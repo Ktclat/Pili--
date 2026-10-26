@@ -31,6 +31,8 @@ $env:PUB_CACHE = Join-Path $PWD '.tools/pub-cache'
 
 输出在 `build/app/outputs/flutter-apk/`。准备脚本校验 SDK 提交、使用独立 Pub 缓存、幂等应用补丁，不重置或删除共享 SDK/缓存。Git 依赖与 `pubspec.lock` 一起提交。
 
+Linux 主机运行回归测试时，`cnativeapi` 的原生钩子还需要 `clang`、`pkg-config`、`libgtk-3-dev`、`libx11-dev`、`libxi-dev`；CI 已安装这些依赖。
+
 正式分发前配置自己的 `android/key.properties` 和签名密钥，密钥不得提交。未配置时使用测试签名；CI APK 也是测试产物，构建成功不代表成品验收通过。
 
 ## 验证与限制
