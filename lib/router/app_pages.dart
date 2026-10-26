@@ -1,4 +1,6 @@
 import 'package:PiliPlus/pages/article/view.dart';
+import 'package:PiliPlus/pages/scan/view.dart';
+import 'package:PiliPlus/pages/mall/view.dart';
 import 'package:PiliPlus/pages/article_list/view.dart';
 import 'package:PiliPlus/pages/audio/view.dart';
 import 'package:PiliPlus/pages/blacklist/view.dart';
@@ -138,6 +140,8 @@ class Routes {
     GetPage(name: '/sysMsg', page: () => const SysMsgPage()),
     // 登录页面
     GetPage(name: '/loginPage', page: () => const LoginPage()),
+    GetPage(name: '/scan', page: () => const ScanPage()),
+    GetPage(name: '/mall', page: () => const MallPage()),
     // 用户动态
     GetPage(name: '/memberDynamics', page: () => const MemberDynamicsPage()),
     // 日志

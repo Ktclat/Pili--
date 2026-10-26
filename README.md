@@ -1,255 +1,59 @@
-<div align="center">
-    <img width="200" height="200" src="assets/images/logo/logo.png">
-</div>
+# Pili--
 
+基于 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的哔哩哔哩第三方客户端。当前维护和验证重点是 **Android**，保留上游的视频、弹幕、搜索、动态、直播、收藏和离线缓存实现。不是哔哩哔哩官方客户端。
 
+[English](README.en.md) · [源代码](https://github.com/Ktclat/Pili--) · [问题反馈](https://github.com/Ktclat/Pili--/issues)
 
-<div align="center">
-    <h1>PiliPlus</h1>
-<div align="center">
+## 本项目的改动
 
-中文 | [English](README.en.md)
+- **扫一扫**：首页和“我的”提供入口；支持相机、相册、BV/av 标识。识别后先展示结果；外部网页经确认交给系统浏览器；文本和不安全协议只能复制。切后台时停止相机。
+- **会员购**：“我的”中的独立入口。首次点击“下载并启用”才创建 WebView，下载官方 HTML、JavaScript、图片等网页组件；加载成功后记住启用状态。支持失败重试、网页后退、刷新和停用。退出页面释放 WebView，首页不预加载。
+- **安全收紧**：移除 TLS 证书验证绕过、私有存储 DocumentsProvider 和向第三方评论检查应用传递登录 Cookie 的联动；账号请求限定到 HTTPS 的 bilibili.com 及其子域；拒绝账号请求跨源重定向，不将 Cookie 复制到重定向目的地。移除关于页隐藏 URL 入口、网络请求原文调试日志和启动错误自动写剪贴板。
+- **减少重复工作**：内置网页不再每次打开都清空缓存；失败重试限定 GET/HEAD，避免发评、投币等操作重复提交。
+- **独立身份**：名称 Pili--，Android applicationId 为 `io.github.ktclat.piliminus`，反馈与更新地址指向本仓库，可与 PiliPlus 共存。
 
-![GitHub repo size](https://img.shields.io/github/repo-size/bggRGjQaUbCoE/PiliPlus) 
-![GitHub Repo stars](https://img.shields.io/github/stars/bggRGjQaUbCoE/PiliPlus) 
-![GitHub all releases](https://img.shields.io/github/downloads/bggRGjQaUbCoE/PiliPlus/total) 
-</div>
-    <p>使用Flutter开发的BiliBili第三方客户端</p>
-    
-<img src="assets/screenshots/510shots_so.png" width="32%" alt="home" />
-<img src="assets/screenshots/174shots_so.png" width="32%" alt="home" />
-<img src="assets/screenshots/850shots_so.png" width="32%" alt="home" />
-<br/>
-<img src="assets/screenshots/main_screen.png" width="96%" alt="home" />
-<br/>
-</div>
+会员购是官方 H5 应用，**不是独立原生 APK/DEX 插件**。WebView 引擎由系统提供，下载大小和缓存淘汰取决于官方页面及系统。停用关闭自动加载，不清除其他页面共享的登录 Cookie。订单和支付依赖官方页面、账号资格及目标支付应用；未经验证的交易流程不宣称可用，不会自动下单付款。
 
+## 构建 Android
 
-<br/>
+需要 Git、PowerShell 7、JDK 17、Android SDK 37。上游依赖 Flutter 框架补丁，必须使用项目内隔离环境：
 
-## 适配平台
+```powershell
+git clone https://github.com/Ktclat/Pili--.git
+cd Pili--
+git clone --depth 1 --branch 3.47.8 https://github.com/flutter/flutter.git .tools/flutter
+./scripts/prepare_android.ps1
+$env:PUB_CACHE = Join-Path $PWD '.tools/pub-cache'
+./.tools/flutter/bin/flutter analyze --no-pub --no-fatal-infos
+./.tools/flutter/bin/flutter test --no-pub
+./.tools/flutter/bin/flutter build apk --release --split-per-abi --no-pub --dart-define=pili.name=0.1.0
+```
 
-- [x] Android
-- [x] iOS
-- [x] Pad
-- [x] Windows
-- [x] Linux
+输出在 `build/app/outputs/flutter-apk/`。准备脚本校验 SDK 提交、使用独立 Pub 缓存、幂等应用补丁，不重置或删除共享 SDK/缓存。Git 依赖与 `pubspec.lock` 一起提交。
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/piliplus.svg)](https://repology.org/project/piliplus/versions)
+正式分发前配置自己的 `android/key.properties` 和签名密钥，密钥不得提交。未配置时使用测试签名；CI APK 也是测试产物，构建成功不代表成品验收通过。
 
-## refactor
+## 验证与限制
 
-- [ ] gRPC [wip]
-- [x] 用户界面
-- [x] 其他
+以安装后的 APK 验收启动、浏览、扫码、权限拒绝、相册识别、不安全链接处理、会员购加载/重试/停用及后台资源释放。实际结果见 [验证记录](docs/VALIDATION.md)。没有截图快照基线或固定帧率门槛；保留的上游回归测试不能替代 APK 验收。
 
-## feat
+其他平台源码保留，但不承诺已验证。模拟器不能替代真机对焦、长时间播放、低内存设备或真实支付测试。安全审查范围见 [安全说明](SECURITY.md)，不据此保证整个依赖链“绝无后门”。
 
-- [x] 编辑动态
-- [x] DLNA 投屏
-- [x] 离线缓存/播放
-- [x] 移动端支持点击弹幕悬停，点赞、复制、举报 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 播放音频
-- [x] 跳过番剧片头/片尾
-- [x] 安卓端 `loudnorm` 适配 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] Win/Mac 支持极验、短信登录 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 视频截取动图 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] AI 原声翻译
-- [x] SuperChat
-- [x] 播放课堂视频
-- [x] 发起投票
-- [x] 发布动态/评论支持`富文本编辑`/`表情显示`/`@用户`
-- [x] 修改消息设置
-- [x] 修改聊天设置
-- [x] 展示折叠消息
-- [x] 查看用户图文
-- [x] 动态话题
-- [x] 直播分区
-- [x] 分享`视频`/`番剧`/`动态`/`专栏`/`直播`至消息
-- [x] 创建/修改/删除关注分组
-- [x] 移除粉丝
-- [x] 直播弹幕发送表情
-- [x] 收藏夹排序
-- [x] 稍后再看 ~~`未看`~~ / `未看完` / ~~`已看完`~~ 分类
-- [x] WebDAV 备份/恢复设置
-- [x] 保存评论/动态
-- [x] 高级弹幕 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 取消/置顶评论
-- [x] 记笔记
-- [x] 多账号支持 by [@My-Responsitories](https://github.com/My-Responsitories)
-- [x] 屏蔽带货动态/评论
-- [x] 互动视频
-- [x] 发评/动态反诈
-- [x] 高能进度条
-- [x] 滑动跳转预览视频缩略图
-- [x] Live Photo
-- [x] 复制/移动/排序收藏夹/稍后再看视频
-- [x] 超分辨率
-- [x] 合并弹幕
-- [x] 会员彩色弹幕
-- [x] 播放全部/继续播放/倒序播放
-- [x] Cookie登录
-- [x] 显示视频分段信息
-- [x] 调节字幕大小
-- [x] 调节全屏弹幕大小
-- [x] 收藏夹/稍后再看多选删除
-- [x] 搜索用户动态
-- [x] 直播弹幕
-- [x] 修改头像/用户名/签名/性别/生日
-- [x] 创建/编辑/删除收藏夹
-- [x] 评论楼中楼查看对话
-- [x] 评论楼中楼定位点击查看的评论
-- [x] 评论楼中楼按热度/时间排序
-- [x] 评论点踩
-- [x] 私信发图
-- [x] 投币动画
-- [x] 取消/追番，更新追番状态
-- [x] 取消/订阅合集
-- [x] SponsorBlock
-- [x] 显示视频完整合集
-- [x] 三连动画
-- [x] 番剧三连
-- [x] 带图评论
-- [x] 视频TAG
-- [x] 筛选搜索
-- [x] 转发动态
-- [x] 合集图片
-- [x] 删除/置顶/撤回私信
-- [x] 举报用户/评论/视频/动态
-- [x] 删除/发布/置顶文本/图片动态
-- [x] 其他
+## 许可证与来源
 
-## opt
+保留上游 [GPL v3 许可证](LICENSE)、文件版权声明和 Git 历史。来源及修改说明见 [NOTICE](NOTICE)。分发修改版和二进制时应按许可证提供对应源码及构建材料；依赖保留各自许可证。应用内可查看开源许可。
 
-- [x] 专栏界面
-- [x] 私信界面
-- [x] 收藏面板
-- [x] PIP
-- [x] 视频封面
-- [x] 回复界面
-- [x] 系统通知
-- [x] 评论显示
-- [x] 亮度调节
-- [x] 视频播放
-- [x] 视频staff
-- [x] 防止bottomsheet遮挡全屏视频
-- [x] 其他
+不提供付费内容破解，不绕过会员权限。感谢 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)、[PiliPala](https://github.com/guozhigq/pilipala)、[PiliPalaX](https://github.com/orz12/PiliPalaX)、[bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)、[media-kit](https://github.com/media-kit/media-kit) 及依赖贡献者。沿用图标来自上游，不代表官方授权或背书。
 
-## fix
+### Windows 含空格路径
 
-- [x] 番剧分集点赞/投币/收藏
-- [x] bugs
+Dart 原生构建钩子在带空格的 SDK 路径下可能启动失败。可将项目映射到一个**尚未占用**的盘符，再从该盘符运行上述准备和构建命令，例如：
 
-<br/>
+```powershell
+subst P: "D:\OneDrive - MSFT\Program\Code\Android\Pili--"
+Set-Location P:\
+./scripts/prepare_android.ps1
+$env:PUB_CACHE = 'P:\.tools\pub-cache'
+```
 
-## 功能
-
-- [x] 推荐视频列表(app端)
-- [x] 最热视频列表
-- [x] 热门直播
-- [x] 番剧列表
-- [x] 屏蔽黑名单内用户视频
-- [x] 无痕模式（播放视为未登录）
-- [x] 游客模式（推荐视为未登录）
-
-- [x] 用户相关
-  - [x] 粉丝、关注用户、拉黑用户查看
-  - [x] 用户主页查看
-  - [x] 关注/取关用户
-  - [x] 离线缓存
-  - [x] 稍后再看
-  - [x] 观看记录
-  - [x] 我的收藏
-  - [x] 站内私信
-  
-- [x] 动态相关
-  - [x] 全部、投稿、番剧分类查看
-  - [x] 动态评论查看
-  - [x] 动态评论回复功能
-
-- [x] 视频播放相关
-  - [x] 双击快进/快退
-  - [x] 双击播放/暂停
-  - [x] 垂直方向调节亮度/音量
-  - [x] 垂直方向上滑全屏、下滑退出全屏
-  - [x] 水平方向手势快进/快退
-  - [x] 全屏方向设置
-  - [x] 倍速选择/长按2倍速
-  - [x] 硬件加速（视机型而定）
-  - [x] 画质选择（高清画质未解锁）
-  - [x] 音质选择（视视频而定）
-  - [x] 解码格式选择（视视频而定）
-  - [x] 弹幕
-  - [x] 字幕
-  - [x] 记忆播放
-  - [x] 视频比例：高度/宽度适应、填充、包含等
-     
-- [x] 搜索相关
-  - [x] 热搜
-  - [x] 搜索历史
-  - [x] 默认搜索词
-  - [x] 投稿、番剧、直播间、用户搜索
-  - [x] 视频搜索排序、按时长筛选
-    
-- [x] 视频详情页相关
-  - [x] 视频选集(分p)切换
-  - [x] 点赞、投币、收藏/取消收藏
-  - [x] 相关视频查看
-  - [x] 评论用户身份标识
-  - [x] 评论(排序)查看、二楼评论查看
-  - [x] 主楼、二楼评论回复功能
-  - [x] 评论点赞
-  - [x] 评论笔记图片查看、保存
-
-- [x] 设置相关
-  - [x] 画质、音质、解码方式预设      
-  - [x] 图片质量设定
-  - [x] 主题模式：亮色/暗色/跟随系统
-  - [x] 震动反馈(可选)
-  - [x] 高帧率
-  - [x] 自动全屏
-  - [x] 横屏适配
-- [ ] 等等
-
-<br/>
-
-## 下载
-
-可以从 [Releases](https://github.com/bggRGjQaUbCoE/PiliPlus/releases) 下载，或克隆仓库拉取代码后在本地编译。
-
-<br/>
-
-## 声明
-
-此项目（PiliPlus）是个人为了兴趣而开发，仅用于学习和测试，请于下载后24小时内删除。
-所用API皆从官方网站收集，不提供任何破解内容。
-在此致敬原作者：[guozhigq/pilipala](https://github.com/guozhigq/pilipala)
-在此致敬上游作者：[orz12/PiliPalaX](https://github.com/orz12/PiliPalaX)
-本仓库做了更激进的修改，感谢原作者的开源精神。
-
-感谢使用
-
-
-<br/>
-
-## 致谢
-
-- [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)
-- [flutter_meedu_videoplayer](https://github.com/zezo357/flutter_meedu_videoplayer)
-- [media-kit](https://github.com/media-kit/media-kit)
-- [dio](https://pub.dev/packages/dio)
-- 等等
-
-<br/>
-<br/>
-<br/>
-
-## Star History
-
-<a href="https://star-history.dera.page/#bggRGjQaUbCoE/PiliPlus&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
-   <img alt="Star History Chart" src="https://star-history.dera.page/svg?repos=bggRGjQaUbCoE/PiliPlus&type=Date" />
- </picture>
-</a>
+映射仅供本机开发，源码不变；删除映射前先结束所有构建命令。再次使用其他路径构建时需重新运行准备命令，更新本机生成的包路径。静态分析保留上游弃用/风格提示，以错误和警告阻断构建，不将提示当成功能测试。

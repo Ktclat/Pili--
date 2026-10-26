@@ -1,0 +1,19 @@
+scanner visible
+Active Camera Clients:
+[
+(Camera ID: 10, Cost: 100, PID: 8811, Score: 0, State: 2User Id: 0, Client Package Name: io.github.ktclat.piliminus, Conflicting Client Devices: {})
+]
+
+background
+Active Camera Clients:
+[]
+
+resumed
+Active Camera Clients:
+[
+(Camera ID: 10, Cost: 100, PID: 8811, Score: 0, State: 2User Id: 0, Client Package Name: io.github.ktclat.piliminus, Conflicting Client Devices: {})
+]
+
+scanner exited (after native close)
+Active Camera Clients:
+[]

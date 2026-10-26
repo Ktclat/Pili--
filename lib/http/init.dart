@@ -19,7 +19,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:dio_http2_adapter/dio_http2_adapter.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, listEquals;
+import 'package:flutter/foundation.dart' show listEquals;
 
 class Request {
   static final gzip = ZLibDecoder(gzip: true);
@@ -150,7 +150,6 @@ class Request {
               ..idleTimeout = const Duration(seconds: 15)
               ..autoUncompress = false
               ..findProxy = ((_) => 'PROXY $systemProxyHost:$systemProxyPort')
-              ..badCertificateCallback = (cert, host, port) => true
           : () => HttpClient()
               ..idleTimeout = const Duration(seconds: 15)
               ..autoUncompress = false, // Http2Adapter没有自动解压, 统一行为
@@ -166,9 +165,6 @@ class Request {
                       host: systemProxyHost,
                       port: systemProxyPort,
                     )
-                    ..onBadCertificate = (_) => true
-                : Pref.badCertificateCallback
-                ? (_, config) => config.onBadCertificate = (_) => true
                 : null,
           )
         : null;
@@ -224,22 +220,9 @@ class Request {
           : h11;
 
     // 先于其他Interceptor
-    if (Pref.retryCount != 0) {
-      dio.interceptors.add(
-        RetryInterceptor(dio, Pref.retryCount, Pref.retryDelay),
-      );
-    }
-
-    // 日志拦截器 输出请求、响应内容
-    if (kDebugMode) {
-      dio.interceptors.add(
-        LogInterceptor(
-          request: false,
-          requestHeader: false,
-          responseHeader: false,
-        ),
-      );
-    }
+    dio.interceptors.add(
+      RetryInterceptor(dio, Pref.retryCount, Pref.retryDelay),
+    );
 
     dio
       ..transformer = BackgroundTransformer()

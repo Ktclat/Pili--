@@ -17,7 +17,6 @@ import 'package:PiliPlus/pages/setting/models/model.dart';
 import 'package:PiliPlus/pages/setting/widgets/slider_dialog.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/desktop/window_controller.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
@@ -52,15 +51,7 @@ List<SettingsModel> get extraSettings => [
       leading: const Icon(Icons.storage),
       onTap: _showDownPathDialog,
     ),
-  ] else if (Platform.isAndroid)
-    SwitchModel(
-      title: '允许三方APP访问私有存储',
-      subtitle: '允许三方APP（例如MT管理器）通过访问外部存储的方式访问私有存储下的文件',
-      leading: const Icon(Icons.storage),
-      setKey: SettingBoxKey.enableDocProvider,
-      defaultVal: Pref.enableDocProvider,
-      onChanged: AndroidHelper.updateDocProvider,
-    ),
+  ],
   SplitModel(
     normalModel: const NormalModel.split(
       title: '空降助手',
@@ -81,13 +72,6 @@ List<SettingsModel> get extraSettings => [
     onSelected: (value, setState) => GStorage.setting
         .put(SettingBoxKey.pgcSkipType, value.index)
         .whenComplete(setState),
-  ),
-  const SwitchModel(
-    title: '禁用 SSL 证书验证',
-    subtitle: '谨慎开启，禁用容易受到中间人攻击',
-    leading: Icon(Icons.security),
-    needReboot: true,
-    setKey: SettingBoxKey.badCertificateCallback,
   ),
   const SwitchModel(
     title: '使用外部浏览器打开链接',

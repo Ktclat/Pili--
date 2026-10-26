@@ -11,6 +11,7 @@ import 'package:PiliPlus/utils/app_sign.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
+import 'package:PiliPlus/utils/trusted_url.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -44,9 +45,25 @@ class AccountManager extends Interceptor {
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final path = options.path;
 
+    // Never attach a Bilibili identity to third-party/CDN requests.
+    if (!TrustedUrl.isBilibili(options.uri)) {
+      options.extra['account'] = const NoAccount();
+      options.headers.removeWhere(
+        (name, _) =>
+            name.toLowerCase().startsWith('x-bili-') ||
+            name.toLowerCase() == 'cookie' ||
+            name.toLowerCase() == 'authorization',
+      );
+      return handler.next(options);
+    }
+
     final account = _bindRequestAccount(options);
 
     if (account is NoAccount || _skipCookie(path)) return handler.next(options);
+
+    // Redirects must be reviewed by RetryInterceptor, never by the transport.
+    options.followRedirects = false;
+    options.extra['biliAccountRedirects'] = true;
 
     if (!account.isLogin && path == Api.heartBeat) {
       return handler.reject(
@@ -172,8 +189,10 @@ class AccountManager extends Interceptor {
       'biliimg.com',
       'site/getCoin',
     ];
-    String url = err.requestOptions.uri.toString();
-    if (kDebugMode) debugPrint('🌹🌹ApiInterceptor: $url\n$err');
+    String url = err.requestOptions.uri
+        .replace(query: '', fragment: '')
+        .toString();
+    if (kDebugMode) debugPrint('ApiInterceptor: $url ${err.type}');
     if (skipShow.any(url.contains) ||
         (url.contains('skipSegments') && err.requestOptions.method == 'GET')) {
       // skip
@@ -193,24 +212,10 @@ class AccountManager extends Interceptor {
         .where((cookie) => cookie.isNotEmpty)
         .map(Cookie.fromSetCookieValue)
         .toList();
-    final statusCode = response.statusCode ?? 0;
-    final locations = response.headers[HttpHeaders.locationHeader] ?? const [];
-    final isRedirectRequest = statusCode >= 300 && statusCode < 400;
     final originalUri = response.requestOptions.uri;
     final realUri = originalUri.resolveUri(response.realUri);
+    if (!TrustedUrl.isBilibili(realUri)) return;
     await account.cookieJar.saveFromResponse(realUri, cookies);
-    if (isRedirectRequest && locations.isNotEmpty) {
-      final originalUri = response.realUri;
-      await Future.wait(
-        locations.map(
-          (location) => account.cookieJar.saveFromResponse(
-            // Resolves the location based on the current Uri.
-            originalUri.resolve(location),
-            cookies,
-          ),
-        ),
-      );
-    }
     await account.onChange();
   }
 
@@ -236,8 +241,10 @@ class AccountManager extends Interceptor {
 
   static Account? _boundRequestAccount(RequestOptions options) {
     final path = options.path;
-    final account = options.extra['account'] as Account;
-    if (account is NoAccount ||
+    final account = options.extra['account'] as Account?;
+    if (account == null ||
+        account is NoAccount ||
+        !TrustedUrl.isBilibili(options.uri) ||
         path.startsWith(HttpString.appBaseUrl) ||
         _skipCookie(path)) {
       return null;

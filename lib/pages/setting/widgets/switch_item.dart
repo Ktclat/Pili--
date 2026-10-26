@@ -1,7 +1,5 @@
-import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/utils/storage.dart';
-import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:material_ui/material_ui.dart' hide ListTile;
 
@@ -60,15 +58,6 @@ class _SetSwitchItemState extends State<SetSwitchItem> {
 
   Future<void> switchChange([bool? value]) async {
     val = value ?? !val;
-
-    if (val && widget.setKey == SettingBoxKey.badCertificateCallback) {
-      val = await showConfirmDialog(
-        context: context,
-        title: const Text('确定禁用 SSL 证书验证？'),
-        content: const Text('禁用容易受到中间人攻击'),
-      );
-      if (!val) return;
-    }
 
     await GStorage.setting.put(widget.setKey, val);
 

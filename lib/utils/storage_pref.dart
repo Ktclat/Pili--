@@ -436,9 +436,6 @@ abstract final class Pref {
   static int get subtitleFontWeight =>
       _setting.get(SettingBoxKey.subtitleFontWeight, defaultValue: 5);
 
-  static bool get badCertificateCallback =>
-      _setting.get(SettingBoxKey.badCertificateCallback, defaultValue: false);
-
   static bool get continuePlayingPart =>
       _setting.get(SettingBoxKey.continuePlayingPart, defaultValue: true);
 
@@ -507,10 +504,6 @@ abstract final class Pref {
 
   static bool get enableCommAntifraud =>
       _setting.get(SettingBoxKey.enableCommAntifraud, defaultValue: false);
-
-  static bool get biliSendCommAntifraud =>
-      Platform.isAndroid &&
-      _setting.get(SettingBoxKey.biliSendCommAntifraud, defaultValue: false);
 
   static bool get enableCreateDynAntifraud =>
       _setting.get(SettingBoxKey.enableCreateDynAntifraud, defaultValue: false);
@@ -1080,9 +1073,6 @@ abstract final class Pref {
       _setting.get(SettingBoxKey.maxVolume, defaultValue: 2.0);
 
   static List? get liveStream => _setting.get(SettingBoxKey.liveStream);
-
-  static bool get enableDocProvider =>
-      _setting.get(SettingBoxKey.enableDocProvider, defaultValue: false);
 
   static bool get enableEmoteTooltip =>
       _setting.get(SettingBoxKey.enableEmoteTooltip, defaultValue: false);

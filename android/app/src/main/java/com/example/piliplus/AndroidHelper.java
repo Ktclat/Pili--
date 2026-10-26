@@ -72,35 +72,6 @@ public final class AndroidHelper {
         getContext().startActivity(intent);
     }
 
-    public static void biliSendCommAntifraud(
-            int action, long oid, int type, long rpId, long root, long parent, long ctime, @NonNull String commentText,
-            String pictures, @NonNull String sourceId, long uid, @NonNull String cookie
-    ) {
-        Intent intent = new Intent();
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        intent.setComponent(new ComponentName(
-                "icu.freedomIntrovert.biliSendCommAntifraud",
-                "icu.freedomIntrovert.biliSendCommAntifraud.ByXposedLaunchedActivity"
-        ));
-        intent.putExtra("action", action);
-        intent.putExtra("oid", oid);
-        intent.putExtra("type", type);
-        intent.putExtra("rpid", rpId);
-        intent.putExtra("root", root);
-        intent.putExtra("parent", parent);
-        intent.putExtra("ctime", ctime);
-        intent.putExtra("comment_text", commentText);
-        if (pictures != null) {
-            intent.putExtra("pictures", pictures);
-        }
-        intent.putExtra("source_id", sourceId);
-        intent.putExtra("uid", uid);
-        ArrayList<String> cookiesList = new ArrayList<>(1);
-        cookiesList.add(cookie);
-        intent.putStringArrayListExtra("cookies", cookiesList);
-        getContext().startActivity(intent);
-    }
-
     public static void openLinkVerifySettings() {
         Context context = getContext();
         Uri uri = Uri.parse("package:" + context.getPackageName());
@@ -272,14 +243,6 @@ public final class AndroidHelper {
             return systemFontMap.keySet().toArray(new String[0]);
         }
         return null;
-    }
-
-    public static void updateDocProvider(boolean enabled) {
-        Context context = getContext();
-        final ComponentName componentName = new ComponentName(context, BiliDocumentsProvider.class);
-        final int state = enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
-        context.getPackageManager().setComponentEnabledSetting(componentName, state, PackageManager.DONT_KILL_APP);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.S)

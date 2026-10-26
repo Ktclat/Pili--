@@ -122,9 +122,7 @@ abstract class ReplyController<R> extends CommonListController<R, ReplyInfo> {
 
   // comment antifraud
   late final _enableCommAntifraud = Pref.enableCommAntifraud;
-  late final _biliSendCommAntifraud = Pref.biliSendCommAntifraud;
-  bool get enableCommAntifraud =>
-      _enableCommAntifraud || _biliSendCommAntifraud;
+  bool get enableCommAntifraud => _enableCommAntifraud;
   dynamic get sourceId;
 
   ReplySortType get prefSortType => Pref.replySortType;
@@ -323,7 +321,6 @@ abstract class ReplyController<R> extends CommonListController<R, ReplyInfo> {
   void onCheckReply(ReplyInfo replyInfo, {bool isManual = true}) {
     ReplyUtils.onCheckReply(
       replyInfo: replyInfo,
-      biliSendCommAntifraud: _biliSendCommAntifraud,
       sourceId: sourceId,
       isManual: isManual,
     );

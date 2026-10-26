@@ -9,7 +9,12 @@ import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 abstract final class LinuxCookieManager {
   static bool isBiliDomain(String url) {
     final uri = Uri.tryParse(url);
-    if (uri == null) return false;
+    if (uri == null ||
+        uri.scheme != 'https' ||
+        uri.userInfo.isNotEmpty ||
+        uri.port != 443) {
+      return false;
+    }
     final host = uri.host.toLowerCase();
     return host == 'bilibili.com' || host.endsWith('.bilibili.com');
   }
@@ -50,6 +55,8 @@ abstract final class LinuxCookieManager {
 
     return '''
 (function() {
+  if (location.protocol !== 'https:' ||
+      !(location.hostname === 'bilibili.com' || location.hostname.endsWith('.bilibili.com'))) return;
   try {
     var cookies = $jsonStr;
     for (var i = 0; i < cookies.length; i++) {

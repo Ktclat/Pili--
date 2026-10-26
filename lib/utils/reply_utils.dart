@@ -1,20 +1,14 @@
-import 'dart:io' show Platform;
-
 import 'package:PiliPlus/common/widgets/selection_text.dart';
 import 'package:PiliPlus/grpc/bilibili/main/community/reply/v1.pb.dart'
     show ReplyInfo;
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/reply.dart';
 import 'package:PiliPlus/models/common/reply/reply_sort_type.dart';
-import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/accounts/account.dart';
-import 'package:PiliPlus/utils/android/android_helper.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -22,7 +16,6 @@ import 'package:material_ui/material_ui.dart';
 abstract final class ReplyUtils {
   static void onCheckReply({
     required ReplyInfo replyInfo,
-    required bool biliSendCommAntifraud,
     required sourceId,
     required bool isManual,
   }) {
@@ -42,7 +35,6 @@ abstract final class ReplyUtils {
         mid: replyInfo.mid.toInt(),
         //
         isManual: isManual,
-        biliSendCommAntifraud: biliSendCommAntifraud,
         sourceId: sourceId,
       );
     } catch (e) {
@@ -62,37 +54,8 @@ abstract final class ReplyUtils {
     required List pictures,
     required int mid,
     bool isManual = false,
-    required bool biliSendCommAntifraud,
     required sourceId,
   }) async {
-    // biliSendCommAntifraud
-    if (Platform.isAndroid && biliSendCommAntifraud) {
-      try {
-        final cookieString = Accounts.main.cookieJar
-            .toJson()
-            .entries
-            .map((i) => '${i.key}=${i.value}')
-            .join(';');
-        PiliAndroidHelper.biliSendCommAntifraud(
-          0,
-          oid,
-          type,
-          id,
-          root,
-          parent,
-          ctime,
-          message,
-          pictures,
-          sourceId,
-          mid,
-          cookieString,
-        );
-      } catch (e) {
-        if (kDebugMode) debugPrint('biliSendCommAntifraud: $e');
-      }
-      return;
-    }
-
     // CommAntifraud
     if (!isManual) {
       await Future.pause(const Duration(seconds: 8));

@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:PiliPlus/common/widgets/custom_icon.dart';
 import 'package:PiliPlus/grpc/reply.dart';
 import 'package:PiliPlus/models/common/reply/reply_sort_type.dart';
@@ -10,7 +8,6 @@ import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:get/get.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:material_ui/material_ui.dart' hide RefreshIndicator;
@@ -52,16 +49,6 @@ List<SettingsModel> get replySettings => [
     setKey: SettingBoxKey.enableCommAntifraud,
     defaultVal: false,
   ),
-  if (Platform.isAndroid)
-    const SwitchModel(
-      title: '使用「哔哩发评反诈」检查评论',
-      leading: Icon(
-        FontAwesomeIcons.b,
-        size: 22,
-      ),
-      setKey: SettingBoxKey.biliSendCommAntifraud,
-      defaultVal: false,
-    ),
   SwitchModel(
     title: '屏蔽带货评论',
     leading: const Icon(CustomIcons.shopping_bag_not_interested),

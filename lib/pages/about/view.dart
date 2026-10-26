@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:PiliPlus/build_config.dart';
 import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/constants.dart';
-import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/dialog/dialog.dart';
 import 'package:PiliPlus/common/widgets/dialog/export_import.dart';
 import 'package:PiliPlus/common/widgets/dialog/simple_dialog_option.dart';
@@ -13,7 +12,6 @@ import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/services/logger.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
-import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/cache_manager.dart';
 import 'package:PiliPlus/utils/date_utils.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
@@ -42,8 +40,6 @@ class _AboutPageState extends State<AboutPage> {
       '${BuildConfig.versionName}+${BuildConfig.versionCode}';
   RxString cacheSize = ''.obs;
 
-  late int _pressCount = 0;
-
   @override
   void initState() {
     super.initState();
@@ -64,22 +60,6 @@ class _AboutPageState extends State<AboutPage> {
     });
   }
 
-  void _showDialog() => showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      constraints: Style.dialogFixedConstraints,
-      content: TextField(
-        autofocus: true,
-        onSubmitted: (value) {
-          Get.back();
-          if (value.isNotEmpty) {
-            PiliScheme.routePushFromUrl(value);
-          }
-        },
-      ),
-    ),
-  );
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -97,21 +77,12 @@ class _AboutPageState extends State<AboutPage> {
           bottom: padding.bottom + 100,
         ),
         children: [
-          GestureDetector(
-            onTap: () {
-              if (++_pressCount == 5) {
-                _pressCount = 0;
-                _showDialog();
-              }
-            },
-            onSecondaryTap: PlatformUtils.isDesktop ? _showDialog : null,
-            child: Image.asset(
-              width: 150,
-              height: 150,
-              excludeFromSemantics: true,
-              cacheWidth: 150.cacheSize(context),
-              Assets.logo,
-            ),
+          Image.asset(
+            width: 150,
+            height: 150,
+            excludeFromSemantics: true,
+            cacheWidth: 150.cacheSize(context),
+            Assets.logo,
           ),
           ListTile(
             title: Text(
@@ -151,14 +122,16 @@ class _AboutPageState extends State<AboutPage> {
           ListTile(
             title: Text(
               '''
-Build Time: ${DateFormatUtils.format(BuildConfig.buildTime, format: DateFormatUtils.longFormatDs)}
+Build Time: ${BuildConfig.buildTime == 0 ? '未记录' : DateFormatUtils.format(BuildConfig.buildTime, format: DateFormatUtils.longFormatDs)}
 Commit Hash: ${BuildConfig.commitHash}''',
               style: const TextStyle(fontSize: 14),
             ),
             leading: const Icon(Icons.info_outline),
-            onTap: () => PageUtils.launchURL(
-              '${Constants.sourceCodeUrl}/commit/${BuildConfig.commitHash}',
-            ),
+            onTap: BuildConfig.commitHash == 'N/A'
+                ? null
+                : () => PageUtils.launchURL(
+                    '${Constants.sourceCodeUrl}/commit/${BuildConfig.commitHash}',
+                  ),
             onLongPress: () => Utils.copyText(BuildConfig.commitHash),
             onSecondaryTap: PlatformUtils.isMobile
                 ? null
@@ -174,6 +147,20 @@ Commit Hash: ${BuildConfig.commitHash}''',
             leading: const Icon(Icons.code),
             title: const Text('Source Code'),
             subtitle: Text(Constants.sourceCodeUrl, style: subTitleStyle),
+          ),
+          ListTile(
+            leading: const Icon(Icons.balance),
+            title: const Text('开源许可与上游'),
+            subtitle: const Text('基于 PiliPlus · GPL v3'),
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: Constants.appName,
+              applicationVersion: currentVersion,
+              applicationLegalese:
+                  '基于 PiliPlus / PiliPalaX / PiliPala。\n'
+                  '本项目遵循 GPL v3，第三方组件遵循各自许可证。\n'
+                  '源码：https://github.com/Ktclat/Pili--',
+            ),
           ),
           if (Platform.isAndroid)
             ListTile(

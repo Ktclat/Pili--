@@ -279,93 +279,6 @@ extension type AndroidHelper._(jni$_.JObject _$this) implements jni$_.JObject {
     _back(_$$classRef.pointer, _id_back.pointer).check();
   }
 
-  static final _id_biliSendCommAntifraud = _class.staticMethodId(
-    r'biliSendCommAntifraud',
-    r'(IJIJJJJLjava/lang/String;Ljava/lang/String;Ljava/lang/String;JLjava/lang/String;)V',
-  );
-
-  static final _biliSendCommAntifraud =
-      jni$_.ProtectedJniExtensions.lookup<
-            jni$_.NativeFunction<
-              jni$_.JThrowablePtr Function(
-                jni$_.Pointer<jni$_.Void>,
-                jni$_.JMethodIDPtr,
-                jni$_.VarArgs<
-                  (
-                    jni$_.Int32,
-                    jni$_.Int64,
-                    jni$_.Int32,
-                    jni$_.Int64,
-                    jni$_.Int64,
-                    jni$_.Int64,
-                    jni$_.Int64,
-                    jni$_.Pointer<jni$_.Void>,
-                    jni$_.Pointer<jni$_.Void>,
-                    jni$_.Pointer<jni$_.Void>,
-                    jni$_.Int64,
-                    jni$_.Pointer<jni$_.Void>,
-                  )
-                >,
-              )
-            >
-          >('globalEnv_CallStaticVoidMethod')
-          .asFunction<
-            jni$_.JThrowablePtr Function(
-              jni$_.Pointer<jni$_.Void>,
-              jni$_.JMethodIDPtr,
-              core$_.int,
-              core$_.int,
-              core$_.int,
-              core$_.int,
-              core$_.int,
-              core$_.int,
-              core$_.int,
-              jni$_.Pointer<jni$_.Void>,
-              jni$_.Pointer<jni$_.Void>,
-              jni$_.Pointer<jni$_.Void>,
-              core$_.int,
-              jni$_.Pointer<jni$_.Void>,
-            )
-          >();
-
-  /// from: `static public void biliSendCommAntifraud(int action, long oid, int type, long rpId, long root, long parent, long ctime, java.lang.String commentText, java.lang.String pictures, java.lang.String sourceId, long uid, java.lang.String cookie)`
-  static void biliSendCommAntifraud(
-    core$_.int action,
-    core$_.int oid,
-    core$_.int type,
-    core$_.int rpId,
-    core$_.int root,
-    core$_.int parent,
-    core$_.int ctime,
-    jni$_.JString commentText,
-    jni$_.JString? pictures,
-    jni$_.JString sourceId,
-    core$_.int uid,
-    jni$_.JString cookie,
-  ) {
-    final _$$classRef = _class.reference;
-    final _$commentText = commentText.reference;
-    final _$pictures = pictures?.reference ?? jni$_.jNullReference;
-    final _$sourceId = sourceId.reference;
-    final _$cookie = cookie.reference;
-    _biliSendCommAntifraud(
-      _$$classRef.pointer,
-      _id_biliSendCommAntifraud.pointer,
-      action,
-      oid,
-      type,
-      rpId,
-      root,
-      parent,
-      ctime,
-      _$commentText.pointer,
-      _$pictures.pointer,
-      _$sourceId.pointer,
-      uid,
-      _$cookie.pointer,
-    ).check();
-  }
-
   static final _id_openLinkVerifySettings = _class.staticMethodId(
     r'openLinkVerifySettings',
     r'()V',
@@ -696,41 +609,6 @@ extension type AndroidHelper._(jni$_.JObject _$this) implements jni$_.JObject {
       _$$classRef.pointer,
       _id_fontFamilies.pointer,
     ).object<jni$_.JArray<jni$_.JString?>?>();
-  }
-
-  static final _id_updateDocProvider = _class.staticMethodId(
-    r'updateDocProvider',
-    r'(Z)V',
-  );
-
-  static final _updateDocProvider =
-      jni$_.ProtectedJniExtensions.lookup<
-            jni$_.NativeFunction<
-              jni$_.JThrowablePtr Function(
-                jni$_.Pointer<jni$_.Void>,
-                jni$_.JMethodIDPtr,
-                jni$_.VarArgs<(jni$_.Int32,)>,
-              )
-            >
-          >('globalEnv_CallStaticVoidMethod')
-          .asFunction<
-            jni$_.JThrowablePtr Function(
-              jni$_.Pointer<jni$_.Void>,
-              jni$_.JMethodIDPtr,
-              core$_.int,
-            )
-          >();
-
-  /// from: `static public void updateDocProvider(boolean enabled)`
-  static void updateDocProvider(
-    core$_.bool enabled,
-  ) {
-    final _$$classRef = _class.reference;
-    _updateDocProvider(
-      _$$classRef.pointer,
-      _id_updateDocProvider.pointer,
-      enabled ? 1 : 0,
-    ).check();
   }
 
   static final _id_isDomainVerified = _class.staticMethodId(

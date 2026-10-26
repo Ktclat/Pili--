@@ -101,7 +101,7 @@ packages:
     dependency: "direct main"
     description:
       path: audio_service
-      ref: dev
+      ref: "9f91eb8d6aa0905661ab3914ebdd3c9fb5c37cc2"
       resolved-ref: "9f91eb8d6aa0905661ab3914ebdd3c9fb5c37cc2"
       url: "https://github.com/bggRGjQaUbCoE/audio_service.git"
     source: git
@@ -134,7 +134,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: dev
+      ref: c8c2143c1720292801f72867e29ddeb50c36134e
       resolved-ref: c8c2143c1720292801f72867e29ddeb50c36134e
       url: "https://github.com/bggRGjQaUbCoE/audio_session.git"
     source: git
@@ -223,7 +223,7 @@ packages:
     dependency: "direct main"
     description:
       path: cached_network_image
-      ref: develop
+      ref: b1597d6d58ad3bc5bcf2d93022bc893add7ce66b
       resolved-ref: b1597d6d58ad3bc5bcf2d93022bc893add7ce66b
       url: "https://github.com/bggRGjQaUbCoE/flutter_cached_network_image_ce.git"
     source: git
@@ -241,7 +241,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
+      ref: "275046d8647a6a26cba1d0dadb9e28688cb3dbf1"
       resolved-ref: "275046d8647a6a26cba1d0dadb9e28688cb3dbf1"
       url: "https://github.com/bggRGjQaUbCoE/canvas_danmaku.git"
     source: git
@@ -250,7 +250,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: dev
+      ref: "0a9f6fd4ee2ac13ab75591ea70530e245ddb4366"
       resolved-ref: "0a9f6fd4ee2ac13ab75591ea70530e245ddb4366"
       url: "https://github.com/My-Responsitories/catcher_2.git"
     source: git
@@ -267,7 +267,7 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/chat_bottom_container"
-      ref: dev
+      ref: a39a5b2a0d108c33608fabd054ea97334d21ad6f
       resolved-ref: a39a5b2a0d108c33608fabd054ea97334d21ad6f
       url: "https://github.com/bggRGjQaUbCoE/flutter_chat_packages.git"
     source: git
@@ -492,7 +492,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: dev
+      ref: d9136d5d85f41cd92f80771b84ef7c9d4c97e95c
       resolved-ref: d9136d5d85f41cd92f80771b84ef7c9d4c97e95c
       url: "https://github.com/bggRGjQaUbCoE/extended_nested_scroll_view.git"
     source: git
@@ -642,7 +642,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: dev
+      ref: e33a789a4dce561267a995d3bc48c638c3950e02
       resolved-ref: e33a789a4dce561267a995d3bc48c638c3950e02
       url: "https://github.com/bggRGjQaUbCoE/flutter_html.git"
     source: git
@@ -659,7 +659,7 @@ packages:
     dependency: "direct overridden"
     description:
       path: flutter_inappwebview_android
-      ref: "v6.1.5"
+      ref: "0bfa46dfff87f0d9e9d5e13cbd5c4a7c7310f8c9"
       resolved-ref: "0bfa46dfff87f0d9e9d5e13cbd5c4a7c7310f8c9"
       url: "https://github.com/bggRGjQaUbCoE/flutter_inappwebview.git"
     source: git
@@ -708,7 +708,7 @@ packages:
     dependency: "direct overridden"
     description:
       path: flutter_inappwebview_windows
-      ref: "v6.1.5"
+      ref: "0bfa46dfff87f0d9e9d5e13cbd5c4a7c7310f8c9"
       resolved-ref: "0bfa46dfff87f0d9e9d5e13cbd5c4a7c7310f8c9"
       url: "https://github.com/bggRGjQaUbCoE/flutter_inappwebview.git"
     source: git
@@ -754,7 +754,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
+      ref: "5a1be84314e8c53efa3b7324cd8dc535fefe931a"
       resolved-ref: "5a1be84314e8c53efa3b7324cd8dc535fefe931a"
       url: "https://github.com/bggRGjQaUbCoE/flutter_smart_dialog.git"
     source: git
@@ -763,7 +763,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: master
+      ref: "4c26cbdad3b6efb5625cc5bd5fd0ae2459bf31f7"
       resolved-ref: "4c26cbdad3b6efb5625cc5bd5fd0ae2459bf31f7"
       url: "https://github.com/bggRGjQaUbCoE/flutter_sortable_wrap.git"
     source: git
@@ -806,7 +806,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v10.9.0"
+      ref: cf4a19ece5cb296d73d90f0d73106f779c85fa26
       resolved-ref: cf4a19ece5cb296d73d90f0d73106f779c85fa26
       url: "https://github.com/bggRGjQaUbCoE/font_awesome_flutter.git"
     source: git
@@ -815,7 +815,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: dev
+      ref: "3e65da893d9736135b2631a39e46c8f5388c2536"
       resolved-ref: "3e65da893d9736135b2631a39e46c8f5388c2536"
       url: "https://github.com/bggRGjQaUbCoE/getx.git"
     source: git
@@ -1144,7 +1144,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: const
+      ref: "2bb68d1de3c7bb8c6117fce54d43da65a2387163"
       resolved-ref: "2bb68d1de3c7bb8c6117fce54d43da65a2387163"
       url: "https://github.com/bggRGjQaUbCoE/material_design_icons_flutter.git"
     source: git
@@ -1169,7 +1169,7 @@ packages:
     dependency: "direct main"
     description:
       path: media_kit
-      ref: native
+      ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       resolved-ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       url: "https://github.com/My-Responsitories/media-kit.git"
     source: git
@@ -1178,7 +1178,7 @@ packages:
     dependency: "direct overridden"
     description:
       path: "libs/android/media_kit_libs_android_video"
-      ref: native
+      ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       resolved-ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       url: "https://github.com/My-Responsitories/media-kit.git"
     source: git
@@ -1187,7 +1187,7 @@ packages:
     dependency: "direct overridden"
     description:
       path: "libs/ios/media_kit_libs_ios_video"
-      ref: native
+      ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       resolved-ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       url: "https://github.com/My-Responsitories/media-kit.git"
     source: git
@@ -1212,7 +1212,7 @@ packages:
     dependency: "direct main"
     description:
       path: "libs/universal/media_kit_libs_video"
-      ref: native
+      ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       resolved-ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       url: "https://github.com/My-Responsitories/media-kit.git"
     source: git
@@ -1221,7 +1221,7 @@ packages:
     dependency: "direct overridden"
     description:
       path: "libs/windows/media_kit_libs_windows_video"
-      ref: native
+      ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       resolved-ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       url: "https://github.com/My-Responsitories/media-kit.git"
     source: git
@@ -1230,7 +1230,7 @@ packages:
     dependency: "direct overridden"
     description:
       path: media_kit_native_event_loop
-      ref: native
+      ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       resolved-ref: "73771ec38176be2d984a3049c28177bce23b54a0"
       url: "https://github.com/My-Responsitories/media-kit.git"
     source: git
@@ -1239,7 +1239,7 @@ packages:
     dependency: "direct main"
     description:
       path: media_kit_video
-      ref: native
+      ref: "85f0a69ea66b100882b27a3375c72e5155375343"
       resolved-ref: "85f0a69ea66b100882b27a3375c72e5155375343"
       url: "https://github.com/bggRGjQaUbCoE/media-kit.git"
     source: git
@@ -1260,11 +1260,19 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  mobile_scanner:
+    dependency: "direct main"
+    description:
+      name: mobile_scanner
+      sha256: "5a51ea79f0cf8293f616a5d08baae185b59b5e6bb24df01f2a63037ade0bade0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.4.2"
   native_device_orientation:
     dependency: "direct main"
     description:
       path: "."
-      ref: master
+      ref: "7be186c79adca7d3ff5abc34bc75d171c68c2694"
       resolved-ref: "7be186c79adca7d3ff5abc34bc75d171c68c2694"
       url: "https://github.com/bggRGjQaUbCoE/flutter_native_device_orientation.git"
     source: git
@@ -1727,7 +1735,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: mod
+      ref: "71f34fa179e2d05818004e22e632dd59f2a223be"
       resolved-ref: "71f34fa179e2d05818004e22e632dd59f2a223be"
       url: "https://github.com/bggRGjQaUbCoE/super_sliver_list.git"
     source: git
@@ -1952,7 +1960,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
+      ref: "2f669c98fb81cff1c64fee93466a1475c77e4273"
       resolved-ref: "2f669c98fb81cff1c64fee93466a1475c77e4273"
       url: "https://github.com/wgh136/webdav_client.git"
     source: git
@@ -1977,7 +1985,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: main
+      ref: "80acd536a1ea1c121c36e32d30e638a295087ed1"
       resolved-ref: "80acd536a1ea1c121c36e32d30e638a295087ed1"
       url: "https://github.com/leanflutter/window_manager.git"
     source: git

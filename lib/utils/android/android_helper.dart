@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io' show Platform;
 import 'dart:ui';
 
@@ -10,50 +9,6 @@ import 'package:jni/jni.dart';
 
 abstract final class PiliAndroidHelper {
   static final isPipAvailable = AndroidHelper.isPipAvailable;
-
-  static void biliSendCommAntifraud(
-    int action,
-    int oid,
-    int type,
-    int rpId,
-    int root,
-    int parent,
-    int ctime,
-    String commentText,
-    List pictures,
-    String sourceId,
-    int uid,
-    String cookie,
-  ) {
-    final jCommentText = commentText.toJString();
-    final jSourceId = sourceId.toJString();
-    final jCookie = cookie.toJString();
-    final jPictures = pictures.isEmpty
-        ? null
-        : jsonEncode(pictures).toJString();
-
-    try {
-      AndroidHelper.biliSendCommAntifraud(
-        action,
-        oid,
-        type,
-        rpId,
-        root,
-        parent,
-        ctime,
-        jCommentText,
-        jPictures,
-        jSourceId,
-        uid,
-        jCookie,
-      );
-    } finally {
-      jCommentText.release();
-      jSourceId.release();
-      jCookie.release();
-      jPictures?.release();
-    }
-  }
 
   static bool openMusic(String title, String? artist, String? album) {
     final jTitle = title.toJString();

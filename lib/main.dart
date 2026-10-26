@@ -32,7 +32,6 @@ import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/theme_utils.dart';
-import 'package:PiliPlus/utils/utils.dart';
 import 'package:catcher_2/catcher_2.dart';
 import 'package:collection/collection.dart';
 import 'package:dynamic_color/dynamic_color.dart' show DynamicColorPlugin;
@@ -98,7 +97,6 @@ void main() async {
   try {
     await GStorage.init();
   } catch (e) {
-    await Utils.copyText(e.toString(), needToast: false);
     if (kDebugMode) debugPrint('GStorage init error: $e');
     DeviceUtils.exitApp();
   }
@@ -112,7 +110,6 @@ void main() async {
   Get
     ..lazyPut(AccountService.new)
     ..lazyPut(DownloadService.new);
-  HttpOverrides.global = _CustomHttpOverrides();
 
   if (PlatformUtils.isMobile) {
     if (Platform.isAndroid) MaxScreenSize.init();
@@ -398,19 +395,5 @@ class MyApp extends StatelessWidget {
     }
     GStorage.setting.put(SettingBoxKey.dynamicColor, false);
     return false;
-  }
-}
-
-class _CustomHttpOverrides extends HttpOverrides {
-  @override
-  HttpClient createHttpClient(SecurityContext? context) {
-    final client = super.createHttpClient(context);
-    // ..maxConnectionsPerHost = 32
-    /// The default value is 15 seconds.
-    //   ..idleTimeout = const Duration(seconds: 15);
-    if (kDebugMode || Pref.badCertificateCallback) {
-      client.badCertificateCallback = (cert, host, port) => true;
-    }
-    return client;
   }
 }

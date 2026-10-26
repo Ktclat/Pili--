@@ -95,6 +95,18 @@ class _MediaPageState extends CommonPageState<MinePage>
                   children: [
                     _buildUserInfo(theme, secondary),
                     _buildActions(secondary),
+                    ListTile(
+                      leading: const Icon(Icons.qr_code_scanner),
+                      title: const Text('扫一扫'),
+                      subtitle: const Text('相机扫码或从相册识别'),
+                      onTap: () => Get.toNamed('/scan'),
+                    ),
+                    ListTile(
+                      leading: const Icon(Icons.shopping_bag_outlined),
+                      title: const Text('会员购'),
+                      subtitle: const Text('独立入口，首次使用按需下载网页组件'),
+                      onTap: () => Get.toNamed('/mall'),
+                    ),
                     for (final tab in controller.mineTabs)
                       switch (tab) {
                         .favorite => Obx(_buildFav),

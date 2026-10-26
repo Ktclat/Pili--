@@ -149,4 +149,6 @@ pili_release.json
 
 dist
 
-test*
+.tools/
+.artifacts/
+.*-output.txt

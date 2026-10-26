@@ -98,6 +98,11 @@ class _HomePageState extends CommonPageState<HomePage>
     final child = Row(
       children: [
         searchBar(),
+        IconButton(
+          tooltip: '扫一扫',
+          onPressed: () => Get.toNamed('/scan'),
+          icon: const Icon(Icons.qr_code_scanner),
+        ),
         const SizedBox(width: 4),
         msgBadge(_mainController),
         const SizedBox(width: 8),

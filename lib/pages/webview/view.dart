@@ -14,6 +14,7 @@ import 'package:PiliPlus/utils/linux_cookie_manager.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/utils.dart';
+import 'package:PiliPlus/utils/trusted_url.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -250,7 +251,7 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
         {
           'source': cookieJs,
           'injectionTime': 0, // start
-          'forAllFrames': true,
+          'forAllFrames': false,
         },
       if (_currentUrl.startsWith('https://www.bilibili.com/h5/note-app'))
         const {
@@ -403,14 +404,16 @@ document.addEventListener('click', function(e) {
               child: InAppWebView(
                 webViewEnvironment: webViewEnvironment,
                 initialSettings: InAppWebViewSettings(
-                  clearCache: true,
+                  clearCache: false,
                   javaScriptEnabled: true,
                   forceDark: ForceDark.AUTO,
                   useHybridComposition: true,
                   algorithmicDarkeningAllowed: true,
                   useShouldOverrideUrlLoading: true,
                   userAgent: userAgent,
-                  mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                  mixedContentMode: MixedContentMode.MIXED_CONTENT_NEVER_ALLOW,
+                  allowFileAccess: false,
+                  allowContentAccess: false,
                 ),
                 initialUrlRequest: URLRequest(
                   url: WebUri.uri(Uri.tryParse(_currentUrl) ?? Uri()),
@@ -419,18 +422,29 @@ document.addEventListener('click', function(e) {
                   _webViewController = controller
                     ..addJavaScriptHandler(
                       handlerName: 'finishButtonClicked',
-                      callback: (args) {
-                        Get.back();
+                      callback: (args) async {
+                        final uri = (await controller.getUrl())?.uriValue;
+                        if (mounted &&
+                            uri != null &&
+                            TrustedUrl.isBilibili(uri) &&
+                            uri.host == 'www.bilibili.com' &&
+                            uri.path == '/h5/note-app') {
+                          Get.back();
+                        }
                       },
                     )
                     ..addJavaScriptHandler(
                       handlerName: 'infoBarClicked',
                       callback: (args) async {
                         WebUri? uri = await controller.getUrl();
-                        if (uri != null) {
+                        if (uri != null &&
+                            TrustedUrl.isBilibili(uri.uriValue) &&
+                            uri.host == 'www.bilibili.com' &&
+                            uri.path == '/h5/note-app') {
                           String? oid = uri.queryParameters['oid'];
-                          if (oid != null) {
-                            PiliScheme.videoPush(int.parse(oid), null);
+                          final id = int.tryParse(oid ?? '');
+                          if (id != null) {
+                            PiliScheme.videoPush(id, null);
                           }
                         }
                       },
