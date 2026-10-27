@@ -1,1 +1,11 @@
 blank_issues_enabled: false
+contact_links:
+  - name: 常见问题与使用说明
+    url: https://github.com/Ktclat/Pili--/blob/main/docs/FAQ.md
+    about: 先了解安装、上游关系、扫码、会员购和版本信息。
+  - name: 参与贡献
+    url: https://github.com/Ktclat/Pili--/blob/main/CONTRIBUTING.md
+    about: 查看问题反馈、功能建议和提交改动的约定。
+  - name: 安全漏洞与敏感信息
+    url: https://github.com/Ktclat/Pili--/blob/main/SECURITY.md
+    about: 报告前阅读安全说明；不要在公开 Issue 中上传凭据或漏洞利用细节。
