@@ -8,12 +8,6 @@ Pili-- 是基于 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的个人
 
 “独立维护”指独立的项目身份、功能取舍、反馈入口和发布流程，不表示从零编写，也不表示与上游有官方关系。PiliPala、PiliPalaX 等早期项目及其他开源依赖的贡献见[致谢与来源](ACKNOWLEDGEMENTS.md)。
 
-## 为什么仓库有很多历史 commits 和 Contributors？
-
-本仓库保留了导入上游时的 Git 历史，因此提交记录和 GitHub Contributors 中会包含上游作者。它们反映真实的历史贡献，不能理解为这些作者加入了 Pili-- 的团队，或为本项目的新功能提供支持、审核或背书。
-
-README 和来源文档可以说明这些区别，但不会重新定义 GitHub 根据历史展示的贡献记录。我们保留原作者、版权声明与历史，方便追溯和今后的上游同步。具体导入基线见 [NOTICE](../NOTICE)。
-
 ## 到哪里下载？为什么 Releases 或更新检查没有新版本？
 
 以[本仓库 Releases](https://github.com/Ktclat/Pili--/releases) 的实际发布情况为准。尚未发布时，可以按[开发指南](DEVELOPMENT.md)构建；若成功的 [Actions 运行](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 提供附件，也可以用于对应提交的开发测试。

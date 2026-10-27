@@ -22,7 +22,7 @@
 
 视频播放、弹幕、搜索、动态、直播、收藏、离线缓存等基础能力，来自上游及其社区的长期积累。Pili-- 在这份基础上加入自己的功能和调整，使用独立的项目名称、Android 应用 ID、反馈入口与更新来源。
 
-> 本项目不是哔哩哔哩官方客户端，也不代表 PiliPlus、PiliPalaX 或 PiliPala 的官方版本。感谢上游作者与每一位贡献者；项目来源、原作者署名、许可证和 Git 历史均予以保留。
+> 本项目不是哔哩哔哩官方客户端，也不代表 PiliPlus、PiliPalaX 或 PiliPala 的官方版本。感谢上游作者与每一位贡献者；项目来源、版权声明和许可证均予以保留。
 
 ## 有什么不一样
 
@@ -107,7 +107,5 @@ APK 输出至 `build/app/outputs/flutter-apk/`。项目依赖上游 Flutter 框�
 ## 致谢与许可
 
 首先感谢 **[PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)** 提供直接的代码基础，也向 **[PiliPala](https://github.com/guozhigq/pilipala)**、**[PiliPalaX](https://github.com/orz12/PiliPalaX)** 及历代贡献者致敬。感谢 [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)、[Flutter](https://github.com/flutter/flutter)、[media-kit](https://github.com/media-kit/media-kit) 和其他开源依赖，让这些尝试成为可能。完整说明见[致谢与来源](docs/ACKNOWLEDGEMENTS.md)。
-
-仓库中的历史 commits 和 Contributors 包含继承自上游的工作，**不等于这些作者加入了 Pili-- 的维护团队，也不代表他们认可本项目的后续改动**。保留这些记录，是为了让贡献和来源可追溯。
 
 项目沿用上游 [GPL v3 许可证](LICENSE)，文件级许可与第三方组件的独立声明继续适用。修改和再分发请遵守相应许可证，并按要求提供对应源码与构建材料；“个人兴趣、自用”描述的是项目定位，不是额外的许可限制。详见 [NOTICE](NOTICE)。

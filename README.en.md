@@ -22,7 +22,7 @@ A personal-interest fork of PiliPlus · Unofficial Bilibili client · Android fi
 
 Video playback, danmaku, search, feeds, live streams, favorites, and offline caching come from upstream and its community. Pili-- builds on that foundation with its own changes, project name, Android application ID, issue tracker, and update source.
 
-> This is not an official Bilibili client or an official release of PiliPlus, PiliPalaX, or PiliPala. Upstream attribution, copyright notices, licenses, and Git history are retained with thanks to the original authors and contributors.
+> This is not an official Bilibili client or an official release of PiliPlus, PiliPalaX, or PiliPala. Upstream attribution, copyright notices, and licenses are respected, with thanks to the original authors and contributors.
 
 ## What changes here
 
@@ -109,7 +109,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting code or documentation. 
 ## Acknowledgements and license
 
 Thank you to **[PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)** for the direct codebase, and to **[PiliPala](https://github.com/guozhigq/pilipala)**, **[PiliPalaX](https://github.com/orz12/PiliPalaX)**, and their contributors for the work behind it. Thanks also to [bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect), [Flutter](https://github.com/flutter/flutter), [media-kit](https://github.com/media-kit/media-kit), and the wider dependency community. See the [full acknowledgements](docs/ACKNOWLEDGEMENTS.md).
-
-Historical commits and the Contributors graph include inherited upstream work. **They do not identify an active Pili-- team or imply that those authors endorse this fork or its later changes.** Keeping the history preserves attribution and traceability.
 
 The project retains upstream's [GPL v3 license](LICENSE), alongside applicable file-level and third-party licenses. Follow those terms when modifying or redistributing, including the corresponding source and build-material requirements. “Personal-interest” describes the project's purpose and adds no license restriction. See [NOTICE](NOTICE).

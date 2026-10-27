@@ -173,4 +173,4 @@ git fetch upstream
 
 如果已有 `upstream`，先用 `git remote -v` 核对地址，不必重复添加。阅读差异后，在单独分支选择性合入；对选取的提交可使用 `git cherry-pick -x <提交号>` 记录来源，合并较大范围时保留原提交历史并说明冲突处理。同步后重新审阅框架补丁、Android 身份、账号请求策略和本项目新增功能，执行相应验证。
 
-不要为了让 Contributors 列表看起来只属于本项目而改写原作者或删除历史。贡献归属和独立维护关系见 [来源与致谢](ACKNOWLEDGEMENTS.md)。
+无论采取哪种同步方式，都需要保留来源信息和适用的版权声明。上游关系见 [来源与致谢](ACKNOWLEDGEMENTS.md)。
