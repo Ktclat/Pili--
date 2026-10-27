@@ -56,6 +56,15 @@ class AndroidIdentityTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'targetPackage'):
                 identity.check_shortcuts(root, package)
 
+    def test_shortcut_component_resource_references_are_rejected(self):
+        for target in ('@string/shortcut_target_package', '@0x7f1100b6', '@2131820726'):
+            root = ET.fromstring(f'''<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+                <shortcut><intent android:action="android.intent.action.VIEW"
+                    android:targetPackage="{target}" android:targetClass="{identity.ACTIVITY}" />
+                </shortcut></shortcuts>''')
+            with self.assertRaisesRegex(ValueError, 'literal targetPackage'):
+                identity.check_shortcuts(root, identity.APP_ID)
+
     def test_android_xml_dump_includes_binary_boolean_and_resource_reference(self):
         root = identity.parse_xmltree('''N: android=http://schemas.android.com/apk/res/android
   E: manifest (line=1)
@@ -72,16 +81,6 @@ class AndroidIdentityTests(unittest.TestCase):
         identity.check_manifest(root, identity.APP_ID, packaged=True)
         self.assertEqual(identity.attr(root.find('application'), 'label'), '@0x7f100001')
 
-    def test_aapt_and_aapt2_resource_names_resolve_to_installed_package(self):
-        for name in ('io.github.ktclat.piliminus:string/shortcut_target_package', 'string/shortcut_target_package'):
-            strings = identity.string_resources(f'''    resource 0x7f100001 {name}
-      () "io.github.ktclat.piliminus.debug"
-    resource 0x7f020001 drawable/something
-      () (file) res/a.png type=PNG
-''')
-            self.assertEqual(strings['@0x7f100001'], identity.APP_ID + '.debug')
-            self.assertEqual(strings['@string/shortcut_target_package'], identity.APP_ID + '.debug')
-
     def test_aapt2_expanded_namespace_and_plain_boolean(self):
         root = identity.parse_xmltree('''N: android=http://schemas.android.com/apk/res/android (line=1)
   E: manifest (line=1)
@@ -95,6 +94,36 @@ class AndroidIdentityTests(unittest.TestCase):
             A: http://schemas.android.com/apk/res/android:authorities(0x01010018)="io.github.ktclat.piliminus.share"
 ''')
         identity.check_manifest(root, identity.APP_ID, packaged=True)
+
+    def test_shortcuts_follow_metadata_id_after_resource_path_shortening(self):
+        manifest = self.manifest()
+        ET.SubElement(manifest.find('application'), 'meta-data', {
+            identity.ANDROID + 'name': 'android.app.shortcuts',
+            identity.ANDROID + 'resource': '@0x7f140004',
+        })
+        for dump in ('''    resource 0x7f140004 xml/shortcuts
+      (v25) (file) res/K7.xml type=XML
+      (v26) (file) res/qZ.xml type=XML
+    resource 0x7f140005 xml/other
+      () (file) res/xml/shortcuts.xml type=XML
+''', '''    spec resource 0x7f140004 io.github.ktclat.piliminus:xml/shortcuts: flags=0x00000000
+      config v25:
+        resource 0x7f140004 io.github.ktclat.piliminus:xml/shortcuts: t=0x03 d=0x00000149
+          (string8) "res/K7.xml"
+      config v26:
+        resource 0x7f140004 io.github.ktclat.piliminus:xml/shortcuts: t=0x03 d=0x00000150
+          (string8) "res/qZ.xml"
+'''):
+            self.assertEqual(identity.shortcut_files(manifest, identity.xml_resources(dump)), {'res/K7.xml', 'res/qZ.xml'})
+
+    def test_missing_shortcuts_resource_is_rejected(self):
+        manifest = self.manifest()
+        ET.SubElement(manifest.find('application'), 'meta-data', {
+            identity.ANDROID + 'name': 'android.app.shortcuts',
+            identity.ANDROID + 'resource': '@0x7f140004',
+        })
+        with self.assertRaisesRegex(ValueError, 'Cannot resolve'):
+            identity.shortcut_files(manifest, {'@0x7f140005': {'res/xml/shortcuts.xml'}})
 
 
 if __name__ == '__main__':

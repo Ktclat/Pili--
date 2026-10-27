@@ -28,7 +28,7 @@ Pili-- 使用独立的 Android 安装包身份，可与上游 PiliPlus 分别安
 原来的静态快捷方式沿用上游私有 `SHORTCUT` action，动态固定快捷方式只有 URI，没有目标组件。双安装时存在解析到另一客户端的风险。本次改为：
 
 - 长按应用图标显示的“搜索/离线视频”快捷方式，使用显式 `targetPackage` 与 `targetClass`。
-- Gradle 从每个变体的最终 `applicationId` 生成目标包资源，因此 `.debug`、`.dev` 不会跳到普通 release。
+- Gradle 从每个变体的最终 `applicationId` 生成含字面目标包名的快捷方式 XML，因此 `.debug`、`.dev` 不会跳到普通 release。不能给 `targetPackage` 使用 `@string`：Android 的快捷方式 Intent 解析器不会解析该组件资源引用，会生成无法启动的目标包；检查器明确拒绝此类引用。
 - 固定到桌面的动态快捷方式使用当前应用 `Context` 和 `MainActivity.class` 创建显式 Intent。
 - 移除上游私有 `com.example.piliplus.SHORTCUT` action 注册，保留普通网页和 B 站协议入口。
 

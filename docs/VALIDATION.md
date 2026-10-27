@@ -81,6 +81,6 @@ $env:PYTHONIOENCODING = 'utf-8'
 
 - 使用项目隔离 Flutter 3.47.8、锁文件及框架补丁，在 Linux 主机实际执行 `flutter test --no-pub`：**131 项通过**。新增范围包括下载 200/206/416、实际落盘长度、暂停取消、完成任务切换竞态，会员购刷新/后退/旧回调隔离，URL 信任边界、重定向及重试策略，以及稳定 Release 版本比较。
 - `flutter analyze --no-pub --no-fatal-infos` 无 error/warning；上游风格和弃用 info 仍保留。
-- Android 共存检查器 **8 项 Python 回归通过**；实际使用 SDK 37 的 aapt/aapt2 验证了编译后的测试夹具 APK 解析。夹具仅验证检查器，不代表本应用已安装。
+- Android 共存检查器 **10 项 Python 回归通过**；使用 SDK 37 的 aapt/aapt2 验证压缩资源路径解析，并拒绝 Android 无法解析的快捷方式组件资源引用。Gradle 的 release/debug/`-Pdev` 生成任务已实际执行，输出分别使用对应 applicationId 的字面包名。
 - `prepare_android.ps1` 的锁文件强制模式和重复补丁准备通过；`git diff --check` 通过。
 - 新版应用 APK 的构建、包身份与双安装运行结果应以该版本对应的 CI/PR 记录为准；真机、账号、长期运行和交易流程仍需独立验收。共存边界及操作步骤见 [COEXISTENCE.md](COEXISTENCE.md)。

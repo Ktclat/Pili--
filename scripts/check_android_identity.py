@@ -57,12 +57,14 @@ def check_manifest(root: ET.Element, package: str, *, packaged: bool) -> None:
     require(UPSTREAM_ID + '.SHORTCUT' not in actions, 'Upstream private shortcut action must not be registered')
 
 
-def check_shortcuts(root: ET.Element, package: str, resolve=lambda value: value) -> None:
+def check_shortcuts(root: ET.Element, package: str) -> None:
     intents = root.findall('.//intent')
     require(bool(intents), 'No launcher shortcut intents found')
     for intent in intents:
-        require(resolve(attr(intent, 'targetPackage')) == package, 'Shortcut can leave its installed app: missing/wrong targetPackage')
-        require(resolve(attr(intent, 'targetClass')) == ACTIVITY, 'Shortcut does not target the retained MainActivity class')
+        # Intent.parseIntent uses non-resource strings for component names.
+        # Resolving @string here would falsely pass an unusable launcher intent.
+        require(attr(intent, 'targetPackage') == package, 'Shortcut needs a literal targetPackage matching its installed app')
+        require(attr(intent, 'targetClass') == ACTIVITY, 'Shortcut needs the literal retained MainActivity class')
         require(attr(intent, 'action') == 'android.intent.action.VIEW', 'Shortcut must use ACTION_VIEW with an explicit component')
 
 
@@ -74,10 +76,11 @@ def check_source() -> set[str]:
     namespace = re.search(r'namespace\s*=\s*"([^"]+)"', gradle)
     require(namespace is not None and namespace[1] == UPSTREAM_ID, 'Changing the JNI namespace requires regenerating bindings; do not rename it to applicationId')
     check_manifest(ET.parse(ROOT / 'android/app/src/main/AndroidManifest.xml').getroot(), APP_ID, packaged=False)
-    shortcuts = list((ROOT / 'android/app/src').glob('*/res/xml*/shortcuts.xml'))
-    require(bool(shortcuts), 'No source launcher shortcuts found')
-    for path in shortcuts:
-        check_shortcuts(ET.parse(path).getroot(), '@string/shortcut_target_package')
+    shortcuts = ROOT / 'android/app/shortcut_templates/shortcuts.xml'
+    require(shortcuts.is_file(), 'No launcher shortcuts template found')
+    check_shortcuts(ET.parse(shortcuts).getroot(), '__APPLICATION_ID__')
+    require(not list((ROOT / 'android/app/src').glob('*/res/xml*/shortcuts.xml')),
+            'Static shortcuts would override or conflict with variant-generated resources')
     values = ET.parse(ROOT / 'android/app/src/main/res/values/string.xml').getroot()
     label = values.find("string[@name='app_name']")
     require(label is not None and label.text == 'Pili--', 'Launcher label must distinguish Pili-- from PiliPlus')
@@ -122,20 +125,35 @@ def parse_xmltree(output: str) -> ET.Element:
     return root
 
 
-def string_resources(output: str) -> dict[str, str]:
-    strings: dict[str, str] = {}
+def xml_resources(output: str) -> dict[str, set[str]]:
+    """Resolve resource IDs to all XML configurations, including shrunk paths."""
+    files: dict[str, set[str]] = {}
     current = None
     for line in output.splitlines():
         resource = re.search(r'\bresource (0x[0-9a-fA-F]+)\s+(?:[^\s:]+:)?([^\s:]+/[^\s:]+)', line)
         if resource:
-            current = resource.groups() if resource[2].startswith('string/') else None
-        elif current and '"' in line:
+            current = resource[1] if resource[2].startswith('xml/') else None
+        elif current:
+            # aapt2 prints (file) res/K7.xml; aapt prints (string8) "res/K7.xml".
+            path = re.search(r'\(file\)\s+(res/\S+)', line)
             quoted = re.search(r'"(?:\\.|[^"\\])*"', line)
-            if quoted:
-                value = json.loads(quoted[0])
-                strings['@' + current[0]] = value
-                strings['@' + current[1]] = value
-    return strings
+            value = path[1] if path else json.loads(quoted[0]) if quoted else ''
+            if value.startswith('res/') and value.endswith('.xml'):
+                files.setdefault('@' + current, set()).add(value)
+    return files
+
+
+def shortcut_files(manifest: ET.Element, files: dict[str, set[str]]) -> set[str]:
+    metadata = [node for node in manifest.findall('.//meta-data')
+                if attr(node, 'name') == 'android.app.shortcuts']
+    require(bool(metadata), 'APK has no launcher shortcuts metadata')
+    result: set[str] = set()
+    for node in metadata:
+        reference = attr(node, 'resource')
+        paths = files.get(reference, set())
+        require(bool(paths), f'Cannot resolve launcher shortcuts resource: {reference}')
+        result.update(paths)
+    return result
 
 
 def find_aapt(explicit: str | None) -> Path:
@@ -174,12 +192,12 @@ def check_apk(apk: Path, aapt: Path, allowed_packages: set[str]) -> str:
     package = manifest.get('package', '')
     require(package in allowed_packages, f'Unexpected APK package: {package}')
     check_manifest(manifest, package, packaged=True)
-    strings = string_resources(dump('resources'))
+    resources = dump('resources')
+    shortcuts = shortcut_files(manifest, xml_resources(resources))
     with zipfile.ZipFile(apk) as archive:
-        shortcuts = [name for name in archive.namelist() if re.fullmatch(r'res/xml[^/]*/shortcuts\.xml', name)]
-    require(bool(shortcuts), 'APK contains no compiled launcher shortcuts')
-    for file in shortcuts:
-        check_shortcuts(parse_xmltree(dump('xmltree', file)), package, lambda value: strings.get(value, value))
+        require(shortcuts.issubset(set(archive.namelist())), 'APK is missing a referenced launcher shortcuts XML file')
+    for file in sorted(shortcuts):
+        check_shortcuts(parse_xmltree(dump('xmltree', file)), package)
     return package
 
 
