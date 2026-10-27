@@ -7,10 +7,11 @@
 ## 本项目的改动
 
 - **扫一扫**：首页和“我的”提供入口；支持相机、相册、BV/av 标识。识别后先展示结果；外部网页经确认交给系统浏览器；文本和不安全协议只能复制。切后台时停止相机。
-- **会员购**：“我的”中的独立入口。首次点击“下载并启用”才创建 WebView，下载官方 HTML、JavaScript、图片等网页组件；加载成功后记住启用状态。支持失败重试、网页后退、刷新和停用。退出页面释放 WebView，首页不预加载。
+- **会员购**：“我的”中的独立入口。首次点击“下载并启用”才创建 WebView，下载官方 HTML、JavaScript、图片等网页组件；加载成功后记住启用状态。正常刷新保留当前网页，系统返回优先网页后退，无历史时退出。支持失败重试和停用。退出页面释放 WebView，首页不预加载。
 - **安全收紧**：移除 TLS 证书验证绕过、私有存储 DocumentsProvider 和向第三方评论检查应用传递登录 Cookie 的联动；账号请求限定到 HTTPS 的 bilibili.com 及其子域；拒绝账号请求跨源重定向，不将 Cookie 复制到重定向目的地。移除关于页隐藏 URL 入口、网络请求原文调试日志和启动错误自动写剪贴板。
 - **减少重复工作**：内置网页不再每次打开都清空缓存；失败重试限定 GET/HEAD，避免发评、投币等操作重复提交。
-- **独立身份**：名称 Pili--，Android applicationId 为 `io.github.ktclat.piliminus`，反馈与更新地址指向本仓库，可与 PiliPlus 共存。
+- **独立身份**：名称 Pili--，Android applicationId 为 `io.github.ktclat.piliminus`，反馈与更新地址指向本仓库。桌面快捷方式明确绑定当前应用，账号、设置和默认下载目录由 Android 包名隔离，可与 PiliPlus 共存。检查方法与双安装验收步骤见 [共存说明](docs/COEXISTENCE.md)。
+- **下载续传**：校验续传响应范围和实际长度；服务器返回完整文件时重新写入，避免将完整文件追加到旧片段后误报成功。
 
 会员购是官方 H5 应用，**不是独立原生 APK/DEX 插件**。WebView 引擎由系统提供，下载大小和缓存淘汰取决于官方页面及系统。停用关闭自动加载，不清除其他页面共享的登录 Cookie。订单和支付依赖官方页面、账号资格及目标支付应用；未经验证的交易流程不宣称可用，不会自动下单付款。
 
@@ -26,18 +27,22 @@ git clone --depth 1 --branch 3.47.8 https://github.com/flutter/flutter.git .tool
 $env:PUB_CACHE = Join-Path $PWD '.tools/pub-cache'
 ./.tools/flutter/bin/flutter analyze --no-pub --no-fatal-infos
 ./.tools/flutter/bin/flutter test --no-pub
-./.tools/flutter/bin/flutter build apk --release --split-per-abi --no-pub --dart-define=pili.name=0.1.0
+./scripts/build_android.ps1
 ```
 
-输出在 `build/app/outputs/flutter-apk/`。准备脚本校验 SDK 提交、使用独立 Pub 缓存、幂等应用补丁，不重置或删除共享 SDK/缓存。Git 依赖与 `pubspec.lock` 一起提交。
+输出在 `build/app/outputs/flutter-apk/`。准备脚本校验 SDK 提交、使用独立 Pub 缓存、幂等应用补丁，不重置或删除共享 SDK/缓存。默认强制使用已提交的 `pubspec.lock`；主动修改依赖时使用 `./scripts/prepare_android.ps1 -UpdateLockfile`，审阅并提交锁文件差异。
+
+构建脚本从 `pubspec.yaml` 读取版本名与构建号，统一写入 APK 和关于页，并记录源码提交及构建时间。未提交改动的测试包附加 `-dirty` 标记，正式签名模式要求先提交审阅后的源码。可用 `-TargetPlatform android-arm64` 仅构建 ARM64。应用检查更新时比较安装版本与本仓库的稳定 Release 版本；没有正式 Release 时会明确提示。
 
 Linux 主机运行回归测试时，`cnativeapi` 的原生钩子还需要 `clang`、`pkg-config`、`libgtk-3-dev`、`libx11-dev`、`libxi-dev`；CI 已安装这些依赖。
 
-正式分发前配置自己的 `android/key.properties` 和签名密钥，密钥不得提交。未配置时使用测试签名；CI APK 也是测试产物，构建成功不代表成品验收通过。
+正式分发前配置自己的 `android/key.properties` 和签名密钥，密钥不得提交；使用 `./scripts/build_android.ps1 -RequireReleaseSigning` 检查配置后构建，并长期保管同一签名密钥用于后续升级。未配置时使用测试签名；不同机器或 CI 运行生成的测试密钥可能不同，不能依赖这些包互相覆盖升级。CI APK 是测试产物，构建成功不代表成品验收通过。
 
 ## 验证与限制
 
-以安装后的 APK 验收启动、浏览、扫码、权限拒绝、相册识别、不安全链接处理、会员购加载/重试/停用及后台资源释放。实际结果见 [验证记录](docs/VALIDATION.md)。没有截图快照基线或固定帧率门槛；保留的上游回归测试不能替代 APK 验收。
+主分支和 PR 的 CI 均执行静态分析、回归测试、分 ABI 构建及 APK 包名/Provider/快捷方式检查。回归覆盖下载续传、URL 信任边界、重定向与重试、会员购导航及更新版本选择。
+
+以安装后的 APK 验收启动、浏览、扫码、权限拒绝、相册识别、不安全链接处理、会员购加载/重试/停用及后台资源释放。历史模拟器操作见 [验证记录](docs/VALIDATION.md)，应按记录中的版本判断覆盖范围。没有截图快照基线或固定帧率门槛；自动测试不能替代 APK 和双安装真机验收。
 
 其他平台源码保留，但不承诺已验证。模拟器不能替代真机对焦、长时间播放、低内存设备或真实支付测试。安全审查范围见 [安全说明](SECURITY.md)，不据此保证整个依赖链“绝无后门”。
 

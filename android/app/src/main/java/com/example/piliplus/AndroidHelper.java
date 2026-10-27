@@ -213,7 +213,11 @@ public final class AndroidHelper {
                 ShortcutInfo shortcut = new ShortcutInfo.Builder(context, id)
                         .setShortLabel(label)
                         .setIcon(Icon.createWithAdaptiveBitmap(bitmap))
-                        .setIntent(new Intent(Intent.ACTION_VIEW, Uri.parse(uri)))
+                        // A pinned shortcut belongs to this installed variant,
+                        // even when another Bilibili client owns the same URI.
+                        .setIntent(new Intent(context, MainActivity.class)
+                                .setAction(Intent.ACTION_VIEW)
+                                .setData(Uri.parse(uri)))
                         .build();
                 // TODO: WorkerThread
                 Intent pinIntent = shortcutManager.createShortcutResultIntent(shortcut);

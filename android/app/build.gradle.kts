@@ -1,4 +1,5 @@
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl
+import com.android.build.api.variant.ResValue
 import org.jetbrains.kotlin.konan.properties.Properties
 
 plugins {
@@ -18,6 +19,8 @@ if (!isBuiltInKotlinEnabled) {
 }
 
 android {
+    // JNI bindings use these class names. Android installation/data isolation
+    // uses applicationId below, not this implementation namespace.
     namespace = "com.example.piliplus"
     compileSdk = 37
     ndkVersion = flutter.ndkVersion
@@ -55,9 +58,7 @@ android {
     }
 
     buildFeatures {
-        if (project.hasProperty("dev")) {
-            resValues = true
-        }
+        resValues = true
     }
 
     buildTypes {
@@ -88,6 +89,19 @@ android {
         variant.outputs.forEach { output ->
             (output as ApkVariantOutputImpl).versionCodeOverride = flutter.versionCode
         }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        // Resource XML does not expand manifest placeholders. Resolve the final
+        // ID here so release, debug and -Pdev shortcuts stay inside their app.
+        variant.resValues.put(
+            ResValue.Key("string", "shortcut_target_package"),
+            variant.applicationId.map {
+                ResValue(it, "Installed package for launcher shortcuts")
+            },
+        )
     }
 }
 

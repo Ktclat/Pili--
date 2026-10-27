@@ -1,12 +1,12 @@
 import 'dart:io' show Platform;
 
-import 'package:PiliPlus/build_config.dart';
 import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/browser_ua.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/release_info.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -14,6 +14,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 abstract final class Update {
   // 检查更新
@@ -28,16 +29,20 @@ abstract final class Update {
           extra: {'account': const NoAccount()},
         ),
       );
-      if (res.data is Map || res.data.isEmpty) {
+      if (res.statusCode != 200 || res.data is! List) {
         if (!isAuto) {
-          SmartDialog.showToast('检查更新失败，GitHub接口未返回数据，请检查网络');
+          SmartDialog.showToast('检查更新失败，请检查网络或稍后重试');
         }
         return;
       }
-      final data = res.data[0];
-      final int latest =
-          DateTime.parse(data['created_at']).millisecondsSinceEpoch ~/ 1000;
-      if (BuildConfig.buildTime >= latest) {
+      final release = ReleaseInfo.latestStable(res.data as List);
+      if (release == null) {
+        if (!isAuto) SmartDialog.showToast('暂无正式发布版本');
+        return;
+      }
+      final installed = await PackageInfo.fromPlatform();
+      final data = release.data;
+      if (!release.isNewerThan(installed.version)) {
         if (!isAuto) {
           SmartDialog.showToast('已是最新版本');
         }
@@ -112,6 +117,7 @@ abstract final class Update {
       }
     } catch (e) {
       if (kDebugMode) debugPrint('failed to check update: $e');
+      if (!isAuto) SmartDialog.showToast('检查更新失败，请稍后重试');
     }
   }
 
@@ -120,7 +126,7 @@ abstract final class Update {
     SmartDialog.dismiss();
     try {
       void download(String plat) {
-        if (data['assets'].isNotEmpty) {
+        if (data['assets'] is List && data['assets'].isNotEmpty) {
           for (Map<String, dynamic> i in data['assets']) {
             final String name = i['name'];
             if (name.contains(plat) &&
@@ -129,8 +135,8 @@ abstract final class Update {
               return;
             }
           }
-          throw UnsupportedError('platform not found: $plat');
         }
+        throw UnsupportedError('platform not found: $plat');
       }
 
       if (Platform.isAndroid) {

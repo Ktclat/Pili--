@@ -25,7 +25,7 @@ import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart'
-    show kDebugMode, debugPrint, VoidCallback;
+    show kDebugMode, debugPrint, visibleForTesting, VoidCallback;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:path/path.dart' as path;
@@ -39,6 +39,7 @@ class DownloadService extends GetxService {
   static const _maxDanmakuConcurrency = 4;
 
   final _lock = Lock();
+  final _completingEntries = Set<BiliDownloadEntryInfo>.identity();
 
   final flagNotifier = SetNotifier();
   final waitDownloadQueue = RxList<BiliDownloadEntryInfo>();
@@ -524,7 +525,7 @@ class DownloadService extends GetxService {
 
   void _onReceive(int progress, int total) {
     if (curDownload.value case final entry?) {
-      if (progress == 0 && total != 0) {
+      if (total > 0 && entry.totalBytes != total) {
         _updateBiliDownloadEntryJson(entry..totalBytes = total);
       }
       entry
@@ -550,7 +551,7 @@ class DownloadService extends GetxService {
     if (curDownload.value case final curEntryInfo?) {
       curEntryInfo.downloadedBytes = curEntryInfo.totalBytes;
       if (status == DownloadStatus.completed) {
-        _completeDownload();
+        completeDownload();
       } else {
         _updateBiliDownloadEntryJson(curEntryInfo);
       }
@@ -560,7 +561,7 @@ class DownloadService extends GetxService {
   void _onAudioDone([Object? error]) {
     if (_downloadManager?.status == DownloadStatus.completed) {
       if (error == null) {
-        _completeDownload();
+        completeDownload();
       } else {
         final status = _audioDownloadManager?.status ?? DownloadStatus.pause;
         _updateCurStatus(
@@ -572,23 +573,59 @@ class DownloadService extends GetxService {
     }
   }
 
-  Future<void> _completeDownload() async {
+  @visibleForTesting
+  Future<void> completeDownload() async {
     final entry = curDownload.value;
-    if (entry == null) {
+    if (entry == null ||
+        downloadList.contains(entry) ||
+        !_completingEntries.add(entry)) {
       return;
     }
-    entry
-      ..downloadedBytes = entry.totalBytes
-      ..isCompleted = true;
-    await _updateBiliDownloadEntryJson(entry);
-    waitDownloadQueue.remove(entry);
-    downloadList.insert(0, entry);
-    flagNotifier.refresh();
-    _curCid = null;
-    curDownload.value = null;
-    _downloadManager = null;
-    _audioDownloadManager = null;
-    nextDownload();
+    final videoManager = _downloadManager;
+    final audioManager = _audioDownloadManager;
+    bool isCurrentTask() =>
+        identical(curDownload.value, entry) &&
+        identical(_downloadManager, videoManager) &&
+        identical(_audioDownloadManager, audioManager);
+    try {
+      entry
+        ..downloadedBytes = entry.totalBytes
+        ..isCompleted = true;
+      try {
+        await _updateBiliDownloadEntryJson(entry);
+      } catch (e) {
+        entry
+          ..isCompleted = false
+          ..status = DownloadStatus.failDownload;
+        if (isCurrentTask()) {
+          _updateCurStatus(DownloadStatus.failDownload);
+        }
+        if (kDebugMode) {
+          debugPrint('persist completed download error: $e');
+        }
+        return;
+      }
+      // Deletion may remove this entry while its final metadata is being saved.
+      // A late completion must not put it back in the completed list.
+      if (!waitDownloadQueue.any((item) => identical(item, entry))) {
+        return;
+      }
+      waitDownloadQueue.removeWhere((item) => identical(item, entry));
+      downloadList.insert(0, entry);
+      flagNotifier.refresh();
+      // onDone is synchronous, so another task can start while the write above
+      // is pending. Only the task that finished may release these references.
+      if (!isCurrentTask()) {
+        return;
+      }
+      _curCid = null;
+      curDownload.value = null;
+      _downloadManager = null;
+      _audioDownloadManager = null;
+      nextDownload();
+    } finally {
+      _completingEntries.remove(entry);
+    }
   }
 
   void nextDownload() {

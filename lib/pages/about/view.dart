@@ -127,7 +127,7 @@ Commit Hash: ${BuildConfig.commitHash}''',
               style: const TextStyle(fontSize: 14),
             ),
             leading: const Icon(Icons.info_outline),
-            onTap: BuildConfig.commitHash == 'N/A'
+            onTap: !RegExp(r'^[0-9a-f]{40}$').hasMatch(BuildConfig.commitHash)
                 ? null
                 : () => PageUtils.launchURL(
                     '${Constants.sourceCodeUrl}/commit/${BuildConfig.commitHash}',
