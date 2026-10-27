@@ -97,7 +97,7 @@ androidComponents {
         // Resource XML does not expand manifest placeholders. Resolve the final
         // ID here so release, debug and -Pdev shortcuts stay inside their app.
         variant.resValues.put(
-            ResValue.Key("string", "shortcut_target_package"),
+            variant.makeResValueKey("string", "shortcut_target_package"),
             variant.applicationId.map {
                 ResValue(it, "Installed package for launcher shortcuts")
             },
