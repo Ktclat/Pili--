@@ -121,10 +121,12 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
         if (result case loading.Success<MallPage>(:final response)) {
           final ids = _relatedProducts.map((item) => item.id).toSet()
             ..add(widget.product.id);
-          final added = response.items.where((item) => ids.add(item.id));
+          final added = response.items
+              .where((item) => ids.add(item.id))
+              .toList();
           _relatedProducts.addAll(added);
           _relatedPage = response.page;
-          _relatedHasNext = response.hasNext;
+          _relatedHasNext = response.hasNext && added.isNotEmpty;
         } else {
           _relatedError = mallErrorMessage(result);
         }
@@ -390,7 +392,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
                   detail!.descriptionParts.isEmpty) ...[
                 const SizedBox(height: 22),
                 _sectionHeading('商品介绍', theme),
-                SelectableText(detail.description!),
+                SelectableText(detail!.description!),
               ],
               if (_error != null)
                 MallMessage(
