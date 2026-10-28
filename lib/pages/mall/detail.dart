@@ -37,6 +37,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
   bool _relatedLoaded = false;
   bool _relatedLoading = false;
   bool _relatedHasNext = false;
+  bool _relatedMoreFailed = false;
   int _imageIndex = 0;
   MallProductDetail? _detail;
   String? _error;
@@ -69,6 +70,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
       setState(() {
         if (result case loading.Success<MallProductDetail>(:final response)) {
           _detail = response;
+          _imageIndex = 0;
         } else {
           _error = mallErrorMessage(result);
         }
@@ -86,7 +88,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
   /// Read-only search is opt-in: opening a detail page does not make
   /// additional product requests or send the user's account credentials.
   Future<void> _findMore({bool nextPage = false}) async {
-    if (_relatedLoading || (nextPage && !_relatedHasNext)) return;
+    if (nextPage && (_relatedLoading || !_relatedHasNext)) return;
     final query = nextPage ? _relatedQuery : _relatedSearch.text.trim();
     if (query.isEmpty) {
       setState(() => _relatedError = '请填写商品关键词');
@@ -102,6 +104,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
     setState(() {
       _relatedLoading = true;
       _relatedError = null;
+      _relatedMoreFailed = false;
       if (!nextPage) {
         _relatedLoaded = true;
         _relatedQuery = query;
@@ -129,11 +132,15 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
           _relatedHasNext = response.hasNext && added.isNotEmpty;
         } else {
           _relatedError = mallErrorMessage(result);
+          _relatedMoreFailed = nextPage;
         }
       });
     } catch (_) {
       if (mounted && generation == _relatedGeneration) {
-        setState(() => _relatedError = '商品搜索失败，请稍后重试');
+        setState(() {
+          _relatedError = '商品搜索失败，请稍后重试';
+          _relatedMoreFailed = nextPage;
+        });
       }
     } finally {
       if (mounted && generation == _relatedGeneration) {
@@ -493,8 +500,10 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
             if (_relatedError != null)
               MallMessage(
                 message: _relatedError!,
-                action: '重试搜索',
-                onAction: () => unawaited(_findMore()),
+                action: _relatedMoreFailed ? '重试加载更多' : '重试搜索',
+                onAction: () => unawaited(
+                  _findMore(nextPage: _relatedMoreFailed),
+                ),
               ),
             if (_relatedLoaded &&
                 !_relatedLoading &&
