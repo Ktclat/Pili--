@@ -159,6 +159,96 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
     super.dispose();
   }
 
+  void _showImage(String imageUrl) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => Dialog.fullscreen(
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          appBar: AppBar(
+            title: const Text('查看商品图片'),
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            leading: IconButton(
+              tooltip: '关闭图片',
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(dialogContext).pop(),
+            ),
+          ),
+          body: InteractiveViewer(
+            minScale: 1,
+            maxScale: 5,
+            child: Center(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => const Text(
+                  '图片暂时无法加载',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _gallery(List<String> images, ThemeData theme) => Center(
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 600),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (images.isEmpty)
+              const MallProductImage()
+            else
+              PageView.builder(
+                key: ValueKey('mall-gallery-' + images.join('|')),
+                itemCount: images.length,
+                onPageChanged: (index) => setState(() => _imageIndex = index),
+                itemBuilder: (context, index) => Semantics(
+                  label: '点按放大商品图片',
+                  button: true,
+                  child: InkWell(
+                    onTap: () => _showImage(images[index]),
+                    child: MallProductImage(
+                      url: images[index],
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+              ),
+            if (images.length > 1)
+              Positioned(
+                bottom: 12,
+                right: 12,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.65),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    child: Text(
+                      (_imageIndex + 1).toString() + ' / ' +
+                          images.length.toString(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    ),
+  );
+
   Widget _sectionHeading(String title, ThemeData theme) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Text(
@@ -483,7 +573,6 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
         official.host == 'mall.bilibili.com' &&
         official.port == 443 &&
         official.userInfo.isEmpty;
-    final descriptionImages = _detail?.descriptionImages ?? const <String>[];
     return Scaffold(
       appBar: AppBar(title: const Text('商品详情')),
       body: RefreshIndicator(
@@ -496,73 +585,13 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
               child: Column(
                 children: [
                   if (_loading) const LinearProgressIndicator(),
-                  Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 560),
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: images.isEmpty
-                            ? const MallProductImage()
-                            : PageView.builder(
-                                itemCount: images.length,
-                                itemBuilder: (context, index) =>
-                                    MallProductImage(
-                                      url: images[index],
-                                      fit: BoxFit.contain,
-                                    ),
-                              ),
-                      ),
-                    ),
-                  ),
-                  if (images.length > 1)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        '左右滑动查看 ${images.length} 张商品图片',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ),
+                  _gallery(images, theme),
                   _summary(product, theme),
                 ],
               ),
             ),
-            if (descriptionImages.isNotEmpty) ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                  child: Text('商品介绍', style: theme.textTheme.titleMedium),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 20),
-                sliver: SliverList.builder(
-                  itemCount: descriptionImages.length,
-                  itemBuilder: (context, index) => LayoutBuilder(
-                    builder: (context, constraints) => Image.network(
-                      descriptionImages[index],
-                      width: double.infinity,
-                      cacheWidth:
-                          (constraints.maxWidth *
-                                  MediaQuery.devicePixelRatioOf(context))
-                              .ceil()
-                              .clamp(1, 1600),
-                      fit: BoxFit.fitWidth,
-                      frameBuilder: (_, child, frame, _) => frame == null
-                          ? const SizedBox(
-                              height: 260,
-                              child: Center(child: CircularProgressIndicator()),
-                            )
-                          : child,
-                      errorBuilder: (_, _, _) => const SizedBox(
-                        height: 120,
-                        child: Center(child: Text('图片暂时无法加载')),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            SliverToBoxAdapter(child: _description(theme)),
+            SliverToBoxAdapter(child: _moreProducts(theme)),
           ],
         ),
       ),
