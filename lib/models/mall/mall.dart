@@ -254,6 +254,21 @@ class MallPage {
   }
 }
 
+/// Passive, validated text or image content from the official detail API.
+@immutable
+class MallDescriptionPart {
+  final String? text;
+  final String? imageUrl;
+
+  const MallDescriptionPart.text(String value)
+    : text = value,
+      imageUrl = null;
+
+  const MallDescriptionPart.image(String value)
+    : imageUrl = value,
+      text = null;
+}
+
 @immutable
 class MallProductDetail {
   final MallProduct product;
@@ -261,6 +276,12 @@ class MallProductDetail {
   final String? description;
   final Map<String, String> properties;
   final List<String> descriptionImages;
+  final List<MallDescriptionPart> descriptionParts;
+  final String? shopName;
+  final String? shopAvatarUrl;
+  final String? promotion;
+  final String? deliveryEstimate;
+  final int? depositFen;
 
   const MallProductDetail({
     required this.product,
@@ -268,6 +289,12 @@ class MallProductDetail {
     this.description,
     this.properties = const {},
     this.descriptionImages = const [],
+    this.descriptionParts = const [],
+    this.shopName,
+    this.shopAvatarUrl,
+    this.promotion,
+    this.deliveryEstimate,
+    this.depositFen,
   });
 
   factory MallProductDetail.fromJson(Map<String, dynamic> json) {
@@ -331,19 +358,28 @@ class MallProductDetail {
     addProperty('预计发货', json['presaleDeliveryTimeStr']);
     final texts = <String>[];
     final descriptionImages = <String>{};
+    final descriptionParts = <MallDescriptionPart>[];
     final desc = mallMap(json['detailDescVO']);
     for (final section in mallList(desc?['descList'])) {
       final block = mallMap(section);
       final title = mallText(block?['title']);
-      if (title != null) texts.add(title);
+      if (title != null) {
+        texts.add(title);
+        descriptionParts.add(MallDescriptionPart.text(title));
+      }
       for (final value in mallList(block?['contentList'])) {
         final content = mallMap(value);
         if (content?['type'] == 0) {
           final text = mallText(content?['content']);
-          if (text != null) texts.add(text);
+          if (text != null) {
+            texts.add(text);
+            descriptionParts.add(MallDescriptionPart.text(text));
+          }
         } else if (content?['type'] == 1) {
           final image = mallImageUrl(content?['content']);
-          if (image != null) descriptionImages.add(image);
+          if (image != null && descriptionImages.add(image)) {
+            descriptionParts.add(MallDescriptionPart.image(image));
+          }
         }
       }
     }
@@ -355,10 +391,15 @@ class MallProductDetail {
           element.remove();
         }
         final text = mallText(document.body?.text);
-        if (text != null) texts.add(text);
+        if (text != null) {
+          texts.add(text);
+          descriptionParts.add(MallDescriptionPart.text(text));
+        }
         for (final element in document.querySelectorAll('img')) {
           final image = mallImageUrl(element.attributes['src']);
-          if (image != null) descriptionImages.add(image);
+          if (image != null && descriptionImages.add(image)) {
+            descriptionParts.add(MallDescriptionPart.image(image));
+          }
         }
       }
     }
@@ -368,6 +409,16 @@ class MallProductDetail {
       description: texts.isEmpty ? null : texts.join('\n\n'),
       properties: Map.unmodifiable(properties),
       descriptionImages: List.unmodifiable(descriptionImages),
+      descriptionParts: List.unmodifiable(descriptionParts),
+      shopName: mallText(mallMap(json['shopInfoVO'])?['shopName']),
+      shopAvatarUrl: mallImageUrl(mallMap(json['shopInfoVO'])?['shopFace']),
+      promotion: mallText(
+        mallMap(json['multiDiscountActivityInfoVO'])?['benefitName'],
+      ),
+      deliveryEstimate: mallText(json['presaleDeliveryTimeStr']),
+      depositFen: mallYuanToFen(
+        mallMap(json['itemsDepositVO'])?['depositPrice'],
+      ),
     );
   }
 }
