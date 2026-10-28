@@ -314,6 +314,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('商品价¥115'), findsOneWidget);
+      expect(find.text('定金'), findsOneWidget);
+      expect(find.text('官方店铺'), findsOneWidget);
 
       await tester.tap(find.text('前往官方购买'));
       await tester.pumpAndSettle();
