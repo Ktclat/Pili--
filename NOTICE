@@ -10,8 +10,8 @@ Pili-- modifications dated 2026-10-27 are distributed under GPL version 3
 or, where the original file permits, any later version. See LICENSE.
 New Pili-- source files are licensed under GPL-3.0-or-later.
 
-Modifications include Android application identity, QR scanning, opt-in
-official mall H5 loading, transport/WebView hardening, removal of private
+Modifications include Android application identity, QR scanning, built-in
+native mall browsing with configurable navigation, transport/WebView hardening, removal of private
 storage export and hidden URL entry, reproducible Android build preparation,
 and project documentation. Git history records the individual modifications.
 

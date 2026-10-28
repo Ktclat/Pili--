@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
 import 'package:PiliPlus/grpc/dyn.dart';
@@ -14,10 +13,8 @@ import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/mine/view.dart';
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
-import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/feed_back.dart';
-import 'package:PiliPlus/utils/storage.dart';
-import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/navigation_preferences.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/update.dart';
 import 'package:collection/collection.dart';
@@ -26,7 +23,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class MainController extends GetxController
-    with GetSingleTickerProviderStateMixin, AccountMixin {
+    with GetTickerProviderStateMixin, AccountMixin {
   @override
   final AccountService accountService = Get.find<AccountService>();
 
@@ -34,11 +31,13 @@ class MainController extends GetxController
 
   RxDouble? barOffset;
   RxBool? showBottomBar;
-  late final bool hideBottomBar;
+  late bool hideBottomBar;
   late final barHideType = Pref.barHideType;
   bool useBottomNav = false;
   late dynamic controller;
   final RxInt selectedIndex = 0.obs;
+  int navigationRevision = 0;
+  final _retiredControllers = <ChangeNotifier>[];
 
   final RxInt dynCount = 0.obs;
   late DynamicBadgeMode dynamicBadgeMode;
@@ -78,24 +77,9 @@ class MainController extends GetxController
 
     setNavBarConfig();
 
-    controller = mainTabBarView
-        ? TabController(
-            vsync: this,
-            initialIndex: selectedIndex.value,
-            length: navigationBars.length,
-          )
-        : PageController(initialPage: selectedIndex.value);
+    controller = _createNavigationController();
 
-    hideBottomBar =
-        !useSideBar && navigationBars.length > 1 && Pref.hideBottomBar;
-    if (hideBottomBar) {
-      switch (barHideType) {
-        case .instant:
-          showBottomBar = RxBool(true);
-        case .sync:
-          barOffset ??= RxDouble(0.0);
-      }
-    }
+    _configureBarVisibility();
 
     dynamicBadgeMode = Pref.dynamicBadgeMode;
 
@@ -116,6 +100,30 @@ class MainController extends GetxController
         queryUnreadMsg();
       }
     }
+  }
+
+  dynamic _createNavigationController() => mainTabBarView
+      ? TabController(
+          vsync: this,
+          initialIndex: selectedIndex.value,
+          length: navigationBars.length,
+        )
+      : PageController(initialPage: selectedIndex.value, keepPage: false);
+
+  void _configureBarVisibility() {
+    hideBottomBar =
+        !useSideBar && navigationBars.length > 1 && Pref.hideBottomBar;
+    if (hideBottomBar) {
+      switch (barHideType) {
+        case .instant:
+          showBottomBar ??= RxBool(true);
+        case .sync:
+          barOffset ??= RxDouble(0.0);
+      }
+    }
+
+    barOffset?.value = 0;
+    showBottomBar?.value = true;
   }
 
   Future<int> _msgUnread() async {
@@ -225,19 +233,41 @@ class MainController extends GetxController
   }
 
   void setNavBarConfig() {
-    List<int>? navBarSort =
-        (GStorage.setting.get(SettingBoxKey.navBarSort) as List?)?.fromCast();
-    late final List<NavigationBarType> navigationBars;
-    if (navBarSort == null || navBarSort.isEmpty) {
-      navigationBars = NavigationBarType.values;
-    } else {
-      navigationBars = navBarSort
-          .map(NavigationBarType.values.elementAt)
-          .toList();
+    navigationBars = NavigationPreferences.bars;
+    selectedIndex.value = NavigationBarConfig.selectedIndex(
+      navigationBars,
+      Pref.defaultHomePage,
+    );
+  }
+
+  /// Apply both navigation settings immediately while keeping the active tab
+  /// by identity, rather than retaining an index that can point past the end.
+  void reloadNavigation() {
+    if (isClosed) return;
+    final nextBars = NavigationPreferences.bars;
+    if (const ListEquality<NavigationBarType>().equals(
+      navigationBars,
+      nextBars,
+    )) {
+      return;
     }
-    this.navigationBars = navigationBars;
-    final defPage = Pref.defaultHomePage;
-    selectedIndex.value = math.max(0, navigationBars.indexOf(defPage));
+    final current = navigationBars[selectedIndex.value];
+    final oldController = controller as ChangeNotifier;
+    navigationBars = nextBars;
+    selectedIndex.value = NavigationBarConfig.selectedIndex(nextBars, current);
+    controller = _createNavigationController();
+    navigationRevision++;
+    _mineIndex = null;
+    hasHome = nextBars.contains(NavigationBarType.home);
+    hasDyn = nextBars.contains(NavigationBarType.dynamics);
+    _configureBarVisibility();
+    update(['navigation']);
+
+    // Detach the old PageView/TabBarView before releasing its controller.
+    _retiredControllers.add(oldController);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_retiredControllers.remove(oldController)) oldController.dispose();
+    });
   }
 
   void checkDefaultSearch([bool shouldCheck = false]) {
@@ -289,6 +319,7 @@ class MainController extends GetxController
   }
 
   void setIndex(int value) {
+    if (value < 0 || value >= navigationBars.length) return;
     feedBack();
 
     final currentNav = navigationBars[value];
@@ -297,7 +328,18 @@ class MainController extends GetxController
       if (mainTabBarView) {
         controller.animateTo(value);
       } else {
-        controller.jumpToPage(value);
+        final pageController = controller as PageController;
+        if (pageController.hasClients) {
+          pageController.jumpToPage(value);
+        } else {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!isClosed &&
+                identical(controller, pageController) &&
+                pageController.hasClients) {
+              pageController.jumpToPage(selectedIndex.value);
+            }
+          });
+        }
       }
       if (currentNav == NavigationBarType.home) {
         checkDefaultSearch();
@@ -314,7 +356,7 @@ class MainController extends GetxController
           () => switch (currentNav) {
             .home => homeController.onRefresh(),
             .dynamics => dynamicController.onRefresh(),
-            .mine => null,
+            .mine || .mall => null,
           },
         );
       } else {
@@ -347,7 +389,12 @@ class MainController extends GetxController
   @override
   void onClose() {
     barOffset?.close();
+    showBottomBar?.close();
     controller.dispose();
+    for (final retired in _retiredControllers) {
+      retired.dispose();
+    }
+    _retiredControllers.clear();
     super.onClose();
   }
 

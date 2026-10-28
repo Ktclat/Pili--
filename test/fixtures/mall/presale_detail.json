@@ -1,0 +1,85 @@
+{
+  "success": true,
+  "data": {
+    "itemsId": 13675872,
+    "name": "FuRyu 泡面压 UTAU 重音teto 法棍面包 景品手办",
+    "brief": "会员购独家特典：明信片",
+    "shopInfoVO": {
+      "shopName": "会员购",
+      "shopFace": "https://i0.hdslb.com/bfs/kfptfe/floor/b3cef58335a5869517b306347ab905ca3c702524.png",
+      "upOfficialType": null,
+      "upOfficialTypeIcon": null,
+      "shopJumpLink": "bilibili://mall/home",
+      "living": false,
+      "shopDataInfo": null,
+      "salePoints": null,
+      "brandFlagshipInfo": null,
+      "shopEntry": null
+    },
+    "img": [
+      "//i0.hdslb.com/bfs/mall/mall/27/ed/27ed1b94acbc871b5aa314c65c667b11.png",
+      "//i0.hdslb.com/bfs/mall/mall/4b/cd/4bcddd95e9b035c5d7a0a6bff4a2d25d.png",
+      "//i0.hdslb.com/bfs/mall/mall/71/52/71527ab91996066460c17fac362381cc.png",
+      "//i0.hdslb.com/bfs/mall/mall/51/c6/51c68cfdbdeb8675c9af8b843ca2166e.png",
+      "//i0.hdslb.com/bfs/mall/mall/95/58/955816220c21d5fdd2829287efcae818.png"
+    ],
+    "price": "115",
+    "maxPrice": "115",
+    "brandName": "FuRyu",
+    "ipRightName": "",
+    "mobileDesc": "<p>会员购独家特典：明信片</p><p><img src=\"//i0.hdslb.com/bfs/mall/mall/d6/f6/d6f61c749b458a7350b201bb293c4dc8.jpg\"></p><p><img src=\"//i0.hdslb.com/bfs/mall/mall/91/ff/91ff96bd1cc62e2df99b2d6e9d90eb53.jpg\"><img src=\"//i0.hdslb.com/bfs/mall/mall/a0/9f/a09f8a765cac2c4ceeb97cbf9f84b034.jpg\"><img src=\"//i0.hdslb.com/bfs/mall/mall/85/b5/85b5f4d1fb8766497a315d8678a4a653.jpg\"><img src=\"//i0.hdslb.com/bfs/mall/mall/51/d9/51d9b853a03d78eb349a4f699ebbaaf2.jpg\"><img src=\"//i0.hdslb.com/bfs/mall/mall/9d/8f/9d8f6c275bd09e690350b08a45a3aec0.jpg\"></p>",
+    "pcDesc": "",
+    "attrList": [
+      {
+        "attrName": "尺寸",
+        "attrValue": "高约140mm"
+      },
+      {
+        "attrName": "比例",
+        "attrValue": "无比例"
+      },
+      {
+        "attrName": "发售日",
+        "attrValue": "2027-03"
+      },
+      {
+        "attrName": "材质",
+        "attrValue": [
+          "PVC",
+          "ABS"
+        ]
+      }
+    ],
+    "itemsDepositVO": {
+      "depositType": 0,
+      "deposit": 1725,
+      "depositPrice": "17.25",
+      "skuId": 1020089317,
+      "price": "115",
+      "stock": 99,
+      "warnStock": 5,
+      "stockLevel": 1,
+      "img": "//i0.hdslb.com/bfs/mall/mall/bb/f6/bbf6707207b35b12dbbbb15e2e493ab1.png",
+      "preDepositPrice": "0",
+      "limitBuy": false,
+      "activityPrice": null,
+      "activityDepositPrice": null,
+      "activityStock": null,
+      "activityRestriction": null,
+      "frozenStock": 0,
+      "zpEntityStock": 0,
+      "tax": 0,
+      "taxRate": 0,
+      "status": 1,
+      "subStatus": 11,
+      "autoOnSaleTime": 0,
+      "asyncSku": false
+    },
+    "presaleDeliveryTimeStr": "2027年04月",
+    "multiDiscountActivityInfoVO": null,
+    "detailDescVO": null
+  },
+  "header": null,
+  "code": 0,
+  "message": "success"
+}

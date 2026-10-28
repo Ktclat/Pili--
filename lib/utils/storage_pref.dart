@@ -36,6 +36,7 @@ import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
+import 'package:PiliPlus/utils/navigation_preferences.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -176,10 +177,14 @@ abstract final class Pref {
   static NavigationBarType get defaultHomePage =>
       NavigationBarType.values[defaultHomePageIndex];
 
-  static int get defaultHomePageIndex => _setting.get(
-    SettingBoxKey.defaultHomePage,
-    defaultValue: NavigationBarType.home.index,
-  );
+  static int get defaultHomePageIndex {
+    final index = _setting.get(SettingBoxKey.defaultHomePage);
+    return index is int && index >= 0 && index < NavigationBarType.values.length
+        ? index
+        : NavigationBarType.home.index;
+  }
+
+  static bool get showMallInNavigation => NavigationPreferences.showMall;
 
   static int get previewQ =>
       _setting.get(SettingBoxKey.previewQuality, defaultValue: 100);

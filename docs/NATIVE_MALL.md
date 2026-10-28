@@ -1,0 +1,37 @@
+# 原生会员购
+
+从 `0.2.0+3` 起，会员购随应用内置。推荐商品、新品分类、搜索、商品图片和详情由 Flutter 原生组件绘制，不创建会员购 WebView，也不需要点击“下载并启用”。
+
+默认导航顺序为首页、动态、会员购、我的。可在“设置 → 外观设置 → 在导航栏显示会员购”关闭入口，或使用导航栏编辑调整顺序；更改立即生效。隐藏入口不卸载功能，“我的”仍可打开会员购。升级时保留原有导航项的索引和用户排序，并默认添加会员购。
+
+## 官方实现参考
+
+2026-10-27 从[官方下载中心](https://app.bilibili.com/)提供的 Android 包查看公开资源和接口定义，并实际浏览[会员购首页](https://mall.bilibili.com/)、搜索与商品详情。官方 APK 为 `tv.danmaku.bili`，版本 `9.16.1 / 9161100`，签名校验通过；SHA-256 为 `9568f515a979b1856f8214191896af33948342759d118f99e32c86d204236cf4`。
+
+官方包同时包含继承 `MallBaseFragment` 的原生首页、Web 商城页面和商品详情 Compose 资源；部分接口返回的商品链接又指向官方 H5。静态资源证明存在多种实现，不能据此认定所有官方用户当前使用同一页面。Pili-- 自行实现 Flutter 页面，仅参考公开数据契约，没有打包官方 APK 中的代码、插件或素材。
+
+另实际使用 [REA](https://github.com/morluto/rea) `6.8.0` CLI 检查原 APK 的签名结构及内容摘要，并通过其 JADX 适配器读取商城基类元数据。为限制资源，类检查使用保留原始 `classes19.dex` 字节的派生分析载体；该载体不用于安装或分发。完整 APK 的类分析在 2 GiB 堆限制下内存不足，因此不将该次失败当作完整反编译证据。API 注解来自独立的 DEX 静态读取，并以真实请求交叉验证。
+
+## 数据来源
+
+以下请求均指向 `https://mall.bilibili.com`。研究时保持 HTTPS 证书校验，使用无账号 Cookie 的公开请求取得真实成功响应；接口并非公开稳定性承诺，后续可能变化。
+
+| 用途 | 已验证接口 | 解析要点 |
+| --- | --- | --- |
+| 官方 App 首页 | `GET /mall-c-search/home/index/v2` | 来源为官方 APK 的 `HomeApiServiceV2`；响应有导航、入口和商品流 |
+| 推荐流分页 | `GET /mall-c-search/home/feed/list` | `data.vo.list`；`total` 是本批数量，不能当全部商品总数 |
+| 新品分类 | `GET /mall-c-search/home/new_items/list` | `cateTabs` 提供分类，`days[].presaleItems` 提供商品；请求包含 `pageNum/pageSize/cateType` |
+| 商品搜索 | `POST /mall/noah/search/category/v2` | 查询型 POST；使用请求页码，读取 `hasNextPage`，商品 ID 去重 |
+| 商品详情 | `GET /mall-search-items/items/merchant/info` | 请求 `itemsId`；返回多图、价格、店铺、属性及图文详情 |
+
+详情接口同时经[官方详情页面](https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&itemsId=40143296)的实际网络请求和官方发布的前端资源交叉核对。实现与测试见 `lib/http/mall.dart`、`lib/models/mall/` 和会员购测试文件。
+
+列表保留官方的价格前缀、后缀和预售标识。详情基础商品价与活动价分别展示；`depositPrice` 是元，而 `deposit` 是分，不能直接混用。价格在内部使用整数分处理，避免浮点换算误差。某些搜索页会重复返回已出现的商品，客户端去重并在没有新商品时停止继续加载。
+
+商品描述只提取文本和允许的官方 HTTPS 图片，不执行 HTML 脚本。接口请求不携带应用账号，取消页面请求不弹出账号或登录错误。
+
+## 购买与验证范围
+
+点击“前往官方购买”打开对应商品的官方页面，由官方平台完成登录、规格确认、结算、订单及支付。本客户端不提交订单或支付请求；商品库存、优惠资格和最终价格以官方结算结果为准。
+
+公开接口研究和自动测试不能代替登录用户交易验收。历史网页版验证记录保留在 [VALIDATION.md](VALIDATION.md)，应按版本区分；0.2.0 的测试、构建和设备验证以该版本记录为准。

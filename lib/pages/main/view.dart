@@ -317,10 +317,16 @@ class _MainAppState extends PopScopeState<MainApp>
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => GetBuilder<MainController>(
+    id: 'navigation',
+    builder: (_) => _buildLayout(context),
+  );
+
+  Widget _buildLayout(BuildContext context) {
     Widget child;
     if (_mainController.mainTabBarView) {
       child = TabBarView(
+        key: ValueKey(_mainController.navigationRevision),
         controller: _mainController.controller,
         physics: const NeverScrollableScrollPhysics(),
         scrollDirection: _mainController.useBottomNav ? .horizontal : .vertical,
@@ -328,6 +334,7 @@ class _MainAppState extends PopScopeState<MainApp>
       );
     } else {
       child = PageView(
+        key: ValueKey(_mainController.navigationRevision),
         controller: _mainController.controller,
         physics: const NeverScrollableScrollPhysics(),
         children: _mainController.navigationBars.map((i) => i.page).toList(),

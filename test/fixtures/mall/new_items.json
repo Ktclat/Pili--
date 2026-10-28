@@ -1,0 +1,386 @@
+{
+  "success": true,
+  "data": {
+    "codeType": 1,
+    "codeMsg": "操作成功",
+    "vo": {
+      "pageNum": 1,
+      "pageSize": 5,
+      "total": 151282,
+      "today": null,
+      "currentCateType": 0,
+      "cateTabs": [
+        {
+          "cateType": 0,
+          "cateName": "全部",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 1,
+          "cateName": "手办",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 7,
+          "cateName": "魔力赏",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 3,
+          "cateName": "周边",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 6,
+          "cateName": "数码",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 8,
+          "cateName": "出版物",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 9,
+          "cateName": "模型",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 10,
+          "cateName": "潮玩",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 11,
+          "cateName": "服饰",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 12,
+          "cateName": "众筹",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        },
+        {
+          "cateType": 13,
+          "cateName": "一番赏",
+          "cateNameLightImg": null,
+          "cateNameLightStaticImg": null,
+          "cateNameNightImg": null,
+          "cateNameNightStaticImg": null
+        }
+      ],
+      "days": [
+        {
+          "dayNO": "10月27日",
+          "month": "10",
+          "monthDesc": "月",
+          "day": "27",
+          "weekDay": "周二",
+          "presaleItems": [
+            {
+              "itemsId": 42547033,
+              "price": 128.7,
+              "frontMoney": null,
+              "name": "日瓦戈医生| 苏联首部诺贝尔文学奖作品！书型礼盒+精装文库本+优美译本精校精注，赠艺术别册+特形大海报+2张藏书票",
+              "img": "//i0.hdslb.com/bfs/mall/mall/79/f9/be5ae5cf71af0b5ba749ed93c4071532.jpg",
+              "itemUrlForH5": "https://mall.bilibili.com/detail.html?from=new_product&jumpLinkType=0&saleType=0&loadingShow=1&noTitleBar=1#goFrom=na&itemsId=42547033&noReffer=true",
+              "priceDesc": [
+                "128.70"
+              ],
+              "pricePrefix": "",
+              "priceSymbol": "¥",
+              "tags": {
+                "promotionTagNames": null,
+                "marketingTagNames": null,
+                "saleTypeTagNames": null,
+                "typeAndLimitTagName": null,
+                "itemTagNames": null,
+                "recommendTagNames": null,
+                "feedBoardTag": null,
+                "blindBoxHideTypeNames": null,
+                "blindBoxHasWishNames": null,
+                "titleTagNames": null,
+                "tagsSort": [
+                  "adTagNames",
+                  "promotionTagNames",
+                  "marketingTagNames",
+                  "serviceRightTagNames",
+                  "recommendTagNames",
+                  "otherSalePoints",
+                  "saleTypeTagNames",
+                  "attributeTagNames",
+                  "serviceTagNames"
+                ],
+                "adTagNames": null,
+                "godlikeTag": null,
+                "attributeTagNames": null,
+                "exclusiveSalePoints": null,
+                "starBoxSalePoints": null,
+                "serviceRightsTags": null,
+                "otherSalePoints": null,
+                "blindBoxEuroNames": null,
+                "blindBoxCommendTags": null,
+                "serviceTagNames": null,
+                "drainageTags": null,
+                "actionTags": null,
+                "actThereMaterial": null,
+                "extraTempTags": null,
+                "purchaseIncentiveTag": null
+              },
+              "brief": ""
+            },
+            {
+              "itemsId": 42545792,
+              "price": 39.0,
+              "frontMoney": null,
+              "name": "爱的能力：为什么我们既渴望爱，又害怕走进爱（第13版）",
+              "img": "//i0.hdslb.com/bfs/mall/mall/ad/1e/47b94c8d10ea2f6ec85766af60082ccb.jpg",
+              "itemUrlForH5": "https://mall.bilibili.com/detail.html?from=new_product&jumpLinkType=0&saleType=0&loadingShow=1&noTitleBar=1#goFrom=na&itemsId=42545792&noReffer=true",
+              "priceDesc": [
+                "39"
+              ],
+              "pricePrefix": "",
+              "priceSymbol": "¥",
+              "tags": {
+                "promotionTagNames": null,
+                "marketingTagNames": null,
+                "saleTypeTagNames": null,
+                "typeAndLimitTagName": null,
+                "itemTagNames": null,
+                "recommendTagNames": null,
+                "feedBoardTag": null,
+                "blindBoxHideTypeNames": null,
+                "blindBoxHasWishNames": null,
+                "titleTagNames": null,
+                "tagsSort": [
+                  "adTagNames",
+                  "promotionTagNames",
+                  "marketingTagNames",
+                  "serviceRightTagNames",
+                  "recommendTagNames",
+                  "otherSalePoints",
+                  "saleTypeTagNames",
+                  "attributeTagNames",
+                  "serviceTagNames"
+                ],
+                "adTagNames": null,
+                "godlikeTag": null,
+                "attributeTagNames": null,
+                "exclusiveSalePoints": null,
+                "starBoxSalePoints": null,
+                "serviceRightsTags": null,
+                "otherSalePoints": null,
+                "blindBoxEuroNames": null,
+                "blindBoxCommendTags": null,
+                "serviceTagNames": null,
+                "drainageTags": null,
+                "actionTags": null,
+                "actThereMaterial": null,
+                "extraTempTags": null,
+                "purchaseIncentiveTag": null
+              },
+              "brief": ""
+            },
+            {
+              "itemsId": 42547034,
+              "price": 10.0,
+              "frontMoney": null,
+              "name": "木串微瑕特价 单拍不发",
+              "img": "//i0.hdslb.com/bfs/live/flash_screenshot/9309386002dcacd046ccecb4c0b75e66ce7821c7.jpg",
+              "itemUrlForH5": "https://mall.bilibili.com/detail.html?from=new_product&jumpLinkType=0&saleType=0&loadingShow=1&noTitleBar=1#goFrom=na&itemsId=42547034&noReffer=true",
+              "priceDesc": [
+                "10"
+              ],
+              "pricePrefix": "",
+              "priceSymbol": "¥",
+              "tags": {
+                "promotionTagNames": null,
+                "marketingTagNames": null,
+                "saleTypeTagNames": null,
+                "typeAndLimitTagName": null,
+                "itemTagNames": null,
+                "recommendTagNames": null,
+                "feedBoardTag": null,
+                "blindBoxHideTypeNames": null,
+                "blindBoxHasWishNames": null,
+                "titleTagNames": null,
+                "tagsSort": [
+                  "adTagNames",
+                  "promotionTagNames",
+                  "marketingTagNames",
+                  "serviceRightTagNames",
+                  "recommendTagNames",
+                  "otherSalePoints",
+                  "saleTypeTagNames",
+                  "attributeTagNames",
+                  "serviceTagNames"
+                ],
+                "adTagNames": null,
+                "godlikeTag": null,
+                "attributeTagNames": null,
+                "exclusiveSalePoints": null,
+                "starBoxSalePoints": null,
+                "serviceRightsTags": null,
+                "otherSalePoints": null,
+                "blindBoxEuroNames": null,
+                "blindBoxCommendTags": null,
+                "serviceTagNames": null,
+                "drainageTags": null,
+                "actionTags": null,
+                "actThereMaterial": null,
+                "extraTempTags": null,
+                "purchaseIncentiveTag": null
+              },
+              "brief": ""
+            },
+            {
+              "itemsId": 42547031,
+              "price": 660.0,
+              "frontMoney": null,
+              "name": "手镯55",
+              "img": "//i0.hdslb.com/bfs/live/flash_screenshot/592f019f206c5aeb4b43d27ea151a909816fe1e8.jpg",
+              "itemUrlForH5": "https://mall.bilibili.com/detail.html?from=new_product&jumpLinkType=0&saleType=0&loadingShow=1&noTitleBar=1#goFrom=na&itemsId=42547031&noReffer=true",
+              "priceDesc": [
+                "660"
+              ],
+              "pricePrefix": "",
+              "priceSymbol": "¥",
+              "tags": {
+                "promotionTagNames": null,
+                "marketingTagNames": null,
+                "saleTypeTagNames": null,
+                "typeAndLimitTagName": null,
+                "itemTagNames": null,
+                "recommendTagNames": null,
+                "feedBoardTag": null,
+                "blindBoxHideTypeNames": null,
+                "blindBoxHasWishNames": null,
+                "titleTagNames": null,
+                "tagsSort": [
+                  "adTagNames",
+                  "promotionTagNames",
+                  "marketingTagNames",
+                  "serviceRightTagNames",
+                  "recommendTagNames",
+                  "otherSalePoints",
+                  "saleTypeTagNames",
+                  "attributeTagNames",
+                  "serviceTagNames"
+                ],
+                "adTagNames": null,
+                "godlikeTag": null,
+                "attributeTagNames": null,
+                "exclusiveSalePoints": null,
+                "starBoxSalePoints": null,
+                "serviceRightsTags": null,
+                "otherSalePoints": null,
+                "blindBoxEuroNames": null,
+                "blindBoxCommendTags": null,
+                "serviceTagNames": null,
+                "drainageTags": null,
+                "actionTags": null,
+                "actThereMaterial": null,
+                "extraTempTags": null,
+                "purchaseIncentiveTag": null
+              },
+              "brief": ""
+            },
+            {
+              "itemsId": 42547025,
+              "price": 178.0,
+              "frontMoney": null,
+              "name": "蛋面墨翠手链",
+              "img": "//i0.hdslb.com/bfs/live/flash_screenshot/6f930f2626f59dfc401b9b22318e5542cb4bb547.jpg",
+              "itemUrlForH5": "https://mall.bilibili.com/detail.html?from=new_product&jumpLinkType=0&saleType=0&loadingShow=1&noTitleBar=1#goFrom=na&itemsId=42547025&noReffer=true",
+              "priceDesc": [
+                "178"
+              ],
+              "pricePrefix": "",
+              "priceSymbol": "¥",
+              "tags": {
+                "promotionTagNames": null,
+                "marketingTagNames": null,
+                "saleTypeTagNames": null,
+                "typeAndLimitTagName": null,
+                "itemTagNames": null,
+                "recommendTagNames": null,
+                "feedBoardTag": null,
+                "blindBoxHideTypeNames": null,
+                "blindBoxHasWishNames": null,
+                "titleTagNames": null,
+                "tagsSort": [
+                  "adTagNames",
+                  "promotionTagNames",
+                  "marketingTagNames",
+                  "serviceRightTagNames",
+                  "recommendTagNames",
+                  "otherSalePoints",
+                  "saleTypeTagNames",
+                  "attributeTagNames",
+                  "serviceTagNames"
+                ],
+                "adTagNames": null,
+                "godlikeTag": null,
+                "attributeTagNames": null,
+                "exclusiveSalePoints": null,
+                "starBoxSalePoints": null,
+                "serviceRightsTags": null,
+                "otherSalePoints": null,
+                "blindBoxEuroNames": null,
+                "blindBoxCommendTags": null,
+                "serviceTagNames": null,
+                "drainageTags": null,
+                "actionTags": null,
+                "actThereMaterial": null,
+                "extraTempTags": null,
+                "purchaseIncentiveTag": null
+              },
+              "brief": ""
+            }
+          ],
+          "today": null,
+          "isToday": null
+        }
+      ],
+      "recItems": null,
+      "strategyRecItems": null,
+      "ipFilters": null,
+      "newItemsLayout": {
+        "newItemsVersion": 0
+      }
+    }
+  },
+  "header": null,
+  "code": 0,
+  "message": "success"
+}
