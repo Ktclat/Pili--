@@ -326,6 +326,65 @@ void main() {
   );
 
   testWidgets(
+    'native detail can search and open another product without a web page',
+    (tester) async {
+      final opened = <String>[];
+      final repository = _Repository();
+      await _open(
+        tester,
+        repository,
+        openOfficial: (url) async => opened.add(url),
+      );
+      await tester.tap(find.text('原生商品卡片'));
+      await tester.pumpAndSettle();
+      expect(repository.calls.where((call) => call.$1 == '下一页商品'), isEmpty);
+
+      await tester.tap(find.byTooltip('搜索更多商品').first);
+      await tester.pumpAndSettle();
+      final search = find.byKey(const ValueKey('mall-related-search'));
+      await tester.ensureVisible(search);
+      await tester.enterText(search, '商品');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+
+      expect(repository.calls, contains(('商品', 1, 0)));
+      expect(find.text('下一页商品'), findsOneWidget);
+      await tester.ensureVisible(find.text('下一页商品'));
+      await tester.tap(find.text('下一页商品'));
+      await tester.pumpAndSettle();
+      expect(repository.calls.last, ('detail:456', 0, 0));
+      expect(find.byType(MallProductDetailPage), findsOneWidget);
+      expect(opened, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'verified preorder fields appear natively without exposing a fake checkout',
+    (tester) async {
+      final repository = _Repository()
+        ..onDetail = (_) => const loading.Success(
+          mall.MallProductDetail(
+            product: _product,
+            shopName: '会员购官方店铺',
+            promotion: '官方折扣活动',
+            depositFen: 1725,
+            deliveryEstimate: '2027年04月',
+            properties: {'材质': 'PVC'},
+          ),
+        );
+      await _open(tester, repository);
+      await tester.tap(find.text('原生商品卡片'));
+      await tester.pumpAndSettle();
+      expect(find.text('会员购官方店铺'), findsOneWidget);
+      expect(find.text('官方折扣活动'), findsOneWidget);
+      expect(find.textContaining('17.25'), findsWidgets);
+      expect(find.text('2027年04月'), findsOneWidget);
+      expect(find.text('材质'), findsOneWidget);
+      expect(find.text('PVC'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'disposing the catalog cancels a request and ignores its late result',
     (
       tester,
