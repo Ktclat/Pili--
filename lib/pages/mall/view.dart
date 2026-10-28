@@ -10,10 +10,16 @@ import 'package:material_ui/material_ui.dart';
 
 /// Native catalog backed by the official mall's product APIs.
 class MallPage extends StatefulWidget {
-  const MallPage({super.key, this.repository, this.openOfficial});
+  const MallPage({
+    super.key,
+    this.repository,
+    this.openOfficial,
+    this.embeddedInNavigation = false,
+  });
 
   final MallRepository? repository;
   final Future<void> Function(String url)? openOfficial;
+  final bool embeddedInNavigation;
 
   @override
   State<MallPage> createState() => _MallPageState();
@@ -173,9 +179,15 @@ class _MallPageState extends State<MallPage>
     super.build(context);
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('会员购')),
+      primary: !widget.embeddedInNavigation,
+      appBar: AppBar(
+        primary: !widget.embeddedInNavigation,
+        title: const Text('会员购'),
+      ),
       body: SafeArea(
         top: false,
+        left: !widget.embeddedInNavigation,
+        right: !widget.embeddedInNavigation,
         child: Column(
           children: [
             Padding(
@@ -304,7 +316,11 @@ class _MallPageState extends State<MallPage>
                       ),
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: const EdgeInsets.only(bottom: 20),
+                          // MainLayout paints navigation over its full-height
+                          // body. Keep the last action scrollable above it.
+                          padding: EdgeInsets.only(
+                            bottom: widget.embeddedInNavigation ? 120 : 20,
+                          ),
                           child: _loadingMore
                               ? const Center(child: CircularProgressIndicator())
                               : _moreError != null

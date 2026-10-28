@@ -30,7 +30,7 @@ enum NavigationBarType implements EnumWithLabel {
     '会员购',
     Icon(Icons.shopping_bag_outlined),
     Icon(Icons.shopping_bag),
-    MallPage(),
+    MallPage(embeddedInNavigation: true),
   ),
   ;
 

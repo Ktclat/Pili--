@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:PiliPlus/http/loading_state.dart' as loading;
 import 'package:PiliPlus/http/mall.dart';
 import 'package:PiliPlus/models/mall/mall.dart' as mall;
+import 'package:PiliPlus/common/widgets/main_layout.dart';
 import 'package:PiliPlus/pages/mall/detail.dart';
 import 'package:PiliPlus/pages/mall/view.dart';
 import 'package:dio/dio.dart';
@@ -105,6 +106,65 @@ Future<void> _open(
 }
 
 void main() {
+  testWidgets(
+    'embedded catalog uses outer insets and clears navigation overlay',
+    (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repository = _Repository()
+        ..onHome = (page, _) => page == 1
+            ? _page(
+                List.generate(
+                  6,
+                  (index) => mall.MallProduct(
+                    id: '${index + 1}',
+                    title: '商品 $index',
+                    priceText: '¥10',
+                  ),
+                ),
+                hasNext: true,
+              )
+            : const loading.Error('加载更多失败');
+      await tester.pumpWidget(
+        MaterialApp(
+          home: MediaQuery(
+            data: const MediaQueryData(
+              size: Size(400, 800),
+              padding: EdgeInsets.only(top: 24, bottom: 24),
+              viewPadding: EdgeInsets.only(top: 24, bottom: 24),
+            ),
+            child: MainLayout(
+              sideBar: null,
+              bottomNav: const SizedBox(width: 400, height: 104),
+              body: Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: MallPage(
+                  repository: repository,
+                  embeddedInNavigation: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.getRect(find.byType(AppBar)).height, kToolbarHeight);
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -2000));
+      await tester.pumpAndSettle();
+      expect(find.text('重试加载更多'), findsOneWidget);
+      expect(tester.getRect(find.text('重试加载更多')).top, greaterThan(80));
+      expect(
+        tester.getRect(find.text('重试加载更多')).bottom,
+        lessThanOrEqualTo(696),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'opens a built-in native catalog immediately and preserves price labels',
     (
