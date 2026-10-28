@@ -389,10 +389,12 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
                 const SizedBox(height: 24),
                 _sectionHeading('商品规格与信息', theme),
                 for (final entry in detail!.properties.entries)
-                  if (entry.key != '店铺' &&
-                      entry.key != '官方活动' &&
-                      entry.key != '预计发货' &&
-                      entry.key != '定金')
+                  if ((entry.key != '店铺' || shop == null) &&
+                      (entry.key != '官方活动' || promotion == null) &&
+                      (entry.key != '预计发货' || delivery == null) &&
+                      (entry.key != '定金' ||
+                          deposit == null ||
+                          deposit <= 0))
                     _property(entry.key, entry.value, theme),
               ],
               if (detail?.description?.isNotEmpty == true &&
