@@ -28,6 +28,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
   CancelToken? _cancelToken;
   CancelToken? _relatedCancel;
   final _relatedSearch = TextEditingController();
+  final _detailScroll = ScrollController();
   final _relatedProducts = <MallProduct>[];
   int _relatedGeneration = 0;
   int _relatedPage = 0;
@@ -156,6 +157,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
     _cancelToken?.cancel();
     _relatedCancel?.cancel();
     _relatedSearch.dispose();
+    _detailScroll.dispose();
     super.dispose();
   }
 
@@ -194,7 +196,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
     );
   }
 
-  Widget _gallery(List<String> images, ThemeData theme) => Center(
+  Widget _gallery(List<String> images) => Center(
     child: ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 600),
       child: AspectRatio(
@@ -403,70 +405,53 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
     );
   }
 
-  Widget _description(ThemeData theme) {
+  List<MallDescriptionPart> get _descriptionParts {
     final detail = _detail;
-    if (detail == null) return const SizedBox.shrink();
-    final parts = detail.descriptionParts;
-    if (parts.isEmpty && detail.descriptionImages.isEmpty) {
-      return const SizedBox.shrink();
+    if (detail == null) return const [];
+    if (detail.descriptionParts.isNotEmpty) return detail.descriptionParts;
+    return [
+      if (detail.description != null)
+        MallDescriptionPart.text(detail.description!),
+      for (final image in detail.descriptionImages)
+        MallDescriptionPart.image(image),
+    ];
+  }
+
+  Widget _descriptionPart(MallDescriptionPart part) {
+    if (part.text case final text?) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: SelectableText(text),
+      );
     }
-    final ordered = parts.isNotEmpty
-        ? parts
-        : [
-            if (detail.description != null)
-              MallDescriptionPart.text(detail.description!),
-            for (final image in detail.descriptionImages)
-              MallDescriptionPart.image(image),
-          ];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _sectionHeading('商品图文详情', theme),
-              for (final part in ordered)
-                if (part.text case final text?) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: SelectableText(text),
-                  ),
-                ] else if (part.imageUrl case final url?) ...[
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) => Image.network(
-                        url,
-                        width: double.infinity,
-                        cacheWidth:
-                            (constraints.maxWidth *
-                                    MediaQuery.devicePixelRatioOf(context))
-                                .ceil()
-                                .clamp(1, 1600),
-                        fit: BoxFit.fitWidth,
-                        frameBuilder: (_, child, frame, _) => frame == null
-                            ? const SizedBox(
-                                height: 200,
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                            : child,
-                        errorBuilder: (_, _, _) => const SizedBox(
-                          height: 100,
-                          child: Center(child: Text('详情图片暂时无法加载')),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-            ],
+    if (part.imageUrl case final url?) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: LayoutBuilder(
+          builder: (context, constraints) => Image.network(
+            url,
+            width: double.infinity,
+            cacheWidth:
+                (constraints.maxWidth *
+                        MediaQuery.devicePixelRatioOf(context))
+                    .ceil()
+                    .clamp(1, 1600),
+            fit: BoxFit.fitWidth,
+            frameBuilder: (_, child, frame, _) => frame == null
+                ? const SizedBox(
+                    height: 200,
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : child,
+            errorBuilder: (_, _, _) => const SizedBox(
+              height: 100,
+              child: Center(child: Text('详情图片暂时无法加载')),
+            ),
           ),
         ),
-      ),
-    );
+      );
+    }
+    return const SizedBox.shrink();
   }
 
   Widget _moreProducts(ThemeData theme) => Padding(
@@ -558,6 +543,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final parts = _descriptionParts;
     final product = _detail?.product ?? widget.product;
     final images = _detail?.images.isNotEmpty == true
         ? _detail!.images
@@ -574,23 +560,65 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
         official.port == 443 &&
         official.userInfo.isEmpty;
     return Scaffold(
-      appBar: AppBar(title: const Text('商品详情')),
+      appBar: AppBar(
+        title: const Text('商品详情'),
+        actions: [
+          IconButton(
+            tooltip: '搜索更多商品',
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              if (_detailScroll.hasClients) {
+                unawaited(_detailScroll.animateTo(
+                  _detailScroll.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeInOut,
+                ));
+              }
+            },
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(
           key: const ValueKey('mall-detail-scroll'),
+          controller: _detailScroll,
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverToBoxAdapter(
               child: Column(
                 children: [
                   if (_loading) const LinearProgressIndicator(),
-                  _gallery(images, theme),
+                  _gallery(images),
                   _summary(product, theme),
                 ],
               ),
             ),
-            SliverToBoxAdapter(child: _description(theme)),
+            if (parts.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: _sectionHeading('商品图文详情', theme),
+                    ),
+                  ),
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                sliver: SliverList.builder(
+                  itemCount: parts.length,
+                  itemBuilder: (context, index) => Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 720),
+                      child: _descriptionPart(parts[index]),
+                    ),
+                  ),
+                ),
+              ),
+            ],
             SliverToBoxAdapter(child: _moreProducts(theme)),
           ],
         ),
