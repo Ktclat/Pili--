@@ -120,6 +120,41 @@ void main() {
       );
     });
 
+    test('native detail preserves the official description sequence', () {
+      final original =
+          _fixture('detail')['data'] as Map<String, dynamic>;
+      final detail = MallProductDetail.fromJson({
+        ...original,
+        'detailDescVO': {
+          'descList': [
+            {
+              'title': '说明标题',
+              'contentList': [
+                {'type': 0, 'content': '第一段文字'},
+                {
+                  'type': 1,
+                  'content': '//i0.hdslb.com/bfs/mall/verified.png',
+                },
+                {'type': 0, 'content': '图片后的说明'},
+              ],
+            },
+          ],
+        },
+      });
+      expect(
+        detail.descriptionParts.map((part) => part.text ?? part.imageUrl),
+        [
+          '说明标题',
+          '第一段文字',
+          'https://i0.hdslb.com/bfs/mall/verified.png',
+          '图片后的说明',
+        ],
+      );
+      expect(detail.shopName, '会员购');
+      expect(detail.shopAvatarUrl, startsWith('https://i0.hdslb.com/'));
+      expect(detail.promotion, '指定商品1件3折');
+    });
+
     test('a deposit is shown separately using the verified yuan field', () {
       final detail = MallProductDetail.fromJson(
         _fixture('presale_detail')['data'] as Map<String, dynamic>,
@@ -127,6 +162,8 @@ void main() {
       expect(detail.product.priceText, '商品价¥115');
       expect(detail.product.priceFen, 11500);
       expect(detail.properties['定金'], '¥17.25（非全款）');
+      expect(detail.depositFen, 1725);
+      expect(detail.deliveryEstimate, '2027年04月');
       expect(detail.properties['预计发货'], '2027年04月');
     });
 
