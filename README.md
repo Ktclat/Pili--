@@ -1,11 +1,11 @@
 # Pili--
 
-基于 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的哔哩哔哩第三方客户端，重点维护 **Android**。提供原生会员购、扫一扫和独立应用身份，可与 PiliPlus 同时安装。
+基于 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 继续开发、独立维护的哔哩哔哩第三方客户端，重点维护 **Android**。提供原生会员购、扫一扫和独立应用身份，可与 PiliPlus 同时安装。
 
 [![Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/Ktclat/Pili--/actions/workflows/build.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-[English](README.en.md) · [安装与下载](docs/INSTALL.md) · [文档](docs/README.md) · [更新记录](CHANGELOG.md) · [问题反馈](https://github.com/Ktclat/Pili--/issues/new/choose)
+[English](README.en.md) · [常见问题](docs/FAQ.md) · [安装与下载](docs/INSTALL.md) · [文档](docs/README.md) · [更新记录](CHANGELOG.md) · [问题反馈](https://github.com/Ktclat/Pili--/issues/new/choose)
 
 ## 当前状态
 
@@ -65,4 +65,4 @@
 
 保留上游 [GPL v3 许可证](LICENSE)、版权声明和 Git 历史。来源及修改说明见 [NOTICE](NOTICE)；分发修改版及二进制时，应按许可证提供对应源码和构建材料，依赖保留各自许可证。
 
-感谢 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)、[PiliPala](https://github.com/guozhigq/pilipala)、[PiliPalaX](https://github.com/orz12/PiliPalaX)、[bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)、[media-kit](https://github.com/media-kit/media-kit) 及依赖贡献者。沿用图标来自上游，不代表官方授权或背书。本项目不提供付费内容破解，不绕过会员权限。
+感谢 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)、[PiliPala](https://github.com/guozhigq/pilipala)、[PiliPalaX](https://github.com/orz12/PiliPalaX)、[bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)、[media-kit](https://github.com/media-kit/media-kit) 及依赖贡献者。完整的上游、依赖与素材来源见 [来源与致谢](docs/ACKNOWLEDGEMENTS.md)。沿用图标来自上游，不代表官方授权或背书。本项目不提供付费内容破解，不绕过会员权限。

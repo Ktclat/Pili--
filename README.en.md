@@ -1,11 +1,11 @@
 # Pili--
 
-An unofficial Bilibili client derived from [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus), focused on **Android**. It adds a native mall, QR scanning, and an independent application identity so both clients can be installed together.
+An independently maintained, unofficial Bilibili client derived from [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus), focused on **Android**. It adds a native mall, QR scanning, and an independent application identity so both clients can be installed together.
 
 [![Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/Ktclat/Pili--/actions/workflows/build.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-[简体中文](README.md) · [Documentation](docs/README.md) · [Changes](CHANGELOG.md) · [Report an issue](https://github.com/Ktclat/Pili--/issues/new/choose)
+[简体中文](README.md) · [FAQ](docs/FAQ.md) · [Documentation](docs/README.md) · [Changes](CHANGELOG.md) · [Report an issue](https://github.com/Ktclat/Pili--/issues/new/choose)
 
 ## Status and downloads
 
@@ -45,4 +45,4 @@ See [contributing](CONTRIBUTING.md), the [roadmap](docs/ROADMAP.md), and [securi
 
 ## License
 
-The upstream [GPL v3 license](LICENSE), copyright notices, and Git history are retained. [NOTICE](NOTICE) records the source and modifications; dependencies retain their own licenses. Distribute corresponding source and build materials as required by the license. The inherited logo does not imply official endorsement. The project does not bypass paid-content or membership access controls.
+The upstream [GPL v3 license](LICENSE), copyright notices, and Git history are retained. [NOTICE](NOTICE) records the source and modifications; dependencies retain their own licenses. Distribute corresponding source and build materials as required by the license. See [acknowledgements](docs/ACKNOWLEDGEMENTS.md) for upstream projects, contributors, dependencies, and retained assets. The inherited logo does not imply official endorsement. The project does not bypass paid-content or membership access controls.

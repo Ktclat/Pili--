@@ -2,6 +2,8 @@
 
 本仓库维护 Pili-- 的 Android 改进。问题与 PR 请提交到 [Ktclat/Pili--](https://github.com/Ktclat/Pili--)；保留上游项目链接用于说明来源，不将本项目特有问题自动转给上游。
 
+[常见问题](docs/FAQ.md) · [开发导览](docs/DEVELOPMENT.md) · [来源与致谢](docs/ACKNOWLEDGEMENTS.md)
+
 ## 反馈问题
 
 先搜索[已有问题](https://github.com/Ktclat/Pili--/issues?q=is%3Aissue)，再使用 [Bug 反馈或功能请求表单](https://github.com/Ktclat/Pili--/issues/new/choose)。请提供版本/构建提交、安装来源、设备、复现步骤、实际行为与预期行为。无法排除网络或账号问题时如实描述即可，无需先作结论。
@@ -25,3 +27,7 @@
 - 保留 GPL 与依赖版权声明，提供所修改部分的对应源码；来源见 [NOTICE](NOTICE)。
 
 维护者整合时应核对目标提交的检查结果。正式 Release 还需要固定签名、可追溯源码与实际设备验收，不能仅凭 CI 构建成功发布为已验收成品。
+
+## 来源与上游同步
+
+复用上游或第三方的代码、补丁、素材时，记录原始仓库与提交并保留署名和许可。PiliPlus 是直接上游；本项目的改动与反馈由本仓库独立维护，不将上游贡献者描述为本项目维护团队。个人兴趣与自用的定位不增加额外许可限制，具体权利遵循相应许可证。
