@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:PiliPlus/models/common/member/tab_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -93,156 +94,154 @@ void main() {
   });
   tearDown(Get.reset);
 
-  test(
-    'existing enum indexes and default mall visibility remain compatible',
-    () {
-      expect(NavigationBarType.home.index, 0);
-      expect(NavigationBarType.dynamics.index, 1);
-      expect(NavigationBarType.mine.index, 2);
-      expect(NavigationBarType.mall.index, 3);
-      expect(Pref.showMallInNavigation, isTrue);
-      expect(NavigationPreferences.bars, NavigationBarConfig.defaultOrder);
-    },
-  );
+  test('existing navigation indexes stay stable after the upgrade', () {
+    expect(NavigationBarType.home.index, 0);
+    expect(NavigationBarType.dynamics.index, 1);
+    expect(NavigationBarType.mine.index, 2);
+    expect(NavigationPreferences.bars, NavigationBarConfig.defaultOrder);
+  });
 
-  test('legacy custom navigation adds mall without restoring hidden tabs', () {
-    settings.data[SettingBoxKey.navBarSort] = [2, 0];
+  test('retired indexes are dropped without restoring hidden tabs', () {
+    settings.data[SettingBoxKey.navBarSort] = [2, 3, 0, 2, 99];
     expect(NavigationPreferences.bars, [
       NavigationBarType.mine,
       NavigationBarType.home,
-      NavigationBarType.mall,
     ]);
-    settings.data[SettingBoxKey.navBarSort] = [2];
-    expect(NavigationPreferences.bars, [
-      NavigationBarType.mine,
-      NavigationBarType.mall,
-    ]);
+    settings.data[SettingBoxKey.navBarSort] = [3, 2];
+    expect(NavigationPreferences.bars, [NavigationBarType.mine]);
   });
 
-  test(
-    'navigation editor and visibility switch persist the same selection',
-    () async {
-      await NavigationPreferences.saveOrder([
-        NavigationBarType.dynamics,
-        NavigationBarType.mine,
-      ]);
-      expect(Pref.showMallInNavigation, isFalse);
-      expect(NavigationPreferences.bars, [
-        NavigationBarType.dynamics,
-        NavigationBarType.mine,
-      ]);
+  test('navigation editor persists selection and can reset defaults', () async {
+    await NavigationPreferences.saveOrder([
+      NavigationBarType.dynamics,
+      NavigationBarType.mine,
+    ]);
+    expect(settings.data[SettingBoxKey.navBarSort], [1, 2]);
+    expect(NavigationPreferences.bars, [
+      NavigationBarType.dynamics,
+      NavigationBarType.mine,
+    ]);
+    await NavigationPreferences.reset();
+    expect(NavigationPreferences.bars, NavigationBarConfig.defaultOrder);
+    expect(() => NavigationPreferences.saveOrder([]), throwsArgumentError);
+  });
 
-      await NavigationPreferences.setMallVisible(true);
-      expect(Pref.showMallInNavigation, isTrue);
-      expect(settings.data[SettingBoxKey.navBarSort], [1, 3, 2]);
-      await NavigationPreferences.setMallVisible(false);
-      expect(settings.data[SettingBoxKey.navBarSort], [1, 2]);
-      expect(Pref.showMallInNavigation, isFalse);
-
-      await NavigationPreferences.reset();
-      expect(Pref.showMallInNavigation, isTrue);
+  test('malformed and retired startup preferences have valid fallbacks', () {
+    settings.data[SettingBoxKey.navBarSort] = [-1, 99, 'home', 2, 2];
+    expect(NavigationPreferences.bars, [NavigationBarType.mine]);
+    for (final value in [
+      null,
+      [],
+      [3],
+      [-1, 99, 'home'],
+      'invalid',
+    ]) {
+      settings.data[SettingBoxKey.navBarSort] = value;
       expect(NavigationPreferences.bars, NavigationBarConfig.defaultOrder);
-    },
-  );
-
-  test(
-    'malformed and mall-only saved preferences always leave a valid tab',
-    () async {
-      settings.data[SettingBoxKey.navBarSort] = [-1, 99, 'home', 2, 2];
-      expect(NavigationPreferences.bars, [
-        NavigationBarType.mine,
-        NavigationBarType.mall,
-      ]);
-      settings.data[SettingBoxKey.defaultHomePage] = 99;
+    }
+    for (final value in [3, -1, 99, 'home']) {
+      settings.data[SettingBoxKey.defaultHomePage] = value;
       expect(Pref.defaultHomePage, NavigationBarType.home);
+    }
+    settings.data[SettingBoxKey.defaultHomePage] = 2;
+    expect(Pref.defaultHomePage, NavigationBarType.mine);
 
-      await NavigationPreferences.saveOrder([NavigationBarType.mall]);
-      await NavigationPreferences.setMallVisible(false);
-      expect(NavigationPreferences.bars, [NavigationBarType.home]);
-      expect(() => NavigationPreferences.saveOrder([]), throwsArgumentError);
-    },
-  );
+    // The removed profile tab occupied index 7; earlier choices keep their IDs.
+    settings.data[SettingBoxKey.memberTab] = 7;
+    expect(Pref.memberTab, MemberTabType.def);
+    settings.data[SettingBoxKey.memberTab] = 6;
+    expect(Pref.memberTab, MemberTabType.cheese);
+    expect(MemberTabType.contains('shop'), isFalse);
+  });
 
   for (final animated in [false, true]) {
-    testWidgets(
-      'hiding the current mall safely replaces the ${animated ? 'Tab' : 'Page'}Controller',
-      (
-        tester,
-      ) async {
-        settings.data[SettingBoxKey.mainTabBarView] = animated;
-        settings.data[SettingBoxKey.defaultHomePage] =
-            NavigationBarType.mall.index;
-        final main = Get.put(MainController());
-        await tester.pumpWidget(const _NavigationHarness());
-        await tester.pumpAndSettle();
-        expect(find.text('page:mall'), findsOneWidget);
+    final controllerType = animated ? 'Tab' : 'Page';
 
-        await NavigationPreferences.setMallVisible(false);
-        main.reloadNavigation();
-        await tester.pumpAndSettle();
-        expect(main.navigationBars, [
-          NavigationBarType.home,
-          NavigationBarType.dynamics,
-          NavigationBarType.mine,
-        ]);
-        expect(main.selectedIndex.value, 0);
-        expect(find.text('page:home'), findsOneWidget);
+    testWidgets('retired-only preferences can start with $controllerType', (
+      tester,
+    ) async {
+      settings.data[SettingBoxKey.mainTabBarView] = animated;
+      settings.data[SettingBoxKey.navBarSort] = [3];
+      settings.data[SettingBoxKey.defaultHomePage] = 3;
+      final main = Get.put(MainController());
+      await tester.pumpWidget(const _NavigationHarness());
+      await tester.pumpAndSettle();
+      expect(main.navigationBars, NavigationBarConfig.defaultOrder);
+      expect(main.selectedIndex.value, 0);
+      expect(find.text('page:home'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
 
-        await NavigationPreferences.setMallVisible(true);
-        main.reloadNavigation();
-        // A tap arriving before the replacement view attaches must still select
-        // the requested page after that frame, with no detached-controller error.
-        main.setIndex(main.navigationBars.indexOf(NavigationBarType.mall));
-        await tester.pumpAndSettle();
-        expect(find.text('page:mall'), findsOneWidget);
+    testWidgets('removing the selected tab safely replaces $controllerType', (
+      tester,
+    ) async {
+      settings.data[SettingBoxKey.mainTabBarView] = animated;
+      settings.data[SettingBoxKey.defaultHomePage] =
+          NavigationBarType.dynamics.index;
+      final main = Get.put(MainController());
+      await tester.pumpWidget(const _NavigationHarness());
+      await tester.pumpAndSettle();
+      expect(find.text('page:dynamics'), findsOneWidget);
 
-        await NavigationPreferences.saveOrder([NavigationBarType.mall]);
-        main.reloadNavigation();
-        await tester.pumpAndSettle();
-        expect(main.navigationBars, [NavigationBarType.mall]);
-        expect(main.selectedIndex.value, 0);
-        await NavigationPreferences.setMallVisible(false);
-        main.reloadNavigation();
-        await tester.pumpAndSettle();
-        expect(main.navigationBars, [NavigationBarType.home]);
-        expect(find.text('page:home'), findsOneWidget);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox.shrink());
-      },
-    );
+      await NavigationPreferences.saveOrder([
+        NavigationBarType.home,
+        NavigationBarType.mine,
+      ]);
+      main.reloadNavigation();
+      await tester.pumpAndSettle();
+      expect(main.selectedIndex.value, 0);
+      expect(find.text('page:home'), findsOneWidget);
 
-    testWidgets(
-      'reordering preserves the selected tab and refreshes Mine index (${animated ? 'Tab' : 'Page'})',
-      (
-        tester,
-      ) async {
-        settings.data[SettingBoxKey.mainTabBarView] = animated;
-        settings.data[SettingBoxKey.defaultHomePage] =
-            NavigationBarType.mine.index;
-        final main = Get.put(MainController());
-        await tester.pumpWidget(const _NavigationHarness());
-        await tester.pumpAndSettle();
-        main.toMinePage();
+      await NavigationPreferences.reset();
+      main.reloadNavigation();
+      // A tap before the replacement view attaches must select the requested
+      // tab after that frame without a detached-controller exception.
+      main.setIndex(main.navigationBars.indexOf(NavigationBarType.dynamics));
+      await tester.pumpAndSettle();
+      expect(find.text('page:dynamics'), findsOneWidget);
 
-        await NavigationPreferences.saveOrder([
-          NavigationBarType.mine,
-          NavigationBarType.mall,
-        ]);
-        main.reloadNavigation();
-        await tester.pumpAndSettle();
-        expect(main.selectedIndex.value, 0);
-        expect(find.text('page:mine'), findsOneWidget);
-        main.setIndex(1);
-        await tester.pumpAndSettle();
-        main.toMinePage();
-        await tester.pumpAndSettle();
-        expect(main.selectedIndex.value, 0);
-        expect(find.text('page:mine'), findsOneWidget);
-        main.setIndex(99);
-        expect(main.selectedIndex.value, 0);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox.shrink());
-      },
-    );
+      await NavigationPreferences.saveOrder([NavigationBarType.dynamics]);
+      main.reloadNavigation();
+      await tester.pumpAndSettle();
+      expect(main.selectedIndex.value, 0);
+      await NavigationPreferences.saveOrder([NavigationBarType.home]);
+      main.reloadNavigation();
+      await tester.pumpAndSettle();
+      expect(find.text('page:home'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('reordering keeps Mine selected with $controllerType', (
+      tester,
+    ) async {
+      settings.data[SettingBoxKey.mainTabBarView] = animated;
+      settings.data[SettingBoxKey.defaultHomePage] =
+          NavigationBarType.mine.index;
+      final main = Get.put(MainController());
+      await tester.pumpWidget(const _NavigationHarness());
+      await tester.pumpAndSettle();
+      main.toMinePage();
+
+      await NavigationPreferences.saveOrder([
+        NavigationBarType.mine,
+        NavigationBarType.dynamics,
+      ]);
+      main.reloadNavigation();
+      await tester.pumpAndSettle();
+      expect(main.selectedIndex.value, 0);
+      expect(find.text('page:mine'), findsOneWidget);
+      main.setIndex(1);
+      await tester.pumpAndSettle();
+      main.toMinePage();
+      await tester.pumpAndSettle();
+      expect(main.selectedIndex.value, 0);
+      expect(find.text('page:mine'), findsOneWidget);
+      main.setIndex(99);
+      expect(main.selectedIndex.value, 0);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   }
 }

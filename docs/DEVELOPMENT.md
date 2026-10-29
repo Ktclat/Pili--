@@ -20,10 +20,10 @@ Pili-- 基于 PiliPlus 独立维护，当前重点是 Android。环境准备、�
 
 | 路径 | 用途 |
 | --- | --- |
-| [lib/pages/](../lib/pages/) | 页面交互；[原生会员购](NATIVE_MALL.md)包含筛选、详情、收藏与足迹 |
+| [lib/pages/](../lib/pages/) | 视频、动态、扫码及设置等页面交互 |
 | [lib/http/](../lib/http/) | API、网络请求、重定向与重试 |
 | [账号模块](../lib/utils/accounts/account_manager/README.md) | 请求身份、Cookie 与迟到回调边界 |
-| [lib/utils/storage.dart](../lib/utils/storage.dart) | 本地数据生命周期；会员购使用独立 `mall` box |
+| [lib/utils/storage.dart](../lib/utils/storage.dart) | 本地数据生命周期与旧功能数据清理 |
 | [Android 工程](../android/) | 宿主、Manifest、资源和包身份配置 |
 | [构建脚本](../scripts/build_android.ps1) | 统一版本、提交、时间和签名检查 |
 | [tool/](../tool/README.md) | JNI 生成工具，普通 APK 构建通常不需重新生成 |

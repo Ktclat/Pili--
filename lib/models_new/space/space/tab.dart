@@ -10,8 +10,6 @@ class SpaceTab {
   bool? community;
   bool? dynam1c;
   bool? audios;
-  bool? shop;
-  bool? mall;
   bool? ugcSeason;
   bool? comic;
   bool? cheese;
@@ -36,8 +34,6 @@ class SpaceTab {
     this.community,
     this.dynam1c,
     this.audios,
-    this.shop,
-    this.mall,
     this.ugcSeason,
     this.comic,
     this.cheese,
@@ -62,8 +58,6 @@ class SpaceTab {
     community = json['community'] as bool?;
     dynam1c = json['dynamic'] as bool?;
     audios = json['audios'] as bool?;
-    shop = json['shop'] as bool?;
-    mall = json['mall'] as bool?;
     ugcSeason = json['ugc_season'] as bool?;
     comic = json['comic'] as bool?;
     cheese = json['cheese'] as bool?;

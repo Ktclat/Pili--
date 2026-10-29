@@ -2,7 +2,7 @@ blank_issues_enabled: false
 contact_links:
   - name: 常见问题与上游关系
     url: https://github.com/Ktclat/Pili--/blob/main/docs/FAQ.md
-    about: 查看版本、会员购、扫码、安装和来源说明。
+    about: 查看版本、扫码、安装和来源说明。
   - name: 安装、升级与签名说明
     url: https://github.com/Ktclat/Pili--/blob/main/docs/INSTALL.md
     about: 测试 APK 下载、架构选择、共存与覆盖升级。

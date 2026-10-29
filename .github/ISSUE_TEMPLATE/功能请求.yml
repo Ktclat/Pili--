@@ -7,7 +7,6 @@ body:
     attributes:
       value: |
         请先查看 [本仓库已有请求](https://github.com/Ktclat/Pili--/issues?q=is%3Aissue) 与 [后续计划](https://github.com/Ktclat/Pili--/blob/main/docs/ROADMAP.md)。
-        会员购的当前实现范围见 [说明](https://github.com/Ktclat/Pili--/blob/main/docs/NATIVE_MALL.md)。
   - type: textarea
     id: problem
     attributes:

@@ -31,7 +31,6 @@ import 'package:PiliPlus/pages/member_dynamics/view.dart';
 import 'package:PiliPlus/pages/member_favorite/view.dart';
 import 'package:PiliPlus/pages/member_home/view.dart';
 import 'package:PiliPlus/pages/member_pgc/view.dart';
-import 'package:PiliPlus/pages/member_shop/view.dart';
 import 'package:PiliPlus/pages/member_video_web/archive/view.dart';
 import 'package:PiliPlus/pages/member_video_web/season_series/view.dart';
 import 'package:PiliPlus/utils/android/android_helper.dart';
@@ -595,10 +594,6 @@ class _MemberPageState extends State<MemberPage> {
           mid: _mid,
         ),
         'cheese' => MemberCheese(
-          heroTag: _heroTag,
-          mid: _mid,
-        ),
-        'shop' => MemberShop(
           heroTag: _heroTag,
           mid: _mid,
         ),

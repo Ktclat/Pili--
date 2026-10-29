@@ -11,7 +11,6 @@ abstract final class HttpString {
   static const String opusBaseUrl = 'https://www.bilibili.com/opus';
   static const String spaceBaseUrl = 'https://space.bilibili.com';
   static const String accountBaseUrl = 'https://account.bilibili.com';
-  static const String mallBaseUrl = 'https://mall.bilibili.com';
 
   static const String sponsorBlockBaseUrl = 'https://www.bsbsb.top';
 }

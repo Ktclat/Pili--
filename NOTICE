@@ -22,9 +22,8 @@ imply their affiliation or endorsement.
 MODIFICATIONS
 
 Pili-- modifications beginning on 2026-10-27 include Android application
-identity and coexistence, QR scanning, built-in native mall browsing with
-configurable navigation, search sorting and price filters, local product
-favorites/history and explicit sharing, download stability fixes,
+identity and coexistence, QR scanning, configurable navigation,
+download stability fixes,
 transport/WebView hardening, removal of private storage export and hidden
 URL entry, isolated Android build preparation, and project documentation.
 
