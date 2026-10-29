@@ -1,15 +1,15 @@
 # Pili--
 
-基于 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的哔哩哔哩第三方客户端，重点维护 **Android**。提供原生会员购、扫一扫和独立应用身份，可与 PiliPlus 同时安装。
+基于 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 继续开发、独立维护的哔哩哔哩第三方客户端，重点维护 **Android**。提供原生会员购、扫一扫和独立应用身份，可与 PiliPlus 同时安装。
 
 [![Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/Ktclat/Pili--/actions/workflows/build.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
 
-[English](README.en.md) · [安装与下载](docs/INSTALL.md) · [文档](docs/README.md) · [更新记录](CHANGELOG.md) · [问题反馈](https://github.com/Ktclat/Pili--/issues/new/choose)
+[English](README.en.md) · [常见问题](docs/FAQ.md) · [安装与下载](docs/INSTALL.md) · [文档](docs/README.md) · [更新记录](CHANGELOG.md) · [问题反馈](https://github.com/Ktclat/Pili--/issues/new/choose)
 
 ## 当前状态
 
-当前开发版本为 **0.2.0+3**，尚未发布正式 Release。可从 [GitHub Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取成功构建的测试 APK；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
+当前开发版本为 **0.3.0+4**，尚未发布正式 Release。可从 [GitHub Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取成功构建的测试 APK；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
 
 本项目不是哔哩哔哩官方客户端。其他平台源码保留，目前仅对 Android 提供构建与验证说明。
 
@@ -18,7 +18,9 @@
 | 功能 | 当前实现 |
 | --- | --- |
 | 视频与社区 | 保留上游的视频、弹幕、搜索、动态、直播、收藏和离线缓存实现 |
-| 原生会员购 | Flutter 推荐流、分类、搜索、商品详情、图集缩放、保序图文与详情内继续搜索 |
+| 原生会员购 | 推荐流、分类、搜索、商品详情、图集缩放、保序图文；支持销量、新品、价格排序和价格区间筛选 |
+| 本机收藏与足迹 | 详情页一键收藏，首页工具栏查看；浏览记录可暂停、单条删除或清空，重启后保留 |
+| 商品分享 | 详情页可分享或复制官方商品链接，保留特殊商品的购买路径 |
 | 可调整的导航 | 默认显示首页、动态、会员购、我的；支持隐藏会员购和调整顺序，立即生效 |
 | 扫一扫 | 相机、相册、BV/av 识别；先展示结果，外部网页经确认后打开；后台释放相机 |
 | 与 PiliPlus 共存 | 独立包名、私有数据与默认下载目录；桌面快捷方式绑定本应用 |
@@ -26,7 +28,20 @@
 
 会员购随 APK 内置，无需额外下载或启用。在 **设置 → 外观设置 → 在导航栏显示会员购** 中可关闭或恢复；隐藏后仍可从“我的 → 会员购”进入。
 
+搜索商品后可切换排序与设置价格区间，修改条件会从第一页重新查询。详情页右上角可加入本机收藏、分享商品或复制链接；会员购首页右上角提供收藏和足迹入口。[完整使用说明](docs/NATIVE_MALL.md#搜索排序与价格筛选)。
+
+收藏与足迹只保存在本机，不同步到哔哩哔哩账号；缓存价格为上次浏览时的信息，打开详情会尝试刷新。普通缓存清理保留记录，卸载或清除应用全部数据会删除。
+
 商品浏览使用官方公开接口，不附带账号 Cookie。价格区分商品价、预售定金和活动提示；**购买、选规格、订单与支付由官方页面完成**。接口可能变化，最终价格与库存以官方结算为准。实现及 REA/官方客户端参考范围见 [原生会员购说明](docs/NATIVE_MALL.md)。
+
+## 界面预览
+
+基于真实接口样本渲染的 Flutter 布局预览，含示例本机收藏；[来源与验证范围](docs/images/README.md)。示例中的定金和优惠价会独立展示，筛选采用官方商品价格口径。
+
+<p>
+  <img src="docs/images/mall-search.png" width="280" alt="原生会员购搜索排序与价格区间筛选">
+  <img src="docs/images/mall-library.png" width="280" alt="原生本机商品收藏与浏览足迹入口">
+</p>
 
 ## 安装与共存
 
@@ -50,4 +65,4 @@
 
 保留上游 [GPL v3 许可证](LICENSE)、版权声明和 Git 历史。来源及修改说明见 [NOTICE](NOTICE)；分发修改版及二进制时，应按许可证提供对应源码和构建材料，依赖保留各自许可证。
 
-感谢 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)、[PiliPala](https://github.com/guozhigq/pilipala)、[PiliPalaX](https://github.com/orz12/PiliPalaX)、[bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)、[media-kit](https://github.com/media-kit/media-kit) 及依赖贡献者。沿用图标来自上游，不代表官方授权或背书。本项目不提供付费内容破解，不绕过会员权限。
+感谢 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)、[PiliPala](https://github.com/guozhigq/pilipala)、[PiliPalaX](https://github.com/orz12/PiliPalaX)、[bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect)、[media-kit](https://github.com/media-kit/media-kit) 及依赖贡献者。完整的上游、依赖与素材来源见 [来源与致谢](docs/ACKNOWLEDGEMENTS.md)。沿用图标来自上游，不代表官方授权或背书。本项目不提供付费内容破解，不绕过会员权限。

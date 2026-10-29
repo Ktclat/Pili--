@@ -3,8 +3,13 @@ import 'dart:async';
 import 'package:PiliPlus/http/loading_state.dart' as loading;
 import 'package:PiliPlus/http/mall.dart';
 import 'package:PiliPlus/models/mall/mall.dart' as mall;
+import 'package:PiliPlus/models/mall/search.dart';
 import 'package:PiliPlus/pages/mall/detail.dart';
+import 'package:PiliPlus/pages/mall/library.dart';
+import 'package:PiliPlus/pages/mall/search_filters.dart';
 import 'package:PiliPlus/pages/mall/widgets.dart';
+import 'package:PiliPlus/utils/mall_local_store.dart';
+import 'package:PiliPlus/utils/storage.dart';
 import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -15,11 +20,15 @@ class MallPage extends StatefulWidget {
     this.repository,
     this.openOfficial,
     this.embeddedInNavigation = false,
+    this.localStore,
+    this.shareProduct,
   });
 
   final MallRepository? repository;
   final Future<void> Function(String url)? openOfficial;
   final bool embeddedInNavigation;
+  final MallLocalStore? localStore;
+  final Future<void> Function(String text)? shareProduct;
 
   @override
   State<MallPage> createState() => _MallPageState();
@@ -28,12 +37,15 @@ class MallPage extends StatefulWidget {
 class _MallPageState extends State<MallPage>
     with AutomaticKeepAliveClientMixin {
   late final MallRepository _repository = widget.repository ?? MallHttp();
+  late final MallLocalStore _localStore =
+      widget.localStore ?? MallLocalStore(box: GStorage.mall);
   final _search = TextEditingController();
   final _scroll = ScrollController();
   final _products = <mall.MallProduct>[];
   List<mall.MallCategory> _categories = const [];
   CancelToken? _cancelToken;
   String _query = '';
+  MallSearchOptions _options = const MallSearchOptions();
   int _categoryId = 0;
   int _page = 0;
   int _generation = 0;
@@ -91,6 +103,7 @@ class _MallPageState extends State<MallPage>
           : await _repository.search(
               _query,
               page: nextPage,
+              options: _options,
               cancelToken: _cancelToken,
             );
       if (!mounted || generation != _generation) return;
@@ -138,6 +151,7 @@ class _MallPageState extends State<MallPage>
   void _submit(String value) {
     FocusScope.of(context).unfocus();
     _query = value.trim();
+    if (_query.isEmpty) _options = const MallSearchOptions();
     if (_scroll.hasClients) _scroll.jumpTo(0);
     unawaited(_load(reset: true, clear: true));
   }
@@ -149,13 +163,34 @@ class _MallPageState extends State<MallPage>
     unawaited(_load(reset: true, clear: true));
   }
 
+  void _setOptions(MallSearchOptions options) {
+    if (_options == options) return;
+    _options = options;
+    if (_scroll.hasClients) _scroll.jumpTo(0);
+    unawaited(_load(reset: true, clear: true));
+  }
+
+  void _openLibrary({bool history = false}) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MallLibraryPage(
+          store: _localStore,
+          onOpen: _openProduct,
+          showHistory: history,
+        ),
+      ),
+    );
+  }
+
   void _openProduct(mall.MallProduct product) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => MallProductDetailPage(
           product: product,
           repository: _repository,
+          localStore: _localStore,
           openOfficial: widget.openOfficial,
+          shareProduct: widget.shareProduct,
         ),
       ),
     );
@@ -168,6 +203,7 @@ class _MallPageState extends State<MallPage>
       if (_repository case final MallHttp repository) repository.close();
     }
     _search.dispose();
+    if (widget.localStore == null) _localStore.dispose();
     _scroll
       ..removeListener(_onScroll)
       ..dispose();
@@ -183,6 +219,18 @@ class _MallPageState extends State<MallPage>
       appBar: AppBar(
         primary: !widget.embeddedInNavigation,
         title: const Text('会员购'),
+        actions: [
+          IconButton(
+            tooltip: '本机收藏',
+            icon: const Icon(Icons.star_outline),
+            onPressed: _openLibrary,
+          ),
+          IconButton(
+            tooltip: '浏览足迹',
+            icon: const Icon(Icons.history),
+            onPressed: () => _openLibrary(history: true),
+          ),
+        ],
       ),
       body: SafeArea(
         top: false,
@@ -225,6 +273,8 @@ class _MallPageState extends State<MallPage>
                 ),
               ),
             ),
+            if (_query.isNotEmpty)
+              MallSearchFilters(options: _options, onChanged: _setOptions),
             if (_query.isEmpty && _categories.isNotEmpty)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

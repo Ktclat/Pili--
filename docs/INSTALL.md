@@ -4,7 +4,7 @@
 
 ## 获取测试包
 
-当前版本 `0.2.0+3` 尚未发布正式 Release。测试包从本仓库的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取：
+当前版本 `0.3.0+4` 尚未发布正式 Release。测试包从本仓库的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取：
 
 1. 选择目标分支和提交对应的 **成功** 运行。`main` 是已整合代码，PR 构建用于验证尚未合并的改动。
 2. 在运行页面底部的 **Artifacts** 下载 `Pili--Android-test-signed`。GitHub 要求登录后下载，附件默认保留 14 天。
@@ -32,6 +32,10 @@ Pili-- 使用 `io.github.ktclat.piliminus`，上游 PiliPlus 使用 `com.example
 会员购随应用内置，默认显示在导航栏。进入 **设置 → 外观设置 → 在导航栏显示会员购** 可立即隐藏或恢复；“导航栏编辑”可调整顺序。隐藏后仍能从“我的 → 会员购”进入。
 
 推荐、分类、搜索、图集和商品详情在应用内展示。点击“前往官方购买”才进入官方页面进行规格确认与结算；应用内不提交订单或支付。遇到网络失败可使用页面上的重试按钮。
+
+## 使用搜索、收藏与足迹
+
+输入关键词后可切换排序、设置价格上下限或重置筛选。商品详情右上角提供星标、分享和复制链接；会员购首页右上角可查看本机收藏与浏览足迹。足迹可暂停记录或清空；它们不与 B 站账号同步，重启后保留，卸载或清除全部数据会删除。更多操作见 [会员购说明](NATIVE_MALL.md)。
 
 ## 签名与覆盖升级
 
