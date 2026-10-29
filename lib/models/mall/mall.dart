@@ -260,13 +260,9 @@ class MallDescriptionPart {
   final String? text;
   final String? imageUrl;
 
-  const MallDescriptionPart.text(String value)
-    : text = value,
-      imageUrl = null;
+  const MallDescriptionPart.text(String value) : text = value, imageUrl = null;
 
-  const MallDescriptionPart.image(String value)
-    : imageUrl = value,
-      text = null;
+  const MallDescriptionPart.image(String value) : imageUrl = value, text = null;
 }
 
 @immutable

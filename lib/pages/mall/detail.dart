@@ -217,7 +217,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
               const MallProductImage()
             else
               PageView.builder(
-                key: ValueKey('mall-gallery-' + images.join('|')),
+                key: ValueKey('mall-gallery-${images.join('|')}'),
                 itemCount: images.length,
                 onPageChanged: (index) => setState(() => _imageIndex = index),
                 itemBuilder: (context, index) => Semantics(
@@ -247,8 +247,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
                       vertical: 5,
                     ),
                     child: Text(
-                      (_imageIndex + 1).toString() + ' / ' +
-                          images.length.toString(),
+                      '${_imageIndex + 1} / ${images.length}',
                       style: const TextStyle(color: Colors.white),
                     ),
                   ),
@@ -345,9 +344,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
                     padding: const EdgeInsets.all(12),
                     child: _property(
                       '预售定金',
-                      '¥' + (deposit ~/ 100).toString() + '.' +
-                          (deposit % 100).toString().padLeft(2, '0') +
-                          '（非全款）',
+                      '¥${deposit ~/ 100}.${(deposit % 100).toString().padLeft(2, '0')}（非全款）',
                       theme,
                     ),
                   ),
@@ -392,16 +389,8 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
                   if ((entry.key != '店铺' || shop == null) &&
                       (entry.key != '官方活动' || promotion == null) &&
                       (entry.key != '预计发货' || delivery == null) &&
-                      (entry.key != '定金' ||
-                          deposit == null ||
-                          deposit <= 0))
+                      (entry.key != '定金' || deposit == null || deposit <= 0))
                     _property(entry.key, entry.value, theme),
-              ],
-              if (detail?.description?.isNotEmpty == true &&
-                  detail!.descriptionParts.isEmpty) ...[
-                const SizedBox(height: 22),
-                _sectionHeading('商品介绍', theme),
-                SelectableText(detail!.description!),
               ],
               if (_error != null)
                 MallMessage(
@@ -443,8 +432,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
             url,
             width: double.infinity,
             cacheWidth:
-                (constraints.maxWidth *
-                        MediaQuery.devicePixelRatioOf(context))
+                (constraints.maxWidth * MediaQuery.devicePixelRatioOf(context))
                     .ceil()
                     .clamp(1, 1600),
             fit: BoxFit.fitWidth,
@@ -515,8 +503,10 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
             if (_relatedProducts.isNotEmpty) ...[
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final columns =
-                      (constraints.maxWidth / 180).floor().clamp(2, 4);
+                  final columns = (constraints.maxWidth / 180).floor().clamp(
+                    2,
+                    4,
+                  );
                   final width =
                       (constraints.maxWidth - (columns - 1) * 12) / columns;
                   final scale = MediaQuery.textScalerOf(context).scale(1);
@@ -581,11 +571,13 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
             icon: const Icon(Icons.search),
             onPressed: () {
               if (_detailScroll.hasClients) {
-                unawaited(_detailScroll.animateTo(
-                  _detailScroll.position.maxScrollExtent,
-                  duration: const Duration(milliseconds: 350),
-                  curve: Curves.easeInOut,
-                ));
+                unawaited(
+                  _detailScroll.animateTo(
+                    _detailScroll.position.maxScrollExtent,
+                    duration: const Duration(milliseconds: 350),
+                    curve: Curves.easeInOut,
+                  ),
+                );
               }
             },
           ),

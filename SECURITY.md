@@ -1,6 +1,8 @@
 # 安全范围与报告
 
-请通过本仓库的安全报告功能报告漏洞，避免在公开 issue 中提交真实 Cookie、access_key、手机号或订单信息。
+当前仓库尚未启用 GitHub 私密漏洞报告。发现漏洞时，可先在 [Issue](https://github.com/Ktclat/Pili--/issues/new/choose) 仅提出私密联系请求，待维护者提供渠道后再发送漏洞细节。普通使用问题可直接使用 Bug 反馈表单。
+
+日志与附件请移除真实 Cookie、access_key、登录二维码、手机号或订单信息，不在公开 Issue 中披露漏洞细节或账号凭据。维护者启用私密漏洞报告后，应同步更新本说明与反馈入口。
 
 ## 2026-10-27 审查
 
@@ -32,4 +34,4 @@
 
 ## 未覆盖
 
-未逐行审计整个上游历史、所有 Dart/Gradle/Maven 依赖、系统 WebView、ML Kit、libmpv/FFmpeg 二进制和实时官方网页。保留的 media-kit 原生依赖下载脚本有固定 SHA-256 校验，但这不等于独立重建并审计了二进制。未进行付费账号、真实订单/支付、真机长期运行和全平台渗透测试。具体执行结果见 docs/VALIDATION.md。
+未逐行审计整个上游历史、所有 Dart/Gradle/Maven 依赖、系统 WebView、ML Kit、libmpv/FFmpeg 二进制和实时官方网页。保留的 media-kit 原生依赖下载脚本有固定 SHA-256 校验，但这不等于独立重建并审计了二进制。未进行付费账号、真实订单/支付、真机长期运行和全平台渗透测试。具体执行结果见 [验证记录](docs/VALIDATION.md)。

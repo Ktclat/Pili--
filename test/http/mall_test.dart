@@ -121,11 +121,10 @@ void main() {
     });
 
     test('native detail preserves the official description sequence', () {
-      final original =
-          _fixture('detail')['data'] as Map<String, dynamic>;
+      final original = _fixture('detail')['data'] as Map<String, dynamic>;
       final detail = MallProductDetail.fromJson({
         ...original,
-        'detailDescVO': {
+        'detailDescVO': const {
           'descList': [
             {
               'title': '说明标题',

@@ -351,7 +351,12 @@ void main() {
 
       expect(repository.calls, contains(('商品', 1, 0)));
       expect(find.text('下一页商品'), findsOneWidget);
-      await tester.ensureVisible(find.text('下一页商品'));
+      await tester.drag(
+        find.byKey(const ValueKey('mall-detail-scroll')),
+        const Offset(0, -400),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('下一页商品').hitTestable(), findsOneWidget);
       await tester.tap(find.text('下一页商品'));
       await tester.pumpAndSettle();
       expect(repository.calls.last, ('detail:456', 0, 0));
