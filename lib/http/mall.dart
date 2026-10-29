@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:PiliPlus/http/browser_ua.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/mall/mall.dart';
+import 'package:PiliPlus/models/mall/search.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
@@ -33,6 +34,7 @@ abstract interface class MallRepository {
   Future<LoadingState<MallPage>> search(
     String query, {
     int page = 1,
+    MallSearchOptions options = const MallSearchOptions(),
     CancelToken? cancelToken,
   });
 
@@ -177,12 +179,16 @@ class MallHttp implements MallRepository {
   Future<LoadingState<MallPage>> search(
     String query, {
     int page = 1,
+    MallSearchOptions options = const MallSearchOptions(),
     CancelToken? cancelToken,
   }) {
     final keyword = query.trim();
-    if (keyword.isEmpty || keyword.length > 200 || page < 1) {
+    if (keyword.isEmpty ||
+        keyword.length > 200 ||
+        page < 1 ||
+        !options.isValid) {
       return Future.value(
-        const MallFailure(MallFailureKind.unavailable, '请输入有效的搜索词'),
+        const MallFailure(MallFailureKind.unavailable, '请输入有效的搜索词和价格区间'),
       );
     }
     return _request(
@@ -191,10 +197,10 @@ class MallHttp implements MallRepository {
       body: {
         'keyword': keyword,
         'filters': '',
-        'priceFlow': '',
-        'priceCeil': '',
-        'sortType': 'totalrank',
-        'sortOrder': '',
+        'priceFlow': options.minimumYuan,
+        'priceCeil': options.maximumYuan,
+        'sortType': options.sort.apiType,
+        'sortOrder': options.sort.apiOrder,
         'pageIndex': page,
         'pageSize': _searchPageSize,
         'userId': '',
@@ -205,7 +211,14 @@ class MallHttp implements MallRepository {
             'values': ['1'],
           },
         ],
-        'rangeQueries': <Object>[],
+        'rangeQueries': [
+          if (options.hasPriceRange)
+            {
+              'field': 'price',
+              'gte': options.minimumYuan,
+              'lte': options.maximumYuan,
+            },
+        ],
       },
       cancelToken: cancelToken,
       parse: (data) => MallPage.fromSearch(data, requestedPage: page),

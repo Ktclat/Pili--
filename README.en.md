@@ -9,20 +9,31 @@ An unofficial Bilibili client derived from [PiliPlus](https://github.com/bggRGjQ
 
 ## Status and downloads
 
-The current development version is **0.2.0+3**. No formal Release has been published. Download the `Pili--Android-test-signed` artifact from a successful [Actions run](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) for the desired branch and commit, then unzip it and choose the appropriate APK. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24).
+The current development version is **0.3.0+4**. No formal Release has been published. Download the `Pili--Android-test-signed` artifact from a successful [Actions run](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) for the desired branch and commit, then unzip it and choose the appropriate APK. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24).
 
 Artifact downloads require a GitHub account and expire after 14 days. Test signing keys can differ between CI runs, so these APKs may not support in-place upgrades. Preserve your data if Android reports a signature conflict. See [installation](docs/INSTALL.md) and [coexistence](docs/COEXISTENCE.md) for details (Chinese).
 
 ## Features
 
 - Upstream video playback, danmaku, search, feeds, live streams, favorites, and offline downloads.
-- A built-in Flutter mall: recommendations, categories, search, product details, zoomable galleries, ordered text/images, and further product search from the detail page.
+- A built-in Flutter mall: recommendations, categories, search, product details, zoomable galleries, ordered text/images, and further product search from the detail page. Search supports relevance, sales, newest, ascending/descending price, and optional price bounds.
+- Local product favorites and browsing history with persistent snapshots, individual removal, clear actions, and a pause switch for history. They stay on this device and do not sync with a Bilibili account. Opening an item fetches fresh details; stored prices may be outdated.
+- Share or copy a product’s official link from its native detail page, preserving special-product destinations.
 - The mall appears in navigation by default. Toggle **Settings → Appearance → Show mall in navigation** (`在导航栏显示会员购`); changes apply immediately. The entry under “Mine” remains available.
 - Camera/gallery QR scanning with a result confirmation step, support for BV/av identifiers, and camera lifecycle handling.
 - Independent Android ID `io.github.ktclat.piliminus`, private data, default download directory, and explicit shortcut targets. Upstream PiliPlus uses `com.example.piliplus`.
 - Download resume and completion-race fixes, strict TLS, account destination restrictions, and retries limited to read requests.
 
 Mall browsing uses public official APIs without account cookies. Product prices and preorder deposits are distinguished. **Product options, checkout, orders, and payments remain on the official platform.** Public APIs may change; final stock and prices are determined there. See the [native mall scope and research](docs/NATIVE_MALL.md).
+
+## Preview
+
+Flutter test previews rendered from captured official responses, including sample local favorites. See [sources and validation scope](docs/images/README.md). Deposits and discounted display prices can differ from the product-price filter.
+
+<p>
+  <img src="docs/images/mall-search.png" width="280" alt="Native mall sorting and price filter">
+  <img src="docs/images/mall-library.png" width="280" alt="Local product favorites and browsing history">
+</p>
 
 ## Development and validation
 

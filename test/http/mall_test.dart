@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/mall.dart';
 import 'package:PiliPlus/models/mall/mall.dart';
+import 'package:PiliPlus/models/mall/search.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -300,6 +301,71 @@ void main() {
         expect(request.data['keyword'], '初音未来');
         expect(request.data['pageIndex'], 2);
         expect(request.data['userId'], '');
+      },
+    );
+
+    test(
+      'search serializes exact yuan bounds into official rangeQueries',
+      () async {
+        final adapter = _Adapter((_) => _json(_fixture('search')));
+        client.httpClientAdapter = adapter;
+        await mall.search(
+          '手办',
+          page: 2,
+          options: const MallSearchOptions(
+            sort: MallSort.priceAscending,
+            minimumFen: 29,
+            maximumFen: 10000,
+          ),
+        );
+        final body = adapter.requests.single.data;
+        expect(body['sortType'], 'price');
+        expect(body['sortOrder'], 'asc');
+        expect(body['rangeQueries'], [
+          {'field': 'price', 'gte': '0.29', 'lte': '100.00'},
+        ]);
+        expect(body['userId'], '');
+        expect(body['pageIndex'], 2);
+        expect(adapter.requests.single.headers['cookie'], isNull);
+      },
+    );
+
+    test(
+      'unsupported price ranges fail locally without a network request',
+      () async {
+        final adapter = _Adapter((_) => _json(_fixture('search')));
+        client.httpClientAdapter = adapter;
+        for (final options in [
+          const MallSearchOptions(minimumFen: -1),
+          const MallSearchOptions(minimumFen: 100, maximumFen: 99),
+          const MallSearchOptions(maximumFen: 100000000001),
+        ]) {
+          expect(await mall.search('手办', options: options), isA<MallFailure>());
+        }
+        expect(adapter.requests, isEmpty);
+      },
+    );
+
+    test(
+      'sales, newest and descending sorts retain official API values',
+      () async {
+        final adapter = _Adapter((_) => _json(_fixture('search')));
+        client.httpClientAdapter = adapter;
+        for (final (sort, type, order) in [
+          (MallSort.sales, 'sale', ''),
+          (MallSort.newest, 'pubdate', ''),
+          (MallSort.priceDescending, 'price', 'desc'),
+        ]) {
+          await mall.search(
+            '手办',
+            options: MallSearchOptions(sort: sort, maximumFen: 10000),
+          );
+          expect(adapter.requests.last.data['sortType'], type);
+          expect(adapter.requests.last.data['sortOrder'], order);
+          expect(adapter.requests.last.data['rangeQueries'], [
+            {'field': 'price', 'gte': '', 'lte': '100.00'},
+          ]);
+        }
       },
     );
 

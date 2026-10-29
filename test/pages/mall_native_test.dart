@@ -3,12 +3,17 @@ import 'dart:async';
 import 'package:PiliPlus/http/loading_state.dart' as loading;
 import 'package:PiliPlus/http/mall.dart';
 import 'package:PiliPlus/models/mall/mall.dart' as mall;
+import 'package:PiliPlus/models/mall/search.dart';
+import 'package:PiliPlus/utils/mall_local_store.dart';
 import 'package:PiliPlus/common/widgets/main_layout.dart';
 import 'package:PiliPlus/pages/mall/detail.dart';
 import 'package:PiliPlus/pages/mall/view.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
+
+late MallLocalStore _localStore;
 
 const _product = mall.MallProduct(
   id: '123',
@@ -39,6 +44,7 @@ loading.Success<mall.MallPage> _page(
 class _Repository implements MallRepository {
   final calls = <(String, int, int)>[];
   final tokens = <CancelToken?>[];
+  final searchOptions = <MallSearchOptions>[];
   FutureOr<loading.LoadingState<mall.MallPage>> Function(
     int page,
     int category,
@@ -67,10 +73,12 @@ class _Repository implements MallRepository {
   Future<loading.LoadingState<mall.MallPage>> search(
     String query, {
     int page = 1,
+    MallSearchOptions options = const MallSearchOptions(),
     CancelToken? cancelToken,
   }) async {
     calls.add((query, page, 0));
     tokens.add(cancelToken);
+    searchOptions.add(options);
     return await onSearch?.call(query, page) ?? _page([_second]);
   }
 
@@ -90,6 +98,7 @@ Future<void> _open(
   WidgetTester tester,
   _Repository repository, {
   Future<void> Function(String url)? openOfficial,
+  Future<void> Function(String text)? shareProduct,
   double textScale = 1,
 }) async {
   await tester.pumpWidget(
@@ -99,13 +108,256 @@ Future<void> _open(
             .copyWith(textScaler: TextScaler.linear(textScale)),
         child: child!,
       ),
-      home: MallPage(repository: repository, openOfficial: openOfficial),
+      home: MallPage(
+        repository: repository,
+        localStore: _localStore,
+        openOfficial: openOfficial,
+        shareProduct: shareProduct,
+      ),
     ),
   );
   await tester.pumpAndSettle();
 }
 
 void main() {
+  setUp(() => _localStore = MallLocalStore());
+  tearDown(() => _localStore.dispose());
+
+  testWidgets(
+    'saved items remain usable on a narrow screen with enlarged text',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final repository = _Repository();
+      await _open(tester, repository, textScale: 1.8);
+      await tester.tap(find.text('原生商品卡片'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('加入本机收藏'));
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('本机收藏'));
+      await tester.pumpAndSettle();
+      expect(find.text('原生商品卡片').hitTestable(), findsOneWidget);
+      expect(find.byTooltip('取消本机收藏').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'price filter sheet scrolls above the keyboard on narrow screens',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetViewInsets);
+      final repository = _Repository();
+      await _open(tester, repository, textScale: 1.8);
+      await tester.enterText(find.byKey(const ValueKey('mall-search')), '商品');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('价格筛选'));
+      await tester.pumpAndSettle();
+      tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('应用价格区间'));
+      await tester.pumpAndSettle();
+      expect(find.text('应用价格区间').hitTestable(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text('应用价格区间'));
+      await tester.pumpAndSettle();
+      expect(find.text('价格区间'), findsNothing);
+    },
+  );
+
+  testWidgets('changing sort resets pagination and isolates an older search', (
+    tester,
+  ) async {
+    final stale = Completer<loading.LoadingState<mall.MallPage>>();
+    final repository = _Repository();
+    repository.onSearch = (_, page) =>
+        repository.searchOptions.last.sort == MallSort.relevance
+        ? stale.future
+        : _page([_second], page: page, hasNext: page == 1);
+    await _open(tester, repository);
+    await tester.enterText(find.byKey(const ValueKey('mall-search')), '商品');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pump();
+    await tester.tap(find.byTooltip('搜索排序'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('销量优先').last);
+    await tester.pumpAndSettle();
+    expect(repository.searchOptions.last.sort, MallSort.sales);
+    expect(repository.calls.last, ('商品', 1, 0));
+    expect(repository.tokens[1]!.isCancelled, isTrue);
+    stale.complete(_page([_product]));
+    await tester.pumpAndSettle();
+    expect(find.text('原生商品卡片'), findsNothing);
+    await tester.tap(find.text('加载更多'));
+    await tester.pumpAndSettle();
+    expect(repository.calls.last, ('商品', 2, 0));
+    expect(repository.searchOptions.last.sort, MallSort.sales);
+  });
+
+  testWidgets(
+    'price sheet rejects invalid bounds, applies exact amounts and resets',
+    (tester) async {
+      final repository = _Repository();
+      await _open(tester, repository);
+      await tester.enterText(find.byKey(const ValueKey('mall-search')), '商品');
+      await tester.testTextInput.receiveAction(TextInputAction.search);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('价格筛选'));
+      await tester.pumpAndSettle();
+      final minimum = find.byKey(const ValueKey('mall-minimum-price'));
+      final maximum = find.byKey(const ValueKey('mall-maximum-price'));
+      await tester.enterText(minimum, '100');
+      await tester.enterText(maximum, '50');
+      await tester.tap(find.text('应用价格区间'));
+      await tester.pumpAndSettle();
+      expect(find.text('最高价不能低于最低价'), findsOneWidget);
+      expect(repository.searchOptions, hasLength(1));
+      await tester.enterText(minimum, '-1');
+      await tester.tap(find.text('应用价格区间'));
+      await tester.pumpAndSettle();
+      expect(find.text('请输入非负金额，最多两位小数'), findsOneWidget);
+      await tester.enterText(minimum, '50.29');
+      await tester.enterText(maximum, '100');
+      await tester.tap(find.text('应用价格区间'));
+      await tester.pumpAndSettle();
+      expect(repository.searchOptions.last.minimumFen, 5029);
+      expect(repository.searchOptions.last.maximumFen, 10000);
+      await tester.ensureVisible(find.text('重置筛选'));
+      await tester.tap(find.text('重置筛选'));
+      await tester.pumpAndSettle();
+      expect(repository.searchOptions.last.isDefault, isTrue);
+      await tester.tap(find.byTooltip('清除搜索'));
+      await tester.pumpAndSettle();
+      expect(find.text('综合排序'), findsNothing);
+      expect(repository.calls.last.$1, 'home');
+    },
+  );
+
+  testWidgets(
+    'favorites reopen native details and refresh shared local snapshots',
+    (tester) async {
+      final repository = _Repository();
+      await _open(tester, repository);
+      await tester.tap(find.text('原生商品卡片'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('加入本机收藏'));
+      await tester.pumpAndSettle();
+      expect(_localStore.favorites, hasLength(1));
+      expect(find.byTooltip('取消本机收藏'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('本机收藏'));
+      await tester.pumpAndSettle();
+      expect(find.text('本机收藏 (1)'), findsOneWidget);
+      repository.onDetail = (_) => const loading.Success(
+        mall.MallProductDetail(
+          product: mall.MallProduct(
+            id: '123',
+            title: '刷新后的商品',
+            priceText: '商品价¥115',
+          ),
+        ),
+      );
+      await tester.tap(find.text('原生商品卡片'));
+      await tester.pumpAndSettle();
+      expect(find.byType(MallProductDetailPage), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('刷新后的商品'), findsOneWidget);
+      expect(find.text('商品价¥115'), findsOneWidget);
+      await tester.tap(find.byTooltip('取消本机收藏'));
+      await tester.pumpAndSettle();
+      expect(find.text('暂无本机收藏'), findsOneWidget);
+      expect(_localStore.history, hasLength(1));
+    },
+  );
+
+  testWidgets(
+    'history can pause and clear with confirmation while favorites remain',
+    (tester) async {
+      await _localStore.visit(_product);
+      await _localStore.toggleFavorite(_product);
+      final repository = _Repository();
+      await _open(tester, repository);
+      await tester.tap(find.byTooltip('浏览足迹'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('记录浏览足迹'));
+      await tester.pumpAndSettle();
+      expect(_localStore.recordHistory, isFalse);
+      await tester.tap(find.byTooltip('管理本机记录'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('清空浏览足迹'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('取消'));
+      await tester.pumpAndSettle();
+      expect(_localStore.history, hasLength(1));
+      await tester.tap(find.byTooltip('管理本机记录'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('清空浏览足迹'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('清空'));
+      await tester.pumpAndSettle();
+      expect(find.text('暂无浏览足迹'), findsOneWidget);
+      expect(_localStore.favorites, hasLength(1));
+    },
+  );
+
+  testWidgets('sharing and copying preserve the special official product route', (
+    tester,
+  ) async {
+    const url =
+        'https://mall.bilibili.com/neul/index.html?page=magic-detail_detail&itemsId=123';
+    const special = mall.MallProduct(
+      id: '123',
+      title: '特别商品',
+      priceText: '¥39',
+      officialUrl: url,
+    );
+    final shared = <String>[];
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final repository = _Repository()..onHome = (_, _) => _page([special]);
+    await _open(
+      tester,
+      repository,
+      shareProduct: (text) async => shared.add(text),
+    );
+    await tester.tap(find.text('特别商品'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('分享与复制链接'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('分享商品'));
+    await tester.pumpAndSettle();
+    expect(shared.single, endsWith('\n$url'));
+    await tester.tap(find.byTooltip('分享与复制链接'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('复制商品链接'));
+    await tester.pumpAndSettle();
+    expect(copied, url);
+  });
   testWidgets(
     'embedded catalog uses outer insets and clears navigation overlay',
     (
@@ -144,6 +396,7 @@ void main() {
                 padding: const EdgeInsets.only(top: 24),
                 child: MallPage(
                   repository: repository,
+                  localStore: _localStore,
                   embeddedInNavigation: true,
                 ),
               ),
@@ -207,7 +460,9 @@ void main() {
     final home = Completer<loading.LoadingState<mall.MallPage>>();
     final repository = _Repository()..onHome = (_, _) => home.future;
     await tester.pumpWidget(
-      MaterialApp(home: MallPage(repository: repository)),
+      MaterialApp(
+        home: MallPage(repository: repository, localStore: _localStore),
+      ),
     );
     await tester.pump();
 
@@ -399,7 +654,9 @@ void main() {
       final response = Completer<loading.LoadingState<mall.MallPage>>();
       final repository = _Repository()..onHome = (_, _) => response.future;
       await tester.pumpWidget(
-        MaterialApp(home: MallPage(repository: repository)),
+        MaterialApp(
+          home: MallPage(repository: repository, localStore: _localStore),
+        ),
       );
       await tester.pump();
 

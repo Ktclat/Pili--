@@ -11,7 +11,8 @@ or, where the original file permits, any later version. See LICENSE.
 New Pili-- source files are licensed under GPL-3.0-or-later.
 
 Modifications include Android application identity, QR scanning, built-in
-native mall browsing with configurable navigation, transport/WebView hardening, removal of private
+native mall browsing with configurable navigation, search filters, local product
+favorites/history and explicit sharing, transport/WebView hardening, removal of private
 storage export and hidden URL entry, reproducible Android build preparation,
 and project documentation. Git history records the individual modifications.
 

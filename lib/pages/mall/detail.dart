@@ -4,8 +4,11 @@ import 'package:PiliPlus/http/loading_state.dart' as loading;
 import 'package:PiliPlus/http/mall.dart';
 import 'package:PiliPlus/models/mall/mall.dart';
 import 'package:PiliPlus/pages/mall/widgets.dart';
+import 'package:PiliPlus/utils/mall_local_store.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/share_utils.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:material_ui/material_ui.dart';
 
 class MallProductDetailPage extends StatefulWidget {
@@ -13,12 +16,16 @@ class MallProductDetailPage extends StatefulWidget {
     super.key,
     required this.product,
     required this.repository,
+    required this.localStore,
     this.openOfficial,
+    this.shareProduct,
   });
 
   final MallProduct product;
   final MallRepository repository;
+  final MallLocalStore localStore;
   final Future<void> Function(String url)? openOfficial;
+  final Future<void> Function(String text)? shareProduct;
 
   @override
   State<MallProductDetailPage> createState() => _MallProductDetailPageState();
@@ -42,6 +49,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
   MallProductDetail? _detail;
   String? _error;
   bool _loading = true;
+  bool _savingFavorite = false;
   int _generation = 0;
 
   @override
@@ -50,7 +58,73 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
     _relatedSearch.text = String.fromCharCodes(
       widget.product.title.runes.take(10),
     ).trim();
+    unawaited(_saveLocal(widget.localStore.visit(widget.product)));
     unawaited(_load());
+  }
+
+  MallProduct get _currentProduct {
+    final product = _detail?.product ?? widget.product;
+    return MallProduct(
+      id: product.id,
+      title: product.title,
+      imageUrl: product.imageUrl ?? widget.product.imageUrl,
+      priceFen: product.priceFen,
+      priceText: product.priceText,
+      officialUrl: widget.product.officialUrl ?? product.officialUrl,
+      subtitle: product.subtitle,
+      tags: List.unmodifiable({...widget.product.tags, ...product.tags}),
+    );
+  }
+
+  Future<void> _saveLocal(Future<void> operation) async {
+    try {
+      await operation;
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is MallFavoriteLimitException
+                  ? '最多保存 ${MallLocalStore.favoriteLimit} 个本机收藏，请先移除部分收藏'
+                  : '本机记录未能保存，请稍后重试',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_savingFavorite) return;
+    setState(() => _savingFavorite = true);
+    await _saveLocal(widget.localStore.toggleFavorite(_currentProduct));
+    if (mounted) setState(() => _savingFavorite = false);
+  }
+
+  Future<void> _share(bool copy) async {
+    final product = _currentProduct;
+    final url = mallOfficialUrl(product.officialUrl);
+    if (url == null) return;
+    try {
+      if (copy) {
+        await Clipboard.setData(ClipboardData(text: url));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('已复制商品链接')),
+          );
+        }
+      } else {
+        await (widget.shareProduct ?? ShareUtils.shareText)(
+          '${product.title}\n$url',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('暂时无法分享，请稍后重试')),
+        );
+      }
+    }
   }
 
   Future<void> _load() async {
@@ -75,6 +149,11 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
           _error = mallErrorMessage(result);
         }
       });
+      if (result is loading.Success<MallProductDetail>) {
+        unawaited(
+          _saveLocal(widget.localStore.refreshProduct(_currentProduct)),
+        );
+      }
     } catch (_) {
       if (!mounted || generation != _generation) return;
       setState(() => _error = '商品详情加载失败，请重试');
@@ -155,7 +234,9 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
         builder: (_) => MallProductDetailPage(
           product: product,
           repository: widget.repository,
+          localStore: widget.localStore,
           openOfficial: widget.openOfficial,
+          shareProduct: widget.shareProduct,
         ),
       ),
     );
@@ -547,7 +628,7 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final parts = _descriptionParts;
-    final product = _detail?.product ?? widget.product;
+    final product = _currentProduct;
     final images = _detail?.images.isNotEmpty == true
         ? _detail!.images
         : [if (product.imageUrl?.isNotEmpty == true) product.imageUrl!];
@@ -566,6 +647,36 @@ class _MallProductDetailPageState extends State<MallProductDetailPage> {
       appBar: AppBar(
         title: const Text('商品详情'),
         actions: [
+          AnimatedBuilder(
+            animation: widget.localStore,
+            builder: (context, _) {
+              final saved = widget.localStore.isFavorite(widget.product.id);
+              return IconButton(
+                tooltip: saved ? '取消本机收藏' : '加入本机收藏',
+                isSelected: saved,
+                icon: const Icon(Icons.star_outline),
+                selectedIcon: const Icon(Icons.star),
+                onPressed: _savingFavorite ? null : _toggleFavorite,
+              );
+            },
+          ),
+          PopupMenuButton<bool>(
+            tooltip: '分享与复制链接',
+            icon: const Icon(Icons.ios_share),
+            onSelected: (copy) => unawaited(_share(copy)),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: false,
+                enabled: canBuy,
+                child: const Text('分享商品'),
+              ),
+              PopupMenuItem(
+                value: true,
+                enabled: canBuy,
+                child: const Text('复制商品链接'),
+              ),
+            ],
+          ),
           IconButton(
             tooltip: '搜索更多商品',
             icon: const Icon(Icons.search),
