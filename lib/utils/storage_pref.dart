@@ -36,7 +36,6 @@ import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
-import 'package:PiliPlus/utils/navigation_preferences.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -84,11 +83,12 @@ abstract final class Pref {
     GlobalData().blackMids..remove(mid),
   );
 
-  static MemberTabType get memberTab =>
-      MemberTabType.values[_setting.get(
-        SettingBoxKey.memberTab,
-        defaultValue: 0,
-      )];
+  static MemberTabType get memberTab {
+    final index = _setting.get(SettingBoxKey.memberTab);
+    return index is int && index >= 0 && index < MemberTabType.values.length
+        ? MemberTabType.values[index]
+        : MemberTabType.def;
+  }
 
   static int get _themeTypeInt => _setting.get(
     SettingBoxKey.themeMode,
@@ -183,8 +183,6 @@ abstract final class Pref {
         ? index
         : NavigationBarType.home.index;
   }
-
-  static bool get showMallInNavigation => NavigationPreferences.showMall;
 
   static int get previewQ =>
       _setting.get(SettingBoxKey.previewQuality, defaultValue: 100);
@@ -960,9 +958,6 @@ abstract final class Pref {
 
     return value;
   }
-
-  static bool get showMemberShop =>
-      _setting.get(SettingBoxKey.showMemberShop, defaultValue: false);
 
   static SuperChatType get superChatType =>
       SuperChatType.values[_setting.get(

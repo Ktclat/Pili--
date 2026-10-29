@@ -8,7 +8,6 @@
 | 开发入口、目录与同步上游 | [开发导览](DEVELOPMENT.md) |
 | Flutter 环境、补丁、签名与本地构建 | [Android 构建指南](BUILD.md) |
 | 与 PiliPlus 的数据、快捷方式和签名隔离 | [共存说明](COEXISTENCE.md) |
-| 原生会员购实现、接口与交易边界 | [会员购说明](NATIVE_MALL.md) |
 | 哪个版本通过了哪些检查 | [验证记录](VALIDATION.md) |
 | 版本变化与未发布内容 | [更新记录](../CHANGELOG.md) |
 | 下一步需要完成的工作 | [后续计划](ROADMAP.md) |
@@ -16,4 +15,4 @@
 | 安全问题、数据使用和报告渠道 | [安全说明](../SECURITY.md) |
 | 上游来源与许可证 | [来源与致谢](ACKNOWLEDGEMENTS.md) · [NOTICE](../NOTICE) · [LICENSE](../LICENSE) |
 
-历史设备证据保存在 [validation/](validation/)。记录以版本及源码提交为准，旧版 H5 页面截图不代表当前原生会员购已通过相同的设备验收。
+历史扫码与播放等设备证据保存在 [validation/](validation/)。记录以版本及源码提交为准，不代表当前版本已经通过相同的设备验收。

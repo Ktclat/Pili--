@@ -240,7 +240,7 @@ class MainController extends GetxController
     );
   }
 
-  /// Apply both navigation settings immediately while keeping the active tab
+  /// Apply navigation changes immediately while keeping the active tab
   /// by identity, rather than retaining an index that can point past the end.
   void reloadNavigation() {
     if (isClosed) return;
@@ -356,7 +356,7 @@ class MainController extends GetxController
           () => switch (currentNav) {
             .home => homeController.onRefresh(),
             .dynamics => dynamicController.onRefresh(),
-            .mine || .mall => null,
+            .mine => null,
           },
         );
       } else {

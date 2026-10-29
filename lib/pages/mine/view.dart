@@ -101,12 +101,6 @@ class _MediaPageState extends CommonPageState<MinePage>
                       subtitle: const Text('相机扫码或从相册识别'),
                       onTap: () => Get.toNamed('/scan'),
                     ),
-                    ListTile(
-                      leading: const Icon(Icons.shopping_bag_outlined),
-                      title: const Text('会员购'),
-                      subtitle: const Text('浏览商品与搜索会员购'),
-                      onTap: () => Get.toNamed('/mall'),
-                    ),
                     for (final tab in controller.mineTabs)
                       switch (tab) {
                         .favorite => Obx(_buildFav),

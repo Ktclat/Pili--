@@ -37,7 +37,6 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
-import 'package:PiliPlus/utils/navigation_preferences.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -139,19 +138,6 @@ List<SettingsModel> get styleSettings => [
     setKey: SettingBoxKey.floatingNavBar,
     defaultVal: false,
     needReboot: true,
-  ),
-  NormalModel(
-    title: '在导航栏显示会员购',
-    subtitle: '默认开启；隐藏后仍可从“我的”打开，立即生效',
-    leading: const Icon(Icons.shopping_bag_outlined),
-    onTap: (_, _) => _setMallNavigationVisible(!Pref.showMallInNavigation),
-    getTrailing: (_) => StreamBuilder(
-      stream: GStorage.setting.watch(key: SettingBoxKey.showMallInNavigation),
-      builder: (_, _) => Switch(
-        value: Pref.showMallInNavigation,
-        onChanged: _setMallNavigationVisible,
-      ),
-    ),
   ),
   SwitchModel(
     title: '显示粉丝勋章',
@@ -265,13 +251,6 @@ List<SettingsModel> get styleSettings => [
     leading: const Icon(Icons.tab),
     getSubtitle: () => '当前优先展示「${Pref.memberTab.title}」',
     onTap: _showMemberTabDialog,
-  ),
-  SwitchModel(
-    title: '显示UP主页小店TAB',
-    leading: const Icon(Icons.shop_outlined),
-    setKey: SettingBoxKey.showMemberShop,
-    defaultVal: false,
-    onChanged: (value) => MemberTabType.showMemberShop = value,
   ),
   SwitchModel(
     title: '首页顶栏收起',
@@ -440,13 +419,6 @@ List<SettingsModel> get styleSettings => [
       leading: const Icon(Icons.autofps_select_outlined),
     ),
 ];
-
-Future<void> _setMallNavigationVisible(bool visible) async {
-  await NavigationPreferences.setMallVisible(visible);
-  if (Get.isRegistered<MainController>()) {
-    Get.find<MainController>().reloadNavigation();
-  }
-}
 
 void _showQualityDialog({
   required BuildContext context,
