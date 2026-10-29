@@ -7,6 +7,29 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+abstract class GenerateShortcutResources : DefaultTask() {
+    @get:Input
+    abstract val applicationId: Property<String>
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val templateFile: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        val template = templateFile.get().asFile.readText()
+        check(template.contains("__APPLICATION_ID__")) {
+            "Shortcut template must contain an application ID placeholder"
+        }
+        val output = outputDirectory.file("xml-v25/shortcuts.xml").get().asFile
+        output.parentFile.mkdirs()
+        output.writeText(template.replace("__APPLICATION_ID__", applicationId.get()))
+    }
+}
+
 val agpMajorVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
     .substringBefore('.')
     .toInt()
@@ -18,6 +41,8 @@ if (!isBuiltInKotlinEnabled) {
 }
 
 android {
+    // JNI bindings use these class names. Android installation/data isolation
+    // uses applicationId below, not this implementation namespace.
     namespace = "com.example.piliplus"
     compileSdk = 37
     ndkVersion = flutter.ndkVersion
@@ -55,9 +80,7 @@ android {
     }
 
     buildFeatures {
-        if (project.hasProperty("dev")) {
-            resValues = true
-        }
+        resValues = true
     }
 
     buildTypes {
@@ -88,6 +111,24 @@ android {
         variant.outputs.forEach { output ->
             (output as ApkVariantOutputImpl).versionCodeOverride = flutter.versionCode
         }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        // Android's shortcut Intent parser requires literal component names;
+        // @string references become an invalid package such as "@2131820726".
+        val generateShortcuts = tasks.register<GenerateShortcutResources>(
+            "generate${variant.name.replaceFirstChar { it.uppercaseChar() }}ShortcutResources",
+        ) {
+            applicationId.set(variant.applicationId)
+            templateFile.set(layout.projectDirectory.file("shortcut_templates/shortcuts.xml"))
+            outputDirectory.set(layout.buildDirectory.dir("generated/shortcutResources/${variant.name}"))
+        }
+        variant.sources.res?.addGeneratedSourceDirectory(
+            generateShortcuts,
+            GenerateShortcutResources::outputDirectory,
+        )
     }
 }
 

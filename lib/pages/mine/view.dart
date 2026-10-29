@@ -104,7 +104,7 @@ class _MediaPageState extends CommonPageState<MinePage>
                     ListTile(
                       leading: const Icon(Icons.shopping_bag_outlined),
                       title: const Text('会员购'),
-                      subtitle: const Text('独立入口，首次使用按需下载网页组件'),
+                      subtitle: const Text('浏览商品与搜索会员购'),
                       onTap: () => Get.toNamed('/mall'),
                     ),
                     for (final tab in controller.mineTabs)

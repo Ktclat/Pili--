@@ -1,4 +1,7 @@
-param([string]$FlutterRoot = (Join-Path $PSScriptRoot '../.tools/flutter'))
+param(
+    [string]$FlutterRoot = (Join-Path $PSScriptRoot '../.tools/flutter'),
+    [switch]$UpdateLockfile
+)
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $sdkRoot = (Resolve-Path $FlutterRoot).Path
@@ -42,7 +45,9 @@ if ($revision -ne '737ba8f885dc774b53b442759999a312c9461e4e') {
 }
 Push-Location $projectRoot
 try {
-    & $flutter pub get
+    $pubArguments = @('pub', 'get')
+    if (-not $UpdateLockfile) { $pubArguments += '--enforce-lockfile' }
+    & $flutter @pubArguments
     if ($LASTEXITCODE -ne 0) { throw 'Dependency resolution failed' }
     $patches = @(
         'modal_barrier.patch', 'text_selection.patch', 'mouse_cursor.patch',

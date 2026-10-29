@@ -11,6 +11,22 @@ abstract final class TrustedUrl {
       uri.host.isNotEmpty &&
       uri.userInfo.isEmpty;
 
+  static bool isBilibiliNote(Uri? uri) =>
+      uri != null &&
+      isBilibili(uri) &&
+      uri.host == 'www.bilibili.com' &&
+      uri.path == '/h5/note-app';
+
+  static int? noteVideoId(Uri? uri) {
+    if (!isBilibiliNote(uri)) return null;
+    try {
+      final id = int.tryParse(uri!.queryParameters['oid'] ?? '');
+      return id != null && id > 0 ? id : null;
+    } on FormatException {
+      return null;
+    }
+  }
+
   static Uri? scanLink(String value) {
     final text = value.trim();
     if (text.length > 8192 || text.contains(RegExp(r'[\x00-\x20\x7f]'))) {

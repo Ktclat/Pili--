@@ -2,7 +2,11 @@ import 'package:PiliPlus/common/widgets/pair.dart';
 import 'package:PiliPlus/common/widgets/reorder_mixin.dart';
 import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/models/common/enum_with_label.dart';
+import 'package:PiliPlus/models/common/nav_bar_config.dart';
+import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/utils/navigation_preferences.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
@@ -26,7 +30,9 @@ class _BarSetPageState extends State<BarSetPage> with ReorderMixin {
     final Map<String, dynamic> args = Get.arguments;
     key = args['key'];
     title = args['title'];
-    final List? cache = GStorage.setting.get(key);
+    final List? cache = key == SettingBoxKey.navBarSort
+        ? NavigationPreferences.bars.map((bar) => bar.index).toList()
+        : GStorage.setting.get(key);
     list = (args['defaultBars'] as List<EnumWithLabel>)
         .map((e) => Pair(first: e, second: cache?.contains(e.index) ?? true))
         .toList();
@@ -47,18 +53,41 @@ class _BarSetPageState extends State<BarSetPage> with ReorderMixin {
     padding = .only(top: 10, right: viewPad.right + 34, bottom: viewPad.bottom);
   }
 
-  void saveEdit() {
-    GStorage.setting.put(
-      key,
-      list.where((e) => e.second).map((e) => e.first.index).toList(),
-    );
-    SmartDialog.showToast('保存成功，下次启动时生效');
+  Future<void> saveEdit() async {
+    final selected = list.where((e) => e.second).map((e) => e.first).toList();
+    if (selected.isEmpty) {
+      SmartDialog.showToast('至少保留一个导航入口');
+      return;
+    }
+    if (key == SettingBoxKey.navBarSort) {
+      await NavigationPreferences.saveOrder(selected.cast<NavigationBarType>());
+      _reloadNavigation();
+      SmartDialog.showToast('保存成功，已生效');
+    } else {
+      await GStorage.setting.put(
+        key,
+        selected.map((bar) => bar.index).toList(),
+      );
+      SmartDialog.showToast('保存成功，下次启动时生效');
+    }
   }
 
-  void onReset() {
-    Get.back();
-    GStorage.setting.delete(key);
-    SmartDialog.showToast('重置成功，下次启动时生效');
+  Future<void> onReset() async {
+    if (key == SettingBoxKey.navBarSort) {
+      await NavigationPreferences.reset();
+      _reloadNavigation();
+      SmartDialog.showToast('重置成功，已生效');
+    } else {
+      await GStorage.setting.delete(key);
+      SmartDialog.showToast('重置成功，下次启动时生效');
+    }
+    if (mounted) Get.back();
+  }
+
+  void _reloadNavigation() {
+    if (Get.isRegistered<MainController>()) {
+      Get.find<MainController>().reloadNavigation();
+    }
   }
 
   void onReorderItem(int oldIndex, int newIndex) {

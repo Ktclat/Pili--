@@ -253,7 +253,7 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
           'injectionTime': 0, // start
           'forAllFrames': false,
         },
-      if (_currentUrl.startsWith('https://www.bilibili.com/h5/note-app'))
+      if (TrustedUrl.isBilibiliNote(Uri.tryParse(_currentUrl)))
         const {
           'source': """
 document.addEventListener('click', function(e) {
@@ -339,15 +339,15 @@ document.addEventListener('click', function(e) {
           _progress.value = p;
         },
         onWebMessageReceived: (msg) {
+          final uri = Uri.tryParse(_currentUrl);
+          if (!mounted || !TrustedUrl.isBilibiliNote(uri)) return;
           final msgStr = msg.toString();
           if (msgStr == 'finishButtonClicked') {
-            if (mounted) Get.back();
+            Get.back();
           } else if (msgStr == 'infoBarClicked') {
-            final uri = Uri.tryParse(_currentUrl);
-            final targetOid =
-                uri?.queryParameters['oid'] ?? widget.oid?.toString();
-            if (targetOid != null) {
-              PiliScheme.videoPush(int.parse(targetOid), null);
+            final id = TrustedUrl.noteVideoId(uri);
+            if (id != null) {
+              PiliScheme.videoPush(id, null);
             }
           }
         },
@@ -424,11 +424,7 @@ document.addEventListener('click', function(e) {
                       handlerName: 'finishButtonClicked',
                       callback: (args) async {
                         final uri = (await controller.getUrl())?.uriValue;
-                        if (mounted &&
-                            uri != null &&
-                            TrustedUrl.isBilibili(uri) &&
-                            uri.host == 'www.bilibili.com' &&
-                            uri.path == '/h5/note-app') {
+                        if (mounted && TrustedUrl.isBilibiliNote(uri)) {
                           Get.back();
                         }
                       },
@@ -436,16 +432,10 @@ document.addEventListener('click', function(e) {
                     ..addJavaScriptHandler(
                       handlerName: 'infoBarClicked',
                       callback: (args) async {
-                        WebUri? uri = await controller.getUrl();
-                        if (uri != null &&
-                            TrustedUrl.isBilibili(uri.uriValue) &&
-                            uri.host == 'www.bilibili.com' &&
-                            uri.path == '/h5/note-app') {
-                          String? oid = uri.queryParameters['oid'];
-                          final id = int.tryParse(oid ?? '');
-                          if (id != null) {
-                            PiliScheme.videoPush(id, null);
-                          }
+                        final uri = (await controller.getUrl())?.uriValue;
+                        final id = TrustedUrl.noteVideoId(uri);
+                        if (mounted && id != null) {
+                          PiliScheme.videoPush(id, null);
                         }
                       },
                     );
@@ -459,7 +449,7 @@ document.addEventListener('click', function(e) {
                 onCloseWindow: (controller) => Get.back(),
                 onLoadStop: (controller, uri) {
                   final url = uri.toString();
-                  if (url.startsWith('https://www.bilibili.com/h5/note-app')) {
+                  if (TrustedUrl.isBilibiliNote(uri?.uriValue)) {
                     controller
                       ..evaluateJavascript(
                         source: """

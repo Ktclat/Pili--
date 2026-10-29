@@ -37,6 +37,7 @@ import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
+import 'package:PiliPlus/utils/navigation_preferences.dart';
 import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
@@ -138,6 +139,19 @@ List<SettingsModel> get styleSettings => [
     setKey: SettingBoxKey.floatingNavBar,
     defaultVal: false,
     needReboot: true,
+  ),
+  NormalModel(
+    title: '在导航栏显示会员购',
+    subtitle: '默认开启；隐藏后仍可从“我的”打开，立即生效',
+    leading: const Icon(Icons.shopping_bag_outlined),
+    onTap: (_, _) => _setMallNavigationVisible(!Pref.showMallInNavigation),
+    getTrailing: (_) => StreamBuilder(
+      stream: GStorage.setting.watch(key: SettingBoxKey.showMallInNavigation),
+      builder: (_, _) => Switch(
+        value: Pref.showMallInNavigation,
+        onChanged: _setMallNavigationVisible,
+      ),
+    ),
   ),
   SwitchModel(
     title: '显示粉丝勋章',
@@ -403,12 +417,12 @@ List<SettingsModel> get styleSettings => [
       '/barSetting',
       arguments: {
         'key': SettingBoxKey.navBarSort,
-        'defaultBars': NavigationBarType.values,
-        'title': 'Navbar',
+        'defaultBars': NavigationBarConfig.defaultOrder,
+        'title': '导航栏',
       },
     ),
-    title: 'Navbar编辑',
-    subtitle: '删除或调换Navbar',
+    title: '导航栏编辑',
+    subtitle: '显示、隐藏或调换导航入口，保存后立即生效',
     leading: const Icon(Icons.toc_outlined),
   ),
   SwitchModel(
@@ -426,6 +440,13 @@ List<SettingsModel> get styleSettings => [
       leading: const Icon(Icons.autofps_select_outlined),
     ),
 ];
+
+Future<void> _setMallNavigationVisible(bool visible) async {
+  await NavigationPreferences.setMallVisible(visible);
+  if (Get.isRegistered<MainController>()) {
+    Get.find<MainController>().reloadNavigation();
+  }
+}
 
 void _showQualityDialog({
   required BuildContext context,

@@ -1,76 +1,57 @@
-# Android 成品验收记录
+# Android 验证记录
 
-日期：2026-10-27（Asia/Hong_Kong）。本记录只描述实际执行的范围，不代表全部上游功能、支付流程或整个供应链通过审计。
+[文档索引](README.md) · [安装说明](INSTALL.md) · [共存说明](COEXISTENCE.md)
 
-## 安装包与环境
+同一版本号可能包含多个开发提交。下文分别标记本次整合、此前 APK 与历史版本的范围；实际构建结果应核对 [Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 的源码提交，不能将早期成功套用到新代码。
 
-- 基于 PiliPlus `72ec31edd6b34883f13ba8caf4e4d76e548ce884`，保留 Git 历史和 GPL v3。
-- Flutter 3.47.8 / Dart 3.13.7，项目内隔离 SDK、固定提交依赖、上游框架补丁；JDK 17。
-- Release 模式，版本 `0.1.0+1`，包名 `io.github.ktclat.piliminus`。本地 APK 使用测试签名，未嵌入提交号（关于页显示 N/A）；不是正式签名发行包。
-- 实际安装：独立 AVD `pili_minus_acceptance_api36`，Android 16 / API 36 / x86_64，系统 WebView 133.0.6943.137，游客账号，虚拟相机和 SwiftShader。
-- ARM64 包完成构建与校验，未在 ARM64 真机上运行。其他平台未验证。
+## 0.2.0+3：详情改进与文档整合（2026-10-29）
 
-最终本地安装包 SHA-256（对应本次提交的应用源码；CI 构建会嵌入自己的提交号/构建时间，哈希不同）：
+本次整合基于 `9b90897`，修正详情文本重复渲染、分析警告及详情内搜索测试的滚动位置。最终提交与 CI 链接见 [PR #1](https://github.com/Ktclat/Pili--/pull/1)。
 
-| 文件 | SHA-256 |
+| 检查 | 本地结果与范围 |
 | --- | --- |
-| app-x86_64-release.apk | `19b62d1f543c7f4e066ffc23570a3bd9f7e93f1c5b378267175fda2134a4d22e` |
-| app-arm64-v8a-release.apk | `b3c34e673ccc507501314316763607302a83afbb0ce60e36b39ab518ae721cdb` |
+| Flutter 全量回归 | **173 项通过**；包含详情图文顺序、预售信息、应用内继续搜索、详情失败重试与原有业务回归 |
+| 静态分析 | **0 error / 0 warning**；保留 39 条上游 info，使用 `--no-fatal-infos` |
+| Python 共存检查器 | **10 项通过**；源码应用身份检查通过 |
+| 差异及文档 | 检查差异格式、Markdown 本地链接与反馈表单 YAML |
 
-## 安装后操作
+云端工作流还会执行三个 ABI 的 APK 构建，以及实际包名、Provider 和快捷方式检查。是否通过以该提交的 CI 结果为准。新增详情交互尚未完成安装后联网设备验收。
 
-使用真实 API、CameraX/ML Kit、Android 相册选择器和系统 WebView，没有替换应用服务或伪造商品/视频响应。
+## 0.2.0+3：基础原生会员购（2026-10-28）
 
-| 场景 | 实际结果 |
+以下已执行结果对应提交 [`f4ceb2f`](https://github.com/Ktclat/Pili--/commit/f4ceb2f6347ab02e43606f0b3634dce277d7af17)，与上文新增详情改进区分：
+
+- Flutter **170 项通过**；静态分析无 error/warning；Python **10 项通过**。
+- [CI 全部通过](https://github.com/Ktclat/Pili--/actions/runs/40656052825)，完成 `armeabi-v7a`、`arm64-v8a`、`x86_64` 构建及最终 APK 身份检查。附件仅按 Actions 保留期限提供。
+- 使用生产 `MallHttp`、标准 TLS、环境代理及其公开 CA，实际验证推荐两页、手办分类、搜索两页、普通详情与预售详情，**7 个只读联网场景通过**；未登录、下单或付款。
+
+### 安装后的 Android 11 模拟器
+
+实际安装 APK：`0.2.0+3` / x86_64，SHA-256 `1c5cc9b3593de4908d48c8b68a79b1601c7da2867cfab1a752de5cdeaa8c6858`。环境为 Android 11 / API 30 AOSP ATD，软件 CPU 与 SwiftShader；不能据此评估真机性能。
+
+| 操作 | 已观察结果 |
 | --- | --- |
-| 全新安装、游客启动、首页/我的切换 | 正常进入首页，真实推荐、封面、我的入口可见 |
-| 官方视频二维码 | 显示确认框，主动打开后进入 `BV1xx411c7mD` 视频详情 |
-| 视频播放与弹幕 | 点击播放后出现实际视频画面和弹幕，进度由 0% 推进到 19%；只验证此公开视频短时播放 |
-| 相机实时识别 | 虚拟场景中摆放实际二维码，CameraX 帧经 ML Kit 识别后弹出正确链接；[截图](validation/camera-qr.png) |
-| 相册识别 | 官方链接、普通文本、仿冒域名、JavaScript 字符串均正确分类；空白图片提示未找到二维码 |
-| 危险协议 | `javascript:alert(1)` 只有继续/复制按钮，没有打开操作；[截图](validation/unsafe-qr.png) |
-| 仿冒域名 | `https://bilibili.com.example.org/...` 标识为外部网站，不视为官方链接；未实际访问该测试域名 |
-| 拒绝相机权限 | 保留相册识别与重试入口；识别结束不再自动重复申请；主动点击重试才重新申请 |
-| 断网识别 | 关闭模拟器 Wi-Fi/移动数据后，相册二维码仍正常解码；无需首次联网下载识别模型 |
-| 相机生命周期 | 扫码页有活动客户端；切后台后无客户端；恢复前台后重建；退出页面后原生相机完成关闭；[系统记录](validation/camera-lifecycle.txt) |
-| 会员购首次使用 | 展示下载说明；点击启用后实际下载官方 H5，商品首页正常显示；[截图](validation/mall.png) |
-| 会员购浏览与状态 | 分类页可打开、工具栏网页后退有效；离开再进入记住启用；停用返回说明页 |
-| 会员购断网与恢复 | 断网显示失败与重新下载按钮；[截图](validation/mall-offline.png)。恢复 Wi-Fi 连接后点击重新下载，真实商品重新显示 |
-| 最终 APK Manifest | 包名正确，相机硬件非必需，备份关闭，不含 BiliDocumentsProvider；剩余文件共享 Provider 未导出 |
-| 运行日志 | 本轮实际操作未发现应用的 FATAL EXCEPTION、未处理 Flutter 异常或 ANR；WebView 销毁时的 renderer termination 日志不等于应用崩溃 |
+| 增量安装与冷启动 | 安装成功，应用可启动，保留应用数据 |
+| 与上游双安装 | Pili-- UID 10072、PiliPlus UID 10071；各自私有目录分别为 `/data/user/0/io.github.ktclat.piliminus` 与 `/data/user/0/com.example.piliplus` |
+| 原生会员购打开与失败重试 | 出现原生标题、搜索框与可操作的重试按钮，无商城 WebView 节点 |
+| 导航隐藏/恢复 | 开关 true → false → true，导航四项 → 三项 → 四项，同一应用进程内立即生效 |
+| 隐藏后的入口 | “我的”仍可实际打开独立原生会员购页面 |
+| 运行日志 | 本轮采样未见未处理应用异常特征 |
 
-相机测试中使用 SDK 自带虚拟场景，墙面放置由 `scripts/android_acceptance.py fixtures` 生成的二维码；经模拟器认证的 gRPC 接口调整物理位置到 `(-2.3, 0.32, 2.72)`、旋转到 `(0, -150, 0)` 后完成实时识别。它验证了相机帧到结果的真实路径，但不能替代真机对焦、弱光和不同镜头测试。
+设备内商品请求未成功，**安装后 APK 的联网推荐、搜索和详情未记为通过**。一次标准 `HttpsURLConnection` 探针在 35 秒超时，未能确定具体原因；未添加应用或系统 TLS 绕过。真实响应在主机上的 Flutter 布局预览不计作设备成功。
 
-## 验收中修复的问题
+## 0.1.1+2：稳定性与共存（2026-10-27）
 
-1. 相机权限被拒后，相册识别结束重新启动相机会再次申请权限：改为显式重试才申请，并补齐拒绝提示。
-2. 会员购已显示商品却在 35 秒后误报下载超时：插件创建/加载回调使用不同 Dart 包装对象，改为比较底层平台控制器，保留旧页面回调防护。重建、重新安装后复测通过。
-3. 初次 Android 构建受 Windows 空格路径、Git 长路径和原生库下载限制影响：使用隔离 SDK/缓存、可选盘符映射、固定 SHA-256 的原生库预下载；最终两个 ABI 均构建成功。
-4. 干净 Linux CI 的原生回归测试缺少 GTK/X11/Xi 开发库：补齐主机依赖，保留测试步骤，不通过跳过检查来消除失败。
+- Flutter **131 项通过**，覆盖下载 200/206/416、落盘长度、暂停取消、完成任务竞态，以及当时的 H5 页面生命周期、URL 信任边界、重定向、重试和稳定 Release 版本比较。
+- Python 检查器 **10 项通过**；实际执行 release/debug/`-Pdev` 快捷方式生成，分别包含对应 applicationId 的字面包名。
+- [CI 记录](https://github.com/Ktclat/Pili--/actions/runs/40453846560)；框架补丁、锁文件强制模式与源码格式检查通过。
 
-## 辅助检查与性能范围
+## 0.1.0+1：初始设备验收（2026-10-27）
 
-- `flutter analyze --no-pub --no-fatal-infos`：退出码 0；无 error/warning，保留 99 条上游风格、弃用及生成代码 info。
-- `flutter test --no-pub`：9 项通过（账号删除后迟到响应不可恢复账号，以及音视频质量选择）。修正现有账号测试的 Hive 初始化，没有移除断言或增加自证实现的测试。
-- `git diff --check`：通过。GPL 许可证正文未改动。
-- 性能改动集中于相机后台停止/退出释放、会员购按需创建和释放、网页缓存复用、限制无意义重试。没有设置截图基线、帧率基线或用单元测试冒充成品性能验收。
-- 模拟器使用软件 GPU，主机同时参与构建。没有据此宣称帧率提升百分比、真机不卡顿或内存泄漏已被完全排除；仍需在目标手机执行长时间播放、滚动、后台切换和低内存测试。
+完整记录、APK 哈希、扫码/视频/权限与相机生命周期证据移至 [历史记录](validation/0.1.0.md)。当时的会员购为按需启用的官方 H5；旧网页截图不能作为 0.2.0 原生页面验收证据。
 
-## 复验
+## 复验与未覆盖范围
 
-按 README 准备环境、构建并安装 APK。可选使用真实设备采证工具：
+按照 [构建指南](BUILD.md) 运行分析、测试、构建和 APK 身份检查。设备采证工具与操作示例见 [历史记录](validation/0.1.0.md#复验)；它只操作安装后的界面，不代替人工验证。双安装操作步骤见 [共存说明](COEXISTENCE.md#真机双安装验收)。
 
-```powershell
-python -m venv .tools/acceptance-python
-./.tools/acceptance-python/Scripts/python -m pip install qrcode Pillow
-$env:PYTHONIOENCODING = 'utf-8'
-./.tools/acceptance-python/Scripts/python scripts/android_acceptance.py --serial <设备序列号> fixtures
-./.tools/acceptance-python/Scripts/python scripts/android_acceptance.py --serial <设备序列号> snapshot home
-./.tools/acceptance-python/Scripts/python scripts/android_acceptance.py --serial <设备序列号> tap 扫一扫
-```
-
-工具只操作安装后的界面、保存 XML/截图和生成二维码素材；不会清除账号数据、登录、下单或付款。`docs/validation/` 是本次人工验收证据，不是自动截图比较基线；本机完整过程材料在被 Git 忽略的 `.artifacts/acceptance/`。
-
-## 未验证范围
-
-登录授权、付费账号、会员权限、真实购物订单/支付、扫码登录授权、下载任务长时间运行、直播长播、投屏、全部上游业务、ARM64 真机及其他操作系统均未完成验收。会员购目前是按需加载的官方 H5，未实现可单独安装的原生动态模块。安全审阅的边界见 [SECURITY.md](../SECURITY.md)。
+仍待验证：ARM64 真机、安装后 APK 的联网会员购、登录授权、扫码登录、付费账号、长时间播放/下载、低内存和后台恢复、直播长播、投屏、真实订单/支付以及其他操作系统。未建立截图比较或帧率门槛。安全审阅边界见 [SECURITY.md](../SECURITY.md)。

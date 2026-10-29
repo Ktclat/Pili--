@@ -1,72 +1,57 @@
 name: Bug 反馈
-description: 描述你所遇到的bug
-labels: [ "bug" ]
+description: 报告 Pili-- 的使用问题，附版本、设备与复现步骤。
+labels: [bug]
 title: "[Bug] "
 body:
-
-  - type: checkboxes
-    id: checklist
+  - type: markdown
     attributes:
-      label: 检查清单
-      options:
-        - label: 搜索了 [历史 issue](https://github.com/bggRGjQaUbCoE/PiliPlus/issues?q=is%3Aissue) ，并未发现相同问题
-          required: true
-        - label: 正在使用最新版本。
-          required: true
-        - label: 已排除网络问题
-          required: true
-        - label: 已排除账号问题
-          required: true
-        - label: 已排除设置问题
-          required: true
-  
-  - type: checkboxes
-    id: assign
-    attributes:
-      label: Assign
-      options:
-        - label: self-assign
-          required: false
-
-  - type: textarea
+      value: |
+        请先搜索 [本仓库已有问题](https://github.com/Ktclat/Pili--/issues?q=is%3Aissue)。
+        安装或签名问题可先查看 [安装说明](https://github.com/Ktclat/Pili--/blob/main/docs/INSTALL.md)。
+        日志与截图请移除 Cookie、access_key、登录二维码、手机号和订单信息；安全漏洞请先阅读 [报告说明](https://github.com/Ktclat/Pili--/blob/main/SECURITY.md)。
+  - type: input
     id: version
     attributes:
-      label: 版本号
+      label: 应用版本与安装来源
+      description: 关于页中的版本/提交，以及下载的 Actions 或 Release 链接；自行构建请注明。
+      placeholder: 0.2.0+3 / 提交号 / 构建链接
     validations:
       required: true
-
+  - type: input
+    id: device
+    attributes:
+      label: 设备与系统
+      description: 手机型号、Android 版本；模拟器请注明。
+    validations:
+      required: true
   - type: textarea
     id: steps
     attributes:
       label: 复现步骤
-      description: 请提供复现该问题所需的具体步骤。
+      description: 从哪个页面开始、执行了什么操作、是否每次发生。
     validations:
       required: true
-
-  - type: textarea
-    id: expected
-    attributes:
-      label: 预期行为
-      description: 请描述你期望的正确行为或结果。
-    validations:
-      required: true
-
   - type: textarea
     id: actual
     attributes:
       label: 实际行为
-      description: 请描述实际的行为或结果。
+      description: 实际结果、错误提示；可附已脱敏的截图或录屏。
     validations:
       required: true
-
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: 相关环境（可选）
+      description: 网络/代理、登录状态、相关设置、与上游共存情况；不确定时如实说明。
   - type: textarea
     id: log
     attributes:
-      label: 错误日志
-      description: 请提供设置->关于->错误日志中的内容，粘贴在下方代码框中。如果没有，请提供您的app版本号、系统版本、设备型号等相关信息。
-
-  - type: textarea
-    id: info
-    attributes:
-      label: 相关信息
-      description: 请补充截图、录屏、BV号等其他有助于解决问题的信息。
+      label: 错误日志（可选）
+      description: 设置 → 关于 → 错误日志；粘贴前请脱敏，没有日志也可以提交。
+      render: text
