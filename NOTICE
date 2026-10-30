@@ -1,0 +1,58 @@
+Pili-- — source and attribution notice
+
+Project: https://github.com/Ktclat/Pili--
+
+Pili-- is an independently maintained personal-interest fork and modified
+distribution of PiliPlus. It is developed for learning, personal use, and
+feature experiments. It is not an official release of PiliPlus, PiliPalaX,
+PiliPala, or Bilibili. Its development, releases, and support are independently
+maintained by Ktclat in this repository. It has no affiliation, partnership,
+or endorsement relationship with those upstream teams.
+
+SOURCE
+
+Direct upstream: https://github.com/bggRGjQaUbCoE/PiliPlus
+Imported revision: 72ec31edd6b34883f13ba8caf4e4d76e548ce884
+Earlier projects credited by upstream:
+  https://github.com/guozhigq/pilipala
+  https://github.com/orz12/PiliPalaX
+
+Original author attributions, LICENSE, and copyright notices are retained.
+Pili-- is independently maintained; credit to upstream projects does not
+make their authors or contributors maintainers of Pili--. Repository history
+and GitHub contribution statistics are not a statement of project ownership,
+support responsibility, or authorship of all inherited code.
+
+MODIFICATIONS
+
+Pili-- modifications beginning on 2026-10-27 include Android application
+identity and coexistence, QR scanning, configurable navigation,
+download stability fixes,
+transport/WebView hardening, removal of private storage export and hidden
+URL entry, isolated Android build preparation, and project documentation.
+
+
+LICENSING AND THIRD-PARTY MATERIAL
+
+Pili-- modifications beginning on 2026-10-27 are distributed under GPL version 3
+or, where the original file permits, any later version. See LICENSE.
+New Pili-- source files are licensed under GPL-3.0-or-later.
+Existing files and third-party components retain their applicable licenses
+and copyright notices. The personal-interest description above does not
+add restrictions to those licenses.
+
+In particular, retain the following embedded third-party notices:
+  assets/shaders/LICENSE — MIT; Copyright (c) 2019 bloc97
+  lib/utils/accounts/account_manager/LICENSE — MIT;
+    Copyright (c) 2018 Wen Du (wendux)
+    Copyright (c) 2022 The CFUG Team
+
+Flutter's generated license registry and the in-app open-source licenses
+screen provide additional dependency notices. Direct dependencies, overrides,
+and resolved versions are recorded in pubspec.yaml and pubspec.lock.
+
+The original logo and retained platform sources are inherited from PiliPlus.
+The Android application ID and visible name distinguish this distribution;
+retained artwork and names do not imply affiliation or endorsement.
+
+Further acknowledgements and source links: docs/ACKNOWLEDGEMENTS.md

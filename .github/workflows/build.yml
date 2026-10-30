@@ -1,0 +1,59 @@
+name: Android validation build
+on:
+  push:
+    branches: [main, 'restart/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install isolated Flutter SDK
+        run: git clone --depth 1 --branch 3.47.8 https://github.com/flutter/flutter.git .tools/flutter
+      - name: Resolve dependencies and apply upstream patches
+        shell: pwsh
+        run: ./scripts/prepare_android.ps1
+      - name: Check Android coexistence configuration
+        run: |
+          python3 -m unittest discover -s scripts/tests -v
+          python3 scripts/check_android_identity.py
+      - name: Install host libraries for native regression tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang pkg-config libgtk-3-dev libx11-dev libxi-dev
+      - name: Analyze and run regression tests
+        env:
+          PUB_CACHE: ${{ github.workspace }}/.tools/pub-cache
+        run: |
+          .tools/flutter/bin/flutter analyze --no-pub --no-fatal-infos
+          .tools/flutter/bin/flutter test --no-pub
+      - name: Build test-signed APKs
+        shell: pwsh
+        run: ./scripts/build_android.ps1
+      - name: Check packaged identity and provider isolation
+        run: |
+          apk_args=()
+          for apk in build/app/outputs/flutter-apk/*-release.apk; do
+            apk_args+=(--apk "$apk")
+          done
+          python3 scripts/check_android_identity.py "${apk_args[@]}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: Pili--Android-test-signed
+          path: build/app/outputs/flutter-apk/*-release.apk
+          if-no-files-found: error
+          retention-days: 14

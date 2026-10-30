@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 常见问题与上游关系
+    url: https://github.com/Ktclat/Pili--/blob/main/docs/FAQ.md
+    about: 查看版本、扫码、安装和来源说明。
+  - name: 安装、升级与签名说明
+    url: https://github.com/Ktclat/Pili--/blob/main/docs/INSTALL.md
+    about: 测试 APK 下载、架构选择、共存与覆盖升级。
+  - name: 安全漏洞报告说明
+    url: https://github.com/Ktclat/Pili--/blob/main/SECURITY.md
+    about: 查看当前报告渠道，请勿在公开 Issue 中提交漏洞细节或账号凭据。
