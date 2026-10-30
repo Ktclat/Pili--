@@ -11,7 +11,7 @@
 
 ## 当前状态
 
-当前开发版本为 **0.5.0+6**，尚未发布正式 Release。可从 [GitHub Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取成功构建的测试 APK；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
+当前版本为 **0.5.0+6**，已提供 [v0.5.0-beta.1 预发布下载](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1)，尚无稳定发行版。本次使用 Actions 测试签名；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
 
 本项目不是哔哩哔哩官方客户端。其他平台源码保留，目前仅对 Android 提供构建与验证说明。
 
@@ -37,11 +37,11 @@
 
 ## 安装与共存
 
-1. 在 [Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 中选择目标分支和提交对应的成功构建。
-2. 下载 `Pili--Android-test-signed` 附件，解压后选择设备对应的 APK；多数当前 Android 手机使用 `arm64-v8a`。
+1. 打开 [v0.5.0-beta.1 Release](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1)，按设备架构下载 `test-signed.apk`；多数当前 Android 手机使用 `arm64-v8a`。
+2. 使用同页的 `SHA256SUMS.txt` 核对下载内容；源码包和 `BUILD_INFO.json` 记录该包的源码及构建来源。
 3. 保留已安装的 PiliPlus，安装 Pili--。两者安装 ID 分别为 `com.example.piliplus` 与 `io.github.ktclat.piliminus`。
 
-附件需登录 GitHub 下载，默认保留 14 天。不同 CI 构建的测试签名可能不同，不能保证覆盖升级；遇到签名冲突先核对来源并保留应用数据。详见 [安装说明](docs/INSTALL.md) 和 [共存说明](docs/COEXISTENCE.md)。
+预发布版不会触发应用内稳定更新提示，请手动下载。不同 CI 构建的测试签名可能不同，不能保证覆盖升级；遇到签名冲突先核对来源并保留应用数据。开发测试包仍可从 [Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取，其附件需登录下载、默认保留 14 天。详见 [安装说明](docs/INSTALL.md) 和 [共存说明](docs/COEXISTENCE.md)。
 
 ## 开发与反馈
 

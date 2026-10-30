@@ -16,11 +16,11 @@ Pili-- 的开发、发布与用户支持由本仓库独立负责，不是 PiliPl
 
 项目来源以 [NOTICE](../NOTICE)、[来源说明](ACKNOWLEDGEMENTS.md)、许可证和文件内版权声明为准；整理历史或创建新的源码快照，不会取消这些署名与许可义务。
 
-## 到哪里下载？为什么 Releases 或更新检查没有新版本？
+## 到哪里下载？为什么更新检查没有新版本？
 
-当前开发版本为 `0.5.0+6`，尚未发布正式 Release。可以从成功的 [Actions 运行](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 下载测试附件，或按 [构建指南](BUILD.md) 自行构建。架构、签名和下载步骤见 [安装说明](INSTALL.md)。
+当前版本 `0.5.0+6` 可从 [v0.5.0-beta.1 预发布页](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1) 下载三架构 APK、校验值与对应源码。本次使用测试签名，不保证覆盖旧测试包；架构、签名和下载步骤见 [安装说明](INSTALL.md)。
 
-当前 CI 使用测试签名，构建附件有保留期限。没有发布记录、附件过期、GitHub 网络不可达或 API 限制，都可能使下载或更新检查无法获得可用安装包。上游的 Release 不是 Pili-- 的发布版本。
+应用内只检查稳定 Release，会忽略本次预发布，因此需要手动下载。开发包仍可从成功的 [Actions 运行](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取，Actions 附件有保留期限；也可按 [构建指南](BUILD.md) 自行构建。GitHub 网络不可达或 API 限制也会影响下载和更新检查。上游的 Release 不是 Pili-- 的发布版本。
 
 ## 可以和 PiliPlus 同时安装吗？
 

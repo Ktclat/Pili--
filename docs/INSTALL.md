@@ -2,24 +2,26 @@
 
 [项目首页](../README.md) · [构建指南](BUILD.md) · [共存说明](COEXISTENCE.md)
 
-## 获取测试包
+## 获取预发布测试包
 
-当前版本 `0.5.0+6` 尚未发布正式 Release。测试包从本仓库的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取：
+当前版本 `0.5.0+6` 已发布为 [v0.5.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1)，使用 Actions 临时测试签名，尚无固定发行密钥签名的稳定版。
 
-1. 选择目标分支和提交对应的 **成功** 运行。`main` 是已整合代码，PR 构建用于验证尚未合并的改动。
-2. 在运行页面底部的 **Artifacts** 下载 `Pili--Android-test-signed`。GitHub 要求登录后下载，附件默认保留 14 天。
-3. 解压 ZIP，按下表选择一个 APK。不要把整个 ZIP 当作安装包。
+1. 打开上述 Release，在 **Assets** 中按下表下载一个 APK；不要把源码压缩包当作安装包。
+2. 下载同页的 `SHA256SUMS.txt`，核对所选 APK 的 SHA-256。
+3. `BUILD_INFO.json` 记录实际包身份、签名证书摘要及来源；`PiliMinus-0.5.0+6-source.tar.gz` 提供对应源码和构建材料。
 4. 通过 Android 安装界面安装；按系统提示为使用的文件管理器或浏览器授予安装来源权限。
 
 | APK | 适用设备 |
 | --- | --- |
-| `app-arm64-v8a-release.apk` | 多数当前 Android 手机，建议优先确认此架构 |
-| `app-armeabi-v7a-release.apk` | 支持 32 位 ARM 的设备 |
-| `app-x86_64-release.apk` | x86_64 Android 设备或模拟器 |
+| `PiliMinus-0.5.0+6-arm64-v8a-test-signed.apk` | 多数当前 Android 手机，建议优先确认此架构 |
+| `PiliMinus-0.5.0+6-armeabi-v7a-test-signed.apk` | 支持 32 位 ARM 的设备 |
+| `PiliMinus-0.5.0+6-x86_64-test-signed.apk` | x86_64 Android 设备或模拟器 |
 
 最低 Android 版本为 **7.0 / API 24**。不确定架构时可查看设备资料；开发者可运行 `adb shell getprop ro.product.cpu.abilist`。构建标为 `release` 仅指编译模式，CI 包仍使用测试签名。
 
-附件过期时，从较新的成功构建获取测试包，或按 [构建指南](BUILD.md) 自行构建。取消或失败的运行不能视为已验证版本。应用内检查更新只读取正式稳定 Release，因此目前提示没有正式发行版是正常行为。
+开发测试包也可从成功的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 下载：选择目标提交，在 **Artifacts** 获取 `Pili--Android-test-signed` 并解压。Actions 附件需登录 GitHub，默认保留 14 天，其中 APK 使用 `app-<ABI>-release.apk` 命名；这项期限不适用于已上传的 Release 附件。取消或失败的运行不能视为已验证版本。
+
+应用内检查更新只读取稳定 Release，会忽略本次 Pre-release；提示没有稳定发行版时，请从本页链接手动下载。预发布构建来源为提交 `6bb2ef25ac67233881333adb175603d77b602cb7` 和 [本次 Actions](https://github.com/Ktclat/Pili--/actions/runs/41020225007)。
 
 ## 与 PiliPlus 一起使用
 
@@ -46,4 +48,4 @@ Pili-- 使用 `io.github.ktclat.piliminus`，上游 PiliPlus 使用 `com.example
 
 遇到“与现有软件包冲突”或签名不匹配时，先核对包来源与错误信息。不要为解决 Pili-- 的签名问题卸载 PiliPlus，也不要未经备份就清除 Pili-- 数据。正式分发前需要配置并长期保存固定的发行签名密钥，目前不承诺不同 CI 测试包互相覆盖升级。
 
-测试包仍需真机验收；已执行与未执行的范围见 [验证记录](VALIDATION.md)。反馈请附应用版本/提交、下载的 Actions 链接、设备型号与 Android 版本。
+预发布包仍需 ARM64 真机及真实账号网页／TV 授权验收；已执行与未执行的范围见 [验证记录](VALIDATION.md)。反馈请附应用版本/提交、下载的 Release 或 Actions 链接、设备型号与 Android 版本。
