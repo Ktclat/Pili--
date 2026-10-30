@@ -35,6 +35,8 @@ Use isolated **Flutter 3.47.8**, **JDK 17**, **Android SDK 37**, and **PowerShel
 
 CI runs static analysis, regression tests, three ABI builds, and packaged identity/provider/shortcut checks. [Validation records](docs/VALIDATION.md) identify the tested commits and distinguish automated checks, live API requests, and installed APK testing. ARM64 real-device acceptance and long-running device tests remain outstanding. Other platform sources are retained without a validation claim.
 
+The 0.5.0 root snapshot passed [Actions #25](https://github.com/Ktclat/Pili--/actions/runs/40985731174), including all three ABI builds, 278 Flutter tests and 10 Python checks. [Emulator evidence](docs/validation/0.5.0.md) covers share reception, manual recognition and privacy switches. Real-account web/TV QR authorization has not been exercised.
+
 See [contributing](CONTRIBUTING.md), the [roadmap](docs/ROADMAP.md), and [security reporting](SECURITY.md). The project is not an official Bilibili product.
 
 ## License

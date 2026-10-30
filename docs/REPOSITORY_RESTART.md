@@ -6,6 +6,8 @@
 
 本轮从经验证的 0.5.0+6 源码快照创建无父提交的新历史，继续使用同一个 GitHub 仓库。旧默认分支归档于 [archive/pre-restart-226677e](https://github.com/Ktclat/Pili--/tree/archive/pre-restart-226677e)，原始提交为 `226677e46d747f135974720053bf034157729400`。旧 PR、构建记录和历史版本不能作为新快照的验证结果。
 
+2026-10-30 已将默认分支 `main` 切换至新的根提交 [`371b81a8e862fa83cee3dc5ac029b6814259e38b`](https://github.com/Ktclat/Pili--/commit/371b81a8e862fa83cee3dc5ac029b6814259e38b)，该提交没有父提交；旧归档分支仍指向上述原始提交。新根提交通过的构建与设备范围见 [验证记录](VALIDATION.md)。
+
 维护环境还保留重建前的 Git bundle 与源码压缩包；它们用于恢复，不包含未跟踪的本机账号数据、签名配置或工具缓存。旧历史不会混入新的默认分支提交链。
 
 ## Contributors 与来源
