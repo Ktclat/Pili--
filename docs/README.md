@@ -8,6 +8,7 @@
 | 开发入口、目录与同步上游 | [开发导览](DEVELOPMENT.md) |
 | Flutter 环境、补丁、签名与本地构建 | [Android 构建指南](BUILD.md) |
 | 与 PiliPlus 的数据、快捷方式和签名隔离 | [共存说明](COEXISTENCE.md) |
+| 悬浮底栏、拖动停留切页与外观开关 | [悬浮导航说明](FLOATING_NAVIGATION.md) |
 | 扫码授权、分享接收与剪贴板识别 | [输入与授权说明](INPUT_RECOGNITION.md) |
 | 新旧 Git 历史与来源声明 | [仓库重建说明](REPOSITORY_RESTART.md) |
 | 哪个版本通过了哪些检查 | [验证记录](VALIDATION.md) |

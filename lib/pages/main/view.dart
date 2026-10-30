@@ -39,6 +39,7 @@ class _MainAppState extends PopScopeState<MainApp>
   late EdgeInsets _padding;
   late ColorScheme _colorScheme;
   Brightness? _brightness;
+  bool _navigationRouteActive = true;
 
   @override
   bool get initCanPop => false;
@@ -85,6 +86,7 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void didPopNext() {
+    _setNavigationRouteActive(true);
     addObserverMobile(this);
     _mainController
       ..checkUnreadDynamic()
@@ -95,8 +97,14 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void didPushNext() {
+    _setNavigationRouteActive(false);
     removeObserverMobile(this);
     super.didPushNext();
+  }
+
+  void _setNavigationRouteActive(bool active) {
+    if (!mounted || _navigationRouteActive == active) return;
+    setState(() => _navigationRouteActive = active);
   }
 
   @override
@@ -158,11 +166,33 @@ class _MainAppState extends PopScopeState<MainApp>
 
   Widget? get _bottomNav {
     Widget? bottomNav;
+    final navigationRevision = _mainController.navigationRevision;
     if (_mainController.navigationBars.length > 1) {
       if (_mainController.floatingNavBar) {
         bottomNav = Obx(
           () => FloatingNavigationBar(
-            onDestinationSelected: _mainController.setIndex,
+            key: ValueKey(
+              'floating-navigation-$navigationRevision',
+            ),
+            interactionEnabled:
+                _navigationRouteActive &&
+                (ModalRoute.isCurrentOf(context) ?? true) &&
+                _mainController.useBottomNav &&
+                MediaQuery.viewInsetsOf(context).bottom == 0 &&
+                _mainController.bottomBarFullyVisible,
+            onDestinationSelected: (index) {
+              if (!mounted ||
+                  !_navigationRouteActive ||
+                  !_mainController.useBottomNav ||
+                  !(ModalRoute.isCurrentOf(context) ?? true) ||
+                  MediaQuery.viewInsetsOf(context).bottom != 0) {
+                return;
+              }
+              _mainController.setFloatingDestination(
+                index,
+                revision: navigationRevision,
+              );
+            },
             selectedIndex: _mainController.selectedIndex.value,
             destinations: _mainController.navigationBars
                 .map(

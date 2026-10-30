@@ -29,7 +29,7 @@ Linux 主机运行回归测试时，`cnativeapi` 的原生钩子还需要 `clang
 
 ## 维护者发布测试预览
 
-先运行 [构建工作流](../.github/workflows/build.yml)，确认目标 `main` 提交全部成功，再手动运行 [Android test prerelease](../.github/workflows/release.yml)，填入构建的 `run_id` 和匹配版本的预发布标签（例如 `v0.5.0-beta.1`）。发布任务使用该次已有 APK，不重新生成签名；它核对源码提交、包身份、版本、ABI 和签名，生成精确源码包、构建信息与校验清单，上传后验证远程摘要，再公开预发布。
+先运行 [构建工作流](../.github/workflows/build.yml)，确认目标 `main` 提交全部成功，再手动运行 [Android test prerelease](../.github/workflows/release.yml)，填入构建的 `run_id` 和匹配版本的预发布标签（例如 `v0.6.0-beta.1`）。发布任务使用该次已有 APK，不重新生成签名；它核对源码提交、包身份、版本、ABI 和签名，从该提交的对应更新记录生成说明，生成精确源码包、构建信息与校验清单，上传后验证远程摘要，再公开预发布。
 
 发布工作流只接受本仓库 `main` 的成功构建，不接受 PR 或其他来源；标签仅允许 `alpha`、`beta`、`rc` 预发布。已公开的版本不会被覆盖，已有草稿附件只有摘要相同才会复用。该流程不代替稳定发行密钥配置或设备验收。
 

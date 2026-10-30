@@ -150,22 +150,47 @@ def source_archive(destination: Path, commit: str, version: str, code: int) -> P
     return path
 
 
+def extract_changelog_entry(changelog: str, version: str, code: int) -> str:
+    """Read one exact version's body without borrowing an adjacent release."""
+    target = f'{version}+{code}'
+    heading = re.compile(r'^ {0,3}##[ \t]+(\d+\.\d+\.\d+\+\d+)(?=[ \t]|$)')
+    next_heading = re.compile(r'^ {0,3}##(?:[ \t]+|$)')
+    sections = []
+    lines = changelog.splitlines()
+    for start, line in enumerate(lines):
+        match = heading.match(line)
+        if match is None or match[1] != target:
+            continue
+        end = next((i for i in range(start + 1, len(lines))
+                    if next_heading.match(lines[i])), len(lines))
+        sections.append('\n'.join(lines[start + 1:end]).strip())
+    require(len(sections) == 1, f'Expected one CHANGELOG entry for {target}')
+    # Comments or subsection titles alone are not release notes.
+    visible = re.sub(r'<!--[\s\S]*?-->', '', sections[0])
+    visible = re.sub(r'^ {0,3}#{1,6}(?:[ \t]+.*)?$', '', visible, flags=re.M).strip()
+    require(bool(visible), f'CHANGELOG entry for {target} has no release content')
+    return sections[0]
+
+
+def source_changes(commit: str, version: str, code: int) -> str:
+    changelog = command('git', 'show', f'{commit}:CHANGELOG.md')
+    return extract_changelog_entry(changelog, version, code)
+
+
 def release_notes(tag: str, version: str, code: int, commit: str, run: dict) -> str:
+    changes = source_changes(commit, version, code)
     return f'''# Pili-- {tag}
 
 Android **{version}+{code}**，测试签名预发布；不是固定发行密钥签名的稳定版。
 
-## 本次功能
+## 本次更新
 
-- 网页／TV 登录码的原生授权确认入口；核对当前账号与登录位置后明确授权，额外验证交由官方处理。
-- 接收其他 Android App 分享的 B 站文字链接，支持手动输入、主动粘贴、b23.tv 和 BV/av；确认后打开。
-- 隐私设置可关闭分享接收；自动剪贴板识别默认关闭。
-- 保留视频、社区和下载功能，独立包名 `{APPLICATION_ID}`，可与上游 PiliPlus 同时安装。
-- 默认分支采用新历史，旧历史已归档。保留 GPL、版权与来源声明，独立维护，与上游团队无隶属、合作或背书关系。会员购／小店模块已移除。
+{changes}
 
 ## 下载与升级
 
 - 多数手机使用 `arm64-v8a`，兼容的 32 位 ARM 设备使用 `armeabi-v7a`，x86_64 设备／模拟器使用 `x86_64`。最低 Android 7.0 / API 24。
+- 独立安装 ID 为 `{APPLICATION_ID}`，可与上游 PiliPlus 同时安装。
 - APK 文件名包含 `test-signed`；`SHA256SUMS.txt` 用于核对附件，`BUILD_INFO.json` 记录实际包身份、签名证书摘要与构建来源。
 - **临时测试签名可能与旧测试包不同，不保证覆盖升级。** 签名冲突时先核对来源并备份数据，不要直接清除应用数据，无需卸载 PiliPlus。
 - 本次为 Pre-release，应用内稳定版更新检查不会提示，请在此页面手动下载。

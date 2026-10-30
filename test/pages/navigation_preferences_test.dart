@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:PiliPlus/common/widgets/floating_navigation_bar.dart';
+import 'package:PiliPlus/models/common/bar_hide_type.dart';
 import 'package:PiliPlus/models/common/member/tab_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
@@ -43,20 +45,73 @@ class _GuestAccountService extends GetxService implements AccountService {
   final RxBool isLogin = false.obs;
 }
 
+class _RecordingMainController extends MainController {
+  final selections = <int>[];
+
+  @override
+  void setIndex(int value) {
+    selections.add(value);
+    super.setIndex(value);
+  }
+}
+
 // Exercise the real MainController with attached Flutter PageView/TabBarView
 // controllers. Placeholder pages avoid starting unrelated network/player code.
 class _NavigationHarness extends StatelessWidget {
-  const _NavigationHarness();
+  const _NavigationHarness({this.showNavigation = false});
+
+  final bool showNavigation;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
     home: GetBuilder<MainController>(
       id: 'navigation',
       builder: (main) {
+        final revision = main.navigationRevision;
         final pages = main.navigationBars
             .map((bar) => Center(child: Text('page:${bar.name}')))
             .toList();
         return Scaffold(
+          bottomNavigationBar: showNavigation
+              ? Align(
+                  alignment: Alignment.bottomCenter,
+                  heightFactor: 1,
+                  child: Obx(
+                    () => main.floatingNavBar
+                        ? FloatingNavigationBar(
+                            key: ValueKey(revision),
+                            interactionEnabled: main.bottomBarFullyVisible,
+                            selectedIndex: main.selectedIndex.value,
+                            onDestinationSelected: (index) =>
+                                main.setFloatingDestination(
+                                  index,
+                                  revision: revision,
+                                ),
+                            destinations: main.navigationBars
+                                .map(
+                                  (bar) => FloatingNavigationDestination(
+                                    label: bar.label,
+                                    icon: bar.icon,
+                                    selectedIcon: bar.selectIcon,
+                                  ),
+                                )
+                                .toList(),
+                          )
+                        : NavigationBar(
+                            selectedIndex: main.selectedIndex.value,
+                            onDestinationSelected: main.setIndex,
+                            destinations: main.navigationBars
+                                .map(
+                                  (bar) => NavigationDestination(
+                                    icon: bar.icon,
+                                    label: bar.label,
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                  ),
+                )
+              : null,
           body: main.mainTabBarView
               ? TabBarView(
                   key: ValueKey(main.navigationRevision),
@@ -100,6 +155,17 @@ void main() {
     expect(NavigationBarType.mine.index, 2);
     expect(NavigationPreferences.bars, NavigationBarConfig.defaultOrder);
   });
+
+  test(
+    'floating navigation defaults on while preserving an explicit opt-out',
+    () {
+      expect(Pref.floatingNavBar, isTrue);
+      settings.data[SettingBoxKey.floatingNavBar] = false;
+      expect(Pref.floatingNavBar, isFalse);
+      final main = Get.put(MainController());
+      expect(main.floatingNavBar, isFalse);
+    },
+  );
 
   test('retired indexes are dropped without restoring hidden tabs', () {
     settings.data[SettingBoxKey.navBarSort] = [2, 3, 0, 2, 99];
@@ -156,6 +222,145 @@ void main() {
 
   for (final animated in [false, true]) {
     final controllerType = animated ? 'Tab' : 'Page';
+
+    testWidgets(
+      'changing navigation style preserves the active $controllerType',
+      (
+        tester,
+      ) async {
+        settings.data[SettingBoxKey.mainTabBarView] = animated;
+        settings.data[SettingBoxKey.defaultHomePage] =
+            NavigationBarType.mine.index;
+        final main = Get.put(MainController());
+        await tester.pumpWidget(const _NavigationHarness(showNavigation: true));
+        await tester.pumpAndSettle();
+        final pageController = main.controller;
+        expect(find.byType(FloatingNavigationBar), findsOneWidget);
+        expect(find.text('page:mine'), findsOneWidget);
+
+        main.setFloatingNavBar(false);
+        await tester.pumpAndSettle();
+        expect(find.byType(FloatingNavigationBar), findsNothing);
+        expect(find.byType(NavigationBar), findsOneWidget);
+        expect(main.controller, same(pageController));
+        expect(main.selectedIndex.value, NavigationBarType.mine.index);
+        expect(find.text('page:mine'), findsOneWidget);
+
+        main.setFloatingNavBar(true);
+        await tester.pumpAndSettle();
+        expect(find.byType(FloatingNavigationBar), findsOneWidget);
+        expect(main.controller, same(pageController));
+        expect(main.navigationRevision, 0);
+        expect(find.text('page:mine'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
+    testWidgets('drag dwell switches the real $controllerType only once', (
+      tester,
+    ) async {
+      settings.data[SettingBoxKey.mainTabBarView] = animated;
+      final main = _RecordingMainController();
+      Get.put<MainController>(main);
+      await tester.pumpWidget(const _NavigationHarness(showNavigation: true));
+      await tester.pumpAndSettle();
+      final gesture = await tester.startGesture(
+        tester.getCenter(find.text('首页')),
+      );
+      await gesture.moveTo(tester.getCenter(find.text('我的')));
+      await tester.pump(const Duration(milliseconds: 199));
+      expect(main.selectedIndex.value, NavigationBarType.home.index);
+      expect(main.selections, isEmpty);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(main.selectedIndex.value, NavigationBarType.mine.index);
+      await tester.pumpAndSettle();
+      expect(find.text('page:mine'), findsOneWidget);
+      expect(main.selections, [NavigationBarType.mine.index]);
+      await tester.pump(const Duration(seconds: 1));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(main.selections, [NavigationBarType.mine.index]);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets(
+      'navigation reordering cancels a pending drag with $controllerType',
+      (
+        tester,
+      ) async {
+        settings.data[SettingBoxKey.mainTabBarView] = animated;
+        final main = _RecordingMainController();
+        Get.put<MainController>(main);
+        await tester.pumpWidget(const _NavigationHarness(showNavigation: true));
+        await tester.pumpAndSettle();
+        final gesture = await tester.startGesture(
+          tester.getCenter(find.text('首页')),
+        );
+        await gesture.moveTo(tester.getCenter(find.text('我的')));
+        await tester.pump(const Duration(milliseconds: 100));
+        await NavigationPreferences.saveOrder([
+          NavigationBarType.home,
+          NavigationBarType.mine,
+          NavigationBarType.dynamics,
+        ]);
+        main.reloadNavigation();
+        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(main.selectedIndex.value, NavigationBarType.home.index);
+        expect(main.selections, isEmpty);
+        expect(find.text('page:home'), findsOneWidget);
+        await gesture.up();
+        await tester.pumpAndSettle();
+        expect(main.selections, isEmpty);
+        expect(tester.takeException(), isNull);
+        await tester.pumpWidget(const SizedBox.shrink());
+      },
+    );
+
+    for (final hideType in BarHideType.values) {
+      testWidgets(
+        '${hideType.name} hiding cancels pending $controllerType navigation',
+        (tester) async {
+          settings.data[SettingBoxKey.mainTabBarView] = animated;
+          settings.data[SettingBoxKey.hideBottomBar] = true;
+          settings.data[SettingBoxKey.barHideType] = hideType.index;
+          final main = _RecordingMainController();
+          Get.put<MainController>(main);
+          await tester.pumpWidget(
+            const _NavigationHarness(showNavigation: true),
+          );
+          await tester.pumpAndSettle();
+          final gesture = await tester.startGesture(
+            tester.getCenter(find.text('首页')),
+          );
+          await gesture.moveTo(tester.getCenter(find.text('我的')));
+          await tester.pump(const Duration(milliseconds: 100));
+          if (hideType == BarHideType.instant) {
+            main.showBottomBar!.value = false;
+          } else {
+            main.barOffset!.value = 1;
+          }
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(main.bottomBarFullyVisible, isFalse);
+          expect(main.selectedIndex.value, NavigationBarType.home.index);
+          expect(main.selections, isEmpty);
+          await gesture.up();
+          if (hideType == BarHideType.instant) {
+            main.showBottomBar!.value = true;
+          } else {
+            main.barOffset!.value = 0;
+          }
+          await tester.pumpAndSettle();
+          expect(main.bottomBarFullyVisible, isTrue);
+          expect(main.selections, isEmpty);
+          expect(tester.takeException(), isNull);
+          await tester.pumpWidget(const SizedBox.shrink());
+        },
+      );
+    }
 
     testWidgets('retired-only preferences can start with $controllerType', (
       tester,

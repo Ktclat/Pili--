@@ -11,7 +11,7 @@ Development, releases, and support are independently maintained by [Ktclat](http
 
 ## Status and downloads
 
-The current version is **0.5.0+6**, available as the [v0.5.0-beta.1 prerelease](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1). There is no stable release yet. Download the appropriate `test-signed.apk` from the release assets and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
+The current development version is **0.6.0+7**, preparing the floating navigation update. The published download remains [v0.5.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1); there is no stable release yet. Download the appropriate `test-signed.apk` from that release and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
 
 This prerelease uses an Actions test signing key, not a permanent release key. Test keys can differ between CI runs, so in-place upgrades are not guaranteed. Preserve your data if Android reports a signature conflict. The in-app stable update check ignores prereleases; download this version manually. Development artifacts remain available from successful [Actions runs](https://github.com/Ktclat/Pili--/actions/workflows/build.yml); those artifacts require a GitHub account and expire after 14 days. See [installation](docs/INSTALL.md) and [coexistence](docs/COEXISTENCE.md) for details (Chinese).
 
@@ -19,6 +19,7 @@ This prerelease uses an Actions test signing key, not a permanent release key. T
 
 - Upstream video playback, danmaku, search, feeds, live streams, favorites, and offline downloads.
 - Customizable navigation, showing Home, Dynamics, and Mine by default. Reordering and visibility changes apply immediately.
+- A floating capsule bar enabled by default in 0.6.0, with saved opt-outs preserved. Its indicator follows a drag continuously; the page changes only after about 200 ms of stillness. Quick passes and early release cancel the pending change. The appearance switch applies immediately; ordinary taps keep direct navigation. See [floating navigation](docs/FLOATING_NAVIGATION.md) for behavior and validation boundaries.
 - Camera/gallery scanning and native confirmation of web/TV login authorization with the current account. Additional security verification remains with the official platform.
 - Receive Android text shares containing Bilibili links, b23.tv links or BV/av identifiers; confirm before opening.
 - Optional foreground clipboard recognition, disabled by default, plus a manual paste-and-recognize page. Shared text and login challenges are not uploaded to a project server or persisted.

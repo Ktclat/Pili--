@@ -57,7 +57,7 @@ class MainController extends GetxController
   late int lastCheckUnreadAt = 0;
 
   final enableMYBar = Pref.enableMYBar;
-  final floatingNavBar = Pref.floatingNavBar;
+  bool floatingNavBar = Pref.floatingNavBar;
   final useSideBar = Pref.useSideBar;
   final hideSideBarLabel = Pref.hideSideBarLabel;
   final mainTabBarView = Pref.mainTabBarView;
@@ -238,6 +238,30 @@ class MainController extends GetxController
       navigationBars,
       Pref.defaultHomePage,
     );
+  }
+
+  bool get bottomBarFullyVisible =>
+      !hideBottomBar ||
+      ((barOffset?.value ?? 0) <= 0 && (showBottomBar?.value ?? true));
+
+  /// Changing the navigation presentation must not replace page controllers
+  /// or reset the user's active page.
+  void setFloatingNavBar(bool enabled) {
+    if (isClosed || floatingNavBar == enabled) return;
+    floatingNavBar = enabled;
+    update(['navigation']);
+  }
+
+  /// A pending dwell may finish before the frame that removes its old bar.
+  /// Bind callbacks to the configuration they displayed, not a reused index.
+  void setFloatingDestination(int value, {required int revision}) {
+    if (isClosed ||
+        revision != navigationRevision ||
+        !floatingNavBar ||
+        !bottomBarFullyVisible) {
+      return;
+    }
+    setIndex(value);
   }
 
   /// Apply navigation changes immediately while keeping the active tab

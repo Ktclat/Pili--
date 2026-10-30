@@ -132,12 +132,17 @@ List<SettingsModel> get styleSettings => [
     defaultVal: true,
     needReboot: true,
   ),
-  const SwitchModel(
+  SwitchModel(
     title: '悬浮底栏',
-    leading: Icon(MdiIcons.soundbar),
+    subtitle: '拖动选中，停留后切换；快速划过不切页',
+    leading: const Icon(MdiIcons.soundbar),
     setKey: SettingBoxKey.floatingNavBar,
-    defaultVal: false,
-    needReboot: true,
+    defaultVal: true,
+    onChanged: (value) {
+      if (Get.isRegistered<MainController>()) {
+        Get.find<MainController>().setFloatingNavBar(value);
+      }
+    },
   ),
   SwitchModel(
     title: '显示粉丝勋章',
