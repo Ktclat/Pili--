@@ -11,11 +11,11 @@
 
 ## 当前状态
 
-当前开发版本为 **0.6.0+7**，正在准备悬浮导航更新；已发布下载仍为 [v0.5.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1)，尚无稳定发行版。预发布包使用 Actions 测试签名；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
+当前版本为 **0.6.0+7**，已提供 [v0.6.0-beta.1 预发布下载](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，包含悬浮导航更新，尚无稳定发行版。预发布包使用 Actions 测试签名；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
 
 本项目不是哔哩哔哩官方客户端。其他平台源码保留，目前仅对 Android 提供构建与验证说明。
 
-0.5.0 源码快照已通过 [三架构构建与回归](https://github.com/Ktclat/Pili--/actions/runs/40985731174)：278 项 Flutter 测试、10 项 Python 检查通过。模拟器上的分享接收、识别与隐私开关已验证，截图见 [设备记录](docs/validation/0.5.0.md)；真实账号扫码授权与 ARM64 真机仍待验收。
+0.6.0 已通过 [三架构构建与回归](https://github.com/Ktclat/Pili--/actions/runs/41070378254)：316 项 Flutter 测试、14 项 Python 检查通过，静态分析无 error / warning。导航与设备验证范围见 [验证记录](docs/VALIDATION.md)；此前 0.5.0 的分享、识别与隐私开关截图保留在 [历史设备记录](docs/validation/0.5.0.md)。真实账号扫码授权与 ARM64 真机仍待验收。
 
 ## 主要功能
 
@@ -40,7 +40,7 @@
 
 ## 安装与共存
 
-1. 打开 [v0.5.0-beta.1 Release](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1)，按设备架构下载 `test-signed.apk`；多数当前 Android 手机使用 `arm64-v8a`。
+1. 打开 [v0.6.0-beta.1 Release](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，按设备架构下载 `test-signed.apk`；多数当前 Android 手机使用 `arm64-v8a`。
 2. 使用同页的 `SHA256SUMS.txt` 核对下载内容；源码包和 `BUILD_INFO.json` 记录该包的源码及构建来源。
 3. 保留已安装的 PiliPlus，安装 Pili--。两者安装 ID 分别为 `com.example.piliplus` 与 `io.github.ktclat.piliminus`。
 

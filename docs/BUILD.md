@@ -27,6 +27,8 @@ Linux 主机运行回归测试时，`cnativeapi` 的原生钩子还需要 `clang
 
 [v0.5.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1) 使用上述测试签名流程，由 [Actions](https://github.com/Ktclat/Pili--/actions/runs/41020225007) 构建提交 `6bb2ef25ac67233881333adb175603d77b602cb7`。Release 附带对应源码包、`SHA256SUMS.txt` 和 `BUILD_INFO.json`；它不是固定发行密钥签名的稳定版，重新构建也不保证与已发布 APK 字节或签名相同。
 
+当前 [v0.6.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) 来自 [构建 41070378254](https://github.com/Ktclat/Pili--/actions/runs/41070378254)，精确源码为 `8998b8fc8ee3edc649cebca05422cc78ca3e63b6`；[发布任务](https://github.com/Ktclat/Pili--/actions/runs/41997171383) 复用该次已有 APK，逐包核验后上传并检查远程摘要。本版仍使用测试签名。
+
 ## 维护者发布测试预览
 
 先运行 [构建工作流](../.github/workflows/build.yml)，确认目标 `main` 提交全部成功，再手动运行 [Android test prerelease](../.github/workflows/release.yml)，填入构建的 `run_id` 和匹配版本的预发布标签（例如 `v0.6.0-beta.1`）。发布任务使用该次已有 APK，不重新生成签名；它核对源码提交、包身份、版本、ABI 和签名，从该提交的对应更新记录生成说明，生成精确源码包、构建信息与校验清单，上传后验证远程摘要，再公开预发布。

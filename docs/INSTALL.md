@@ -4,24 +4,24 @@
 
 ## 获取预发布测试包
 
-当前开发版本 `0.6.0+7` 正在准备悬浮导航更新，尚未发布。可下载的版本仍为 `0.5.0+6`：[v0.5.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.5.0-beta.1)，使用 Actions 临时测试签名，尚无固定发行密钥签名的稳定版。
+当前版本 `0.6.0+7` 已发布为 [v0.6.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，包含悬浮导航更新，使用 Actions 临时测试签名，尚无固定发行密钥签名的稳定版。
 
 1. 打开上述 Release，在 **Assets** 中按下表下载一个 APK；不要把源码压缩包当作安装包。
 2. 下载同页的 `SHA256SUMS.txt`，核对所选 APK 的 SHA-256。
-3. `BUILD_INFO.json` 记录实际包身份、签名证书摘要及来源；`PiliMinus-0.5.0+6-source.tar.gz` 提供对应源码和构建材料。
+3. `BUILD_INFO.json` 记录实际包身份、签名证书摘要及来源；`PiliMinus-0.6.0+7-source.tar.gz` 提供对应源码和构建材料。
 4. 通过 Android 安装界面安装；按系统提示为使用的文件管理器或浏览器授予安装来源权限。
 
 | APK | 适用设备 |
 | --- | --- |
-| `PiliMinus-0.5.0+6-arm64-v8a-test-signed.apk` | 多数当前 Android 手机，建议优先确认此架构 |
-| `PiliMinus-0.5.0+6-armeabi-v7a-test-signed.apk` | 支持 32 位 ARM 的设备 |
-| `PiliMinus-0.5.0+6-x86_64-test-signed.apk` | x86_64 Android 设备或模拟器 |
+| `PiliMinus-0.6.0+7-arm64-v8a-test-signed.apk` | 多数当前 Android 手机，建议优先确认此架构 |
+| `PiliMinus-0.6.0+7-armeabi-v7a-test-signed.apk` | 支持 32 位 ARM 的设备 |
+| `PiliMinus-0.6.0+7-x86_64-test-signed.apk` | x86_64 Android 设备或模拟器 |
 
 最低 Android 版本为 **7.0 / API 24**。不确定架构时可查看设备资料；开发者可运行 `adb shell getprop ro.product.cpu.abilist`。构建标为 `release` 仅指编译模式，CI 包仍使用测试签名。
 
 开发测试包也可从成功的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 下载：选择目标提交，在 **Artifacts** 获取 `Pili--Android-test-signed` 并解压。Actions 附件需登录 GitHub，默认保留 14 天，其中 APK 使用 `app-<ABI>-release.apk` 命名；这项期限不适用于已上传的 Release 附件。取消或失败的运行不能视为已验证版本。
 
-应用内检查更新只读取稳定 Release，会忽略本次 Pre-release；提示没有稳定发行版时，请从本页链接手动下载。预发布构建来源为提交 `6bb2ef25ac67233881333adb175603d77b602cb7` 和 [本次 Actions](https://github.com/Ktclat/Pili--/actions/runs/41020225007)。
+应用内检查更新只读取稳定 Release，会忽略本次 Pre-release；提示没有稳定发行版时，请从本页链接手动下载。预发布构建来源为提交 `8998b8fc8ee3edc649cebca05422cc78ca3e63b6` 和 [本次 Actions](https://github.com/Ktclat/Pili--/actions/runs/41070378254)。
 
 ## 与 PiliPlus 一起使用
 
@@ -40,7 +40,7 @@ Pili-- 使用 `io.github.ktclat.piliminus`，上游 PiliPlus 使用 `com.example
 
 入口为“设置 → 外观设置 → 悬浮底栏”，开关即时生效。0.6.0 默认启用；如果此前明确关闭过，会保留关闭偏好。默认仍显示首页、动态、我的，导航项目的隐藏和顺序由“导航栏编辑”控制。
 
-直接点击导航项即可切页；按住拖动时，选中背景跟随手指移动，停稳约 200 毫秒后才切到目标页。快速划过、停留不足就松手、拖出底栏或取消手势均撤销待切换；已切换后可继续拖向其他项。横屏和平板继续使用原有侧栏。具体交互、设计参考和验收边界见 [悬浮导航说明](FLOATING_NAVIGATION.md)。这些行为属于 0.6.0 开发版，0.5.0 下载包不包含本次改动。
+直接点击导航项即可切页；按住拖动时，选中背景跟随手指移动，停稳约 200 毫秒后才切到目标页。快速划过、停留不足就松手、拖出底栏或取消手势均撤销待切换；已切换后可继续拖向其他项。横屏和平板继续使用原有侧栏。具体交互、设计参考和验收边界见 [悬浮导航说明](FLOATING_NAVIGATION.md)。这些行为属于 0.6.0，0.5.0 下载包不包含本次改动。
 
 ## 从旧版升级
 
