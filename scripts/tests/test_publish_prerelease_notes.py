@@ -1,6 +1,8 @@
 """Keep published notes tied to the APK source and its complete version."""
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -12,6 +14,35 @@ SPEC.loader.exec_module(publisher)
 
 
 class PrereleaseNotesTests(unittest.TestCase):
+    def test_new_draft_can_publish_before_the_release_index_updates(self):
+        commit = 'a' * 40
+        tag = 'v0.6.0-beta.1'
+        draft = {'id': 123, 'tag_name': tag, 'draft': True,
+                 'prerelease': True, 'target_commitish': commit}
+        published = {**draft, 'draft': False,
+                     'html_url': f'https://github.com/Ktclat/Pili--/releases/tag/{tag}'}
+        requests = []
+
+        def cli(*args, input_text=None):
+            if args[:4] == ('gh', 'api', '--method', 'POST'):
+                requests.append(json.loads(input_text))
+                return json.dumps(draft)
+            return ''
+
+        with tempfile.TemporaryDirectory() as folder:
+            notes = Path(folder) / 'notes.md'
+            notes.write_text('Native navigation\n\n拖动停留；保留 `literal` text.\n', encoding='utf-8')
+            # Simulate the collection remaining stale throughout publication.
+            with patch.object(publisher, 'find_release', return_value=None) as find, \
+                    patch.object(publisher, 'tag_commit', side_effect=[None, commit]), \
+                    patch.object(publisher, 'command', side_effect=cli), \
+                    patch.object(publisher, 'assets_from_release', return_value={}), \
+                    patch.object(publisher, 'api', return_value=published):
+                self.assertEqual(publisher.publish(tag, commit, notes, []), published['html_url'])
+            find.assert_called_once_with(tag)
+            self.assertEqual(requests[0]['body'], notes.read_text(encoding='utf-8'))
+            self.assertEqual(requests[0]['target_commitish'], commit)
+
     def test_build_number_and_core_version_must_match_exactly(self):
         changelog = '''# Changes
 ## 0.6.0+70 — next build

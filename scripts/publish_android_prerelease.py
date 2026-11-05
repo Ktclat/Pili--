@@ -36,9 +36,9 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
-def command(*args: object) -> str:
+def command(*args: object, input_text: str | None = None) -> str:
     result = subprocess.run([str(x) for x in args], cwd=ROOT, text=True,
-                            capture_output=True)
+                            input=input_text, capture_output=True)
     if result.returncode:
         # Keep CLI diagnostics useful without dumping environments or large logs.
         # No command arguments contain tokens; GH_TOKEN remains in the environment.
@@ -243,10 +243,19 @@ def publish(tag: str, commit: str, notes: Path, files: list[Path]) -> str:
     require(existing_tag in (None, commit), 'Existing release tag points to different source')
     release = find_release(tag)
     if release is None:
-        command('gh', 'release', 'create', tag, '--repo', REPOSITORY, '--target', commit,
-                '--draft', '--prerelease', '--title', f'Pili-- {tag}（测试签名）', '--notes-file', notes)
-        release = find_release(tag)
-        require(release is not None, 'Created release draft could not be resolved')
+        # The release collection may not immediately include a newly created
+        # draft. Use the POST response instead of depending on that index.
+        payload = {
+            'tag_name': tag, 'target_commitish': commit,
+            'name': f'Pili-- {tag}（测试签名）',
+            'body': notes.read_text(encoding='utf-8'),
+            'draft': True, 'prerelease': True,
+        }
+        release = json.loads(command(
+            'gh', 'api', '--method', 'POST', f'repos/{REPOSITORY}/releases',
+            '--input', '-', input_text=json.dumps(payload, ensure_ascii=False)))
+        require(isinstance(release.get('id'), int) and release.get('tag_name') == tag,
+                'Created release response has an unexpected identity')
     require(release.get('draft') is True, 'Refusing to modify a published release')
     require(release.get('prerelease') is True, 'Existing draft is not a prerelease')
     require(release.get('target_commitish') == commit, 'Existing draft targets different source')
