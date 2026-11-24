@@ -9,6 +9,7 @@ import 'package:PiliPlus/grpc/bilibili/app/listener/v1.pbenum.dart'
 import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/models/common/fav_type.dart';
 import 'package:PiliPlus/models/common/video/source_type.dart';
+import 'package:PiliPlus/models/qr_login_authorization.dart';
 import 'package:PiliPlus/pages/article/view.dart';
 import 'package:PiliPlus/pages/audio/view.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/vote.dart';
@@ -406,6 +407,8 @@ abstract final class PiliScheme {
           case 'login':
             Get.toNamed('/loginPage');
             return true;
+          case 'auth' when path == '/launch':
+            return _showLoginLinkHelp();
           case 'music':
             if (path.startsWith('/playlist/')) {
               final mediaId = uriDigitRegExp.firstMatch(path)?.group(1);
@@ -466,6 +469,14 @@ abstract final class PiliScheme {
   static const bilibili_search = 'search.$bilibili';
   static const bilibili_music = 'music.$bilibili';
 
+  static bool _showLoginLinkHelp() {
+    if (Get.context != null) {
+      SmartDialog.showToast('请在「我的 → 扫码授权登录」扫描二维码或粘贴哔哩哔哩登录链接');
+    }
+    // Returning true also stops callers from opening or saving the URL.
+    return true;
+  }
+
   static Future<bool> _fullPathPush(
     Uri uri, {
     bool selfHandle = false,
@@ -489,6 +500,12 @@ abstract final class PiliScheme {
         uri = Uri.parse(redirectUrl);
         host = uri.host;
       }
+    }
+
+    // Android delivers external challenges directly to the confirmation flow.
+    // Challenges encountered in content or a redirect must not open a WebView.
+    if (QrLoginAuthorizationRequest.isAuthorizationUri(uri)) {
+      return _showLoginLinkHelp();
     }
 
     if (!TrustedUrl.isWebLink(uri) ||

@@ -1,0 +1,120 @@
+import 'dart:async';
+
+import 'package:PiliPlus/pages/scan/authorization.dart';
+import 'package:PiliPlus/pages/scan/view.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:get/get.dart';
+import 'package:material_ui/material_ui.dart';
+
+const _loginLink =
+    'https://account.bilibili.com/h5/account-h5/auth/scan-web?qrcode_key=0123456789abcdef0123456789abcdef';
+
+Future<void> _showScanner(
+  WidgetTester tester, {
+  bool authorizationOnly = true,
+}) async {
+  tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+  await tester.pumpWidget(
+    GetMaterialApp(
+      home: Builder(
+        builder: (context) => Scaffold(
+          body: TextButton(
+            onPressed: () => Get.to(
+              () => ScanPage(authorizationOnly: authorizationOnly),
+            ),
+            child: const Text('打开'),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.tap(find.text('打开'));
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  var reads = 0;
+  late Future<String?> Function() read;
+  setUp(() {
+    reads = 0;
+    read = () async => _loginLink;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.getData') {
+        reads++;
+        return {'text': await read()};
+      }
+      return null;
+    });
+  });
+  tearDown(() {
+    messenger.setMockMethodCallHandler(SystemChannels.platform, null);
+    Get.reset();
+  });
+
+  testWidgets('only the dedicated scanner offers the paste action', (
+    tester,
+  ) async {
+    await _showScanner(tester, authorizationOnly: false);
+    expect(find.text('粘贴登录链接'), findsNothing);
+    expect(reads, 0);
+  });
+
+  testWidgets(
+    'a deliberate paste opens one account confirmation without a camera',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 250);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final pending = Completer<String?>();
+      read = () => pending.future;
+      await _showScanner(tester);
+      expect(reads, 0);
+      final action = find.text('粘贴登录链接');
+      await tester.tap(action);
+      await tester.tap(action);
+      expect(reads, 1);
+      pending.complete(_loginLink);
+      await tester.pumpAndSettle();
+      expect(find.byType(QrLoginAuthorizationPage), findsOneWidget);
+      expect(find.textContaining('0123456789abcdef'), findsNothing);
+      expect(find.byType(ScanPage), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
+  testWidgets('non-login clipboard contents stay on the scanner', (
+    tester,
+  ) async {
+    read = () async => 'https://www.bilibili.com/video/BV17x411w7KC';
+    await _showScanner(tester);
+    await tester.tap(find.text('粘贴登录链接'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('请先复制哔哩哔哩'), findsOneWidget);
+    expect(find.byType(ScanPage), findsOneWidget);
+    expect(find.byType(QrLoginAuthorizationPage), findsNothing);
+    expect(find.textContaining('BV17x411w7KC'), findsNothing);
+    expect(reads, 1);
+  });
+
+  testWidgets('leaving the app discards a pending clipboard result', (
+    tester,
+  ) async {
+    final pending = Completer<String?>();
+    read = () => pending.future;
+    await _showScanner(tester);
+    await tester.tap(find.text('粘贴登录链接'));
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    pending.complete(_loginLink);
+    await tester.pumpAndSettle();
+    expect(find.byType(ScanPage), findsOneWidget);
+    expect(find.byType(QrLoginAuthorizationPage), findsNothing);
+    expect(reads, 1);
+  });
+}

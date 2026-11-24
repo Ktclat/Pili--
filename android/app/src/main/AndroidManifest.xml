@@ -83,6 +83,12 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
             <intent-filter android:label="Pili--">
+                <action android:name="io.github.ktclat.piliminus.action.AUTHORIZE_LOGIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="https" android:host="account.bilibili.com" />
+                <data android:scheme="https" android:host="passport.bilibili.com" />
+            </intent-filter>
+            <intent-filter android:label="Pili--">
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.DEFAULT" />

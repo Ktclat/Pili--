@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   final requests = <RequestOptions>[];
   String? location;
   setUpAll(() {
@@ -91,4 +92,32 @@ void main() {
       isFalse,
     );
   });
+
+  test(
+    'content routes consume login links without opening a web page',
+    () async {
+      const web = 'https://account.bilibili.com/h5/account-h5/auth/scan-web';
+      for (final url in [
+        '$web?qrcode_key=0123456789abcdef0123456789abcdef',
+        '$web?qrcode_key=invalid',
+        'bilibili://auth/launch?callback=test',
+      ]) {
+        expect(
+          await PiliScheme.routePushFromUrl(url, selfHandle: true),
+          isTrue,
+        );
+      }
+      expect(requests, isEmpty);
+
+      location = '$web?qrcode_key=invalid';
+      expect(
+        await PiliScheme.routePushFromUrl(
+          'https://b23.tv/abc',
+          selfHandle: true,
+        ),
+        isTrue,
+      );
+      expect(requests.single.uri.host, 'b23.tv');
+    },
+  );
 }

@@ -30,7 +30,11 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   bool _busy = false;
   bool _disposed = false;
   bool _leaving = false;
+  int _pasteRevision = 0;
   String? _error;
+  String get _cameraError => widget.authorizationOnly
+      ? '无法使用相机，可从相册识别二维码或粘贴登录链接。'
+      : '无法使用相机，请允许相机权限，或从相册识别二维码。';
   bool get _supported =>
       Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
 
@@ -62,18 +66,19 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       await _controller.start();
       if (mounted) {
         setState(
-          () => _error = _controller.value.error == null
-              ? null
-              : '无法使用相机，请允许相机权限，或从相册识别二维码。',
+          () => _error = _controller.value.error == null ? null : _cameraError,
         );
       }
     } catch (_) {
-      if (mounted) setState(() => _error = '无法使用相机，请允许相机权限，或从相册识别二维码。');
+      if (mounted) setState(() => _error = _cameraError);
     }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == .hidden || state == .paused || state == .detached) {
+      _pasteRevision++;
+    }
     if (!_supported || !_controller.value.hasCameraPermission) return;
     if (state == AppLifecycleState.resumed) {
       unawaited(_start());
@@ -91,7 +96,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   }
 
   void _detect(BarcodeCapture capture) {
-    if (_busy) return;
+    if (_busy || _leaving || !mounted) return;
     for (final barcode in capture.barcodes) {
       if (barcode.rawValue case final value? when value.isNotEmpty) {
         unawaited(_showResult(value));
@@ -126,16 +131,61 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     }
   }
 
+  void _openAuthorization(QrLoginAuthorizationRequest request) {
+    _leaving = true;
+    Get.off(() => QrLoginAuthorizationPage(request: request));
+  }
+
+  Future<void> _pasteLoginLink() async {
+    if (!widget.authorizationOnly || _busy || _leaving) return;
+    final revision = _pasteRevision;
+    bool isCurrent() =>
+        mounted &&
+        revision == _pasteRevision &&
+        WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed &&
+        ModalRoute.of(context)?.isCurrent == true;
+    if (!isCurrent()) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    _busy = true;
+    try {
+      final data = await Clipboard.getData(Clipboard.kTextPlain);
+      if (!isCurrent()) return;
+      final request = QrLoginAuthorizationRequest.parse(data?.text ?? '');
+      if (request == null) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('请先复制哔哩哔哩官方网页或 TV 登录二维码中的完整链接')),
+        );
+        return;
+      }
+      if (_supported && _controller.value.isRunning) await _controller.stop();
+      if (isCurrent()) _openAuthorization(request);
+    } catch (_) {
+      if (isCurrent()) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('暂时无法粘贴登录链接，请重试')),
+        );
+      }
+    } finally {
+      if (!_leaving) {
+        _busy = false;
+        if (mounted &&
+            _controller.value.hasCameraPermission &&
+            ModalRoute.of(context)?.isCurrent == true) {
+          await _start();
+        }
+      }
+    }
+  }
+
   Future<void> _showResult(String value) async {
-    if (_busy || !mounted) return;
+    if (_busy || _leaving || !mounted) return;
     _busy = true;
     await _controller.stop();
     if (!mounted) return;
     final request = QrLoginAuthorizationRequest.parse(value);
     if (request != null) {
-      _leaving = true;
-      // Replace the camera route to release CameraX before authorization.
-      Get.off(() => QrLoginAuthorizationPage(request: request));
+      _openAuthorization(request);
       return;
     }
     final parsed = Uri.tryParse(value);
@@ -266,6 +316,12 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     appBar: AppBar(
       title: Text(widget.authorizationOnly ? '扫码授权登录' : '扫一扫'),
       actions: [
+        if (widget.authorizationOnly)
+          TextButton.icon(
+            onPressed: _pasteLoginLink,
+            icon: const Icon(Icons.content_paste),
+            label: const Text('粘贴登录链接'),
+          ),
         IconButton(
           tooltip: '识别链接',
           icon: const Icon(Icons.link),
@@ -306,7 +362,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
             child: Text(
               _error ??
                   (widget.authorizationOnly
-                      ? '扫描你本人设备上的 B 站登录码，确认账号与登录位置后再授权'
+                      ? '扫描你本人设备上的 B 站登录码，或粘贴对应登录链接，再核对账号与登录位置。'
                       : '将二维码放入框内，内容链接与登录授权都需确认'),
             ),
           ),

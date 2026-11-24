@@ -4,6 +4,9 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.WindowManager.LayoutParams
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -12,6 +15,8 @@ import java.util.ArrayDeque
 import java.util.UUID
 
 class MainActivity : AudioServiceActivity() {
+    private var authorizationChannel: MethodChannel? = null
+    private var authorizationIntentCaptured = false
     private var shareChannel: MethodChannel? = null
     private var shareInFlight: String? = null
     private var shareIntentCaptured = false
@@ -21,6 +26,12 @@ class MainActivity : AudioServiceActivity() {
     }
 
     companion object {
+        private const val AUTH_ACTION = "io.github.ktclat.piliminus.action.AUTHORIZE_LOGIN"
+        private const val AUTH_CHANNEL = "io.github.ktclat.piliminus/external_login_authorization"
+        private const val AUTH_CAPTURED_STATE = "piliminus.authorizationIntentCaptured"
+        private val authorization = ExternalLoginAuthorization()
+        private val authorizationHandler = Handler(Looper.getMainLooper())
+        private val expireAuthorization = Runnable { authorization.expire() }
         private const val SHARE_CHANNEL = "io.github.ktclat.piliminus/incoming_share"
         private const val SHARE_CAPTURED_STATE = "piliminus.shareIntentCaptured"
         private const val MAX_SHARE_TEXT_LENGTH = 8192
@@ -34,6 +45,17 @@ class MainActivity : AudioServiceActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        authorizationChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AUTH_CHANNEL).also { channel ->
+            channel.setMethodCallHandler { call, result ->
+                if (call.method == "takeAuthorization") {
+                    authorizationHandler.removeCallbacks(expireAuthorization)
+                    result.success(authorization.take(SystemClock.elapsedRealtime()))
+                } else {
+                    result.notImplemented()
+                }
+            }
+        }
+        signalPendingAuthorization()
         shareChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SHARE_CHANNEL).also { channel ->
             channel.setMethodCallHandler { call, result ->
                 when (call.method) {
@@ -53,10 +75,44 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        authorizationChannel?.setMethodCallHandler(null)
+        authorizationChannel = null
         shareChannel?.setMethodCallHandler(null)
         shareChannel = null
         shareInFlight = null
         super.cleanUpFlutterEngine(flutterEngine)
+    }
+
+    private fun captureAuthorization(source: Intent?, restoring: Boolean = false, alreadyHandled: Boolean = false) {
+        if (source == null) return
+        when (source.action) {
+            AUTH_ACTION -> Unit // Consume even an explicit component call with missing or unrelated data.
+            Intent.ACTION_VIEW -> {
+                val uri = source.data ?: return
+                if (!ExternalLoginAuthorization.isTarget(uri.authority, uri.path)) return
+            }
+            else -> return
+        }
+        authorizationIntentCaptured = true
+        if (!alreadyHandled) {
+            val fromHistory = (source.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+            if (authorization.receive(source.dataString, !restoring && !fromHistory, SystemClock.elapsedRealtime())) {
+                authorizationHandler.removeCallbacks(expireAuthorization)
+                authorizationHandler.postDelayed(expireAuthorization, ExternalLoginAuthorization.MAX_AGE_MS)
+            }
+        }
+        // app_links reads getDataString() on attach as well as onNewIntent().
+        // Remove the challenge before either the embedding or plugins see the Intent.
+        source.action = Intent.ACTION_MAIN
+        source.setDataAndType(null, null)
+        source.replaceExtras(null as Bundle?)
+        source.clipData = null
+        source.selector = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) source.identifier = null
+    }
+
+    private fun signalPendingAuthorization() {
+        if (authorization.hasPending()) authorizationChannel?.invokeMethod("onAuthorizationAvailable", null)
     }
 
     private fun captureShare(source: Intent?, allowCapture: Boolean = true) {
@@ -118,6 +174,8 @@ class MainActivity : AudioServiceActivity() {
         // An in-process Activity/engine reattachment must not replay its launch
         // intent. Only an opaque process ID is saved, never the shared text.
         shareIntentCaptured = savedInstanceState?.getString(SHARE_CAPTURED_STATE) == shareProcessId
+        authorizationIntentCaptured = savedInstanceState?.getString(AUTH_CAPTURED_STATE) == shareProcessId
+        captureAuthorization(intent, restoring = savedInstanceState != null, alreadyHandled = authorizationIntentCaptured)
         captureShare(intent, allowCapture = !shareIntentCaptured)
         super.onCreate(savedInstanceState)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -127,13 +185,16 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
+        captureAuthorization(intent)
         captureShare(intent)
         setIntent(intent)
         super.onNewIntent(intent)
+        signalPendingAuthorization()
         dispatchPendingShare()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
+        if (authorizationIntentCaptured) outState.putString(AUTH_CAPTURED_STATE, shareProcessId)
         if (shareIntentCaptured) outState.putString(SHARE_CAPTURED_STATE, shareProcessId)
         super.onSaveInstanceState(outState)
     }

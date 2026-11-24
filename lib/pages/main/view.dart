@@ -9,6 +9,7 @@ import 'package:PiliPlus/common/widgets/route_aware_mixin.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
+import 'package:PiliPlus/services/external_login_authorization_service.dart';
 import 'package:PiliPlus/services/link_recognition_service.dart';
 import 'package:PiliPlus/utils/android/bindings.g.dart';
 import 'package:PiliPlus/utils/app_scheme.dart';
@@ -33,7 +34,10 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends PopScopeState<MainApp>
     with RouteAware, RouteAwareMixin, WidgetsBindingObserver {
   final _mainController = Get.put(MainController());
-  final _linkRecognition = LinkRecognitionService();
+  final _externalLogin = ExternalLoginAuthorizationService();
+  late final _linkRecognition = LinkRecognitionService(
+    authorizationBlocksClipboard: () => _externalLogin.blocksClipboard,
+  );
   late EdgeInsets _padding;
   late ColorScheme _colorScheme;
   Brightness? _brightness;
@@ -56,7 +60,9 @@ class _MainAppState extends PopScopeState<MainApp>
     if (!Platform.isMacOS) {
       PiliScheme.init();
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (Platform.isAndroid) await _externalLogin.start();
       if (mounted) _linkRecognition.start();
     });
   }
@@ -117,6 +123,7 @@ class _MainAppState extends PopScopeState<MainApp>
 
   @override
   void dispose() {
+    _externalLogin.dispose();
     _linkRecognition.dispose();
     if (Platform.isMacOS) {
       HardwareKeyboard.instance.removeHandler(_handleKeyEvent);

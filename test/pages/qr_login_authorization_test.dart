@@ -67,11 +67,17 @@ class _Repository extends QrLoginAuthorizationRepository {
   }
 }
 
+class _Guest extends Fake implements AnonymousAccount {
+  @override
+  bool get isLogin => false;
+}
+
 Future<QrLoginAuthorizationSession> _show(
   WidgetTester tester,
   _Repository repository, {
   Account Function()? currentAccount,
   QrLoginAuthorizationRequest? request,
+  bool fromExternalApp = false,
 }) async {
   tester.view.physicalSize = const Size(1000, 1400);
   tester.view.devicePixelRatio = 1;
@@ -86,6 +92,7 @@ Future<QrLoginAuthorizationSession> _show(
   );
   await tester.pumpWidget(
     MaterialApp(
+      routes: {'/loginPage': (_) => const Scaffold(body: Text('本机登录页'))},
       home: Builder(
         builder: (context) => Scaffold(
           body: TextButton(
@@ -94,6 +101,7 @@ Future<QrLoginAuthorizationSession> _show(
                 builder: (_) => QrLoginAuthorizationPage(
                   request: challenge,
                   session: session,
+                  fromExternalApp: fromExternalApp,
                 ),
               ),
             ),
@@ -135,11 +143,60 @@ void main() {
   ) async {
     final repository = _Repository();
     final session = await _show(tester, repository);
+    expect(QrLoginAuthorizationPage.isOpen, isTrue);
     await tester.tap(find.text('取消'));
     await tester.pumpAndSettle();
     expect(repository.authorizations, 0);
     expect(session.phase, QrLoginAuthorizationPhase.cancelled);
+    expect(QrLoginAuthorizationPage.isOpen, isFalse);
     expect(find.text('打开扫码确认'), findsOneWidget);
+  });
+
+  testWidgets(
+    'external requests identify the source and require confirmation',
+    (
+      tester,
+    ) async {
+      final repository = _Repository();
+      await _show(tester, repository, fromExternalApp: true);
+      expect(find.text('其他 App 请求登录'), findsOneWidget);
+      expect(find.textContaining('请只授权你刚刚在原 App 亲自发起的登录'), findsOneWidget);
+      expect(find.text('使用账号：UID 123'), findsOneWidget);
+      expect(find.text('官方服务提供的登录地点：测试地点'), findsOneWidget);
+      expect(find.textContaining(_token), findsNothing);
+      expect(repository.authorizations, 0);
+      await tester.tap(find.text('确认授权登录'));
+      await tester.pumpAndSettle();
+      expect(repository.authorizations, 1);
+      expect(find.text('授权成功，请手动切回原 App 查看登录结果。'), findsOneWidget);
+      await tester.tap(find.text('完成'));
+      await tester.pumpAndSettle();
+      expect(QrLoginAuthorizationPage.isOpen, isFalse);
+    },
+  );
+
+  testWidgets('external login opens local sign-in and discards the request', (
+    tester,
+  ) async {
+    final repository = _Repository();
+    final guest = _Guest();
+    await _show(
+      tester,
+      repository,
+      currentAccount: () => guest,
+      fromExternalApp: true,
+    );
+    expect(find.text('请先登录 Pili--，再切回原 App 重新发起登录。'), findsOneWidget);
+    expect(find.text('确认授权登录'), findsNothing);
+    await tester.tap(find.text('去登录 Pili--'));
+    await tester.pumpAndSettle();
+    expect(find.text('本机登录页'), findsOneWidget);
+    expect(QrLoginAuthorizationPage.isOpen, isFalse);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('打开扫码确认'), findsOneWidget);
+    expect(repository.preparations, 0);
+    expect(repository.authorizations, 0);
   });
 
   testWidgets(

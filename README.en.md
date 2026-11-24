@@ -21,6 +21,7 @@ This prerelease uses an Actions test signing key, not a permanent release key. T
 - Customizable navigation, showing Home, Dynamics, and Mine by default. Reordering and visibility changes apply immediately.
 - A floating capsule bar enabled by default in 0.6.0, with saved opt-outs preserved. Its indicator follows a drag continuously; the page changes only after about 200 ms of stillness. Quick passes and early release cancel the pending change. The appearance switch applies immediately; ordinary taps keep direct navigation. See [floating navigation](docs/FLOATING_NAVIGATION.md) for behavior and validation boundaries.
 - Camera/gallery scanning and native confirmation of web/TV login authorization with the current account. Additional security verification remains with the official platform.
+- In the 0.6.1 development build, Android apps using Bilibili web or TV QR login can open the confirmation screen directly. Users can also paste the official QR login link on the same phone. [Android integration](docs/INPUT_RECOGNITION.md)
 - Receive Android text shares containing Bilibili links, b23.tv links or BV/av identifiers; confirm before opening.
 - Optional foreground clipboard recognition, disabled by default, plus a manual paste-and-recognize page. Shared text and login challenges are not uploaded to a project server or persisted.
 - Independent Android ID `io.github.ktclat.piliminus`, private data, default download directory, and explicit shortcut targets. Upstream PiliPlus uses `com.example.piliplus`.

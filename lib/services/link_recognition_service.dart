@@ -12,6 +12,9 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class LinkRecognitionService with WidgetsBindingObserver {
+  LinkRecognitionService({required this._authorizationBlocksClipboard});
+
+  final bool Function() _authorizationBlocksClipboard;
   final _share = IncomingShareService();
   StreamSubscription<dynamic>? _settings;
   bool _disposed = false;
@@ -19,6 +22,7 @@ class LinkRecognitionService with WidgetsBindingObserver {
     allowShares: () => Pref.receiveSharedLinks,
     allowClipboard: () =>
         Pref.recognizeClipboardLinks &&
+        !_authorizationBlocksClipboard() &&
         !const [
           '/scan',
           '/scanLogin',
