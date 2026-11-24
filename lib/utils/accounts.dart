@@ -2,7 +2,9 @@ import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
+import 'package:PiliPlus/utils/linux_cookie_manager.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:hive_ce/hive.dart';
 
 abstract final class Accounts {
@@ -11,7 +13,8 @@ abstract final class Accounts {
     AccountType.values.length,
     AnonymousAccount(),
   );
-  static bool get mainEqVideo => main == video;
+  static bool get isMainVip => Pref.userInfoCache?.vipStatus == 1;
+  static bool get isVideoVip => main == video ? isMainVip : true;
   static Account get main => accountMode[AccountType.main.index];
   static Account get video => accountMode[AccountType.video.index];
   static Account get heartbeat => accountMode[AccountType.heartbeat.index];
@@ -39,11 +42,12 @@ abstract final class Accounts {
         accountMode[t.index] = a;
       }
     }
-    return Future.wait(
-      (accountMode.toSet()..removeWhere((i) => i.activated)).map(
+    return Future.wait([
+      LinuxCookieManager.onMainAccountChanged(),
+      ...(accountMode.toSet()..removeWhere((i) => i.activated)).map(
         Request.buvidActive,
       ),
-    );
+    ]);
   }
 
   static Future<void> clear() async {
@@ -51,19 +55,26 @@ abstract final class Accounts {
     for (int i = 0; i < AccountType.values.length; i++) {
       accountMode[i] = AnonymousAccount();
     }
-    await AnonymousAccount().delete();
+    await Future.wait([
+      AnonymousAccount().delete(),
+      LinuxCookieManager.onMainAccountChanged(),
+    ]);
     Request.buvidActive(AnonymousAccount());
   }
 
   static Future<void> deleteAll(Set<Account> accounts) async {
-    final isLoginMain = Accounts.main.isLogin;
+    final previousMain = Accounts.main;
     for (int i = 0; i < AccountType.values.length; i++) {
       if (accounts.contains(accountMode[i])) {
         accountMode[i] = AnonymousAccount();
       }
     }
-    await Future.wait(accounts.map((i) => i.delete()));
-    if (isLoginMain && !Accounts.main.isLogin) {
+    await Future.wait([
+      if (!identical(previousMain, Accounts.main))
+        LinuxCookieManager.onMainAccountChanged(),
+      ...accounts.map((i) => i.delete()),
+    ]);
+    if (previousMain.isLogin && !Accounts.main.isLogin) {
       await LoginUtils.onLogoutMain();
     }
   }
@@ -71,7 +82,11 @@ abstract final class Accounts {
   static Future<void> set(AccountType key, Account account) async {
     final oldAccount = accountMode[key.index]..type.remove(key);
     accountMode[key.index] = account..type.add(key);
-    await Future.wait([?account.onChange(), ?oldAccount.onChange()]);
+    await Future.wait([
+      if (key == AccountType.main) LinuxCookieManager.onMainAccountChanged(),
+      ?account.onChange(),
+      ?oldAccount.onChange(),
+    ]);
     if (!account.activated) await Request.buvidActive(account);
     switch (key) {
       case AccountType.main:

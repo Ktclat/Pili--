@@ -9,7 +9,7 @@
 ```powershell
 git clone https://github.com/Ktclat/Pili--.git
 cd Pili--
-git clone --depth 1 --branch 3.47.8 https://github.com/flutter/flutter.git .tools/flutter
+git clone --depth 1 --branch 3.47.9 https://github.com/flutter/flutter.git .tools/flutter
 ./scripts/prepare_android.ps1
 $env:PUB_CACHE = Join-Path $PWD '.tools/pub-cache'
 ./.tools/flutter/bin/flutter analyze --no-pub --no-fatal-infos

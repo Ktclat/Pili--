@@ -1,74 +1,99 @@
-import 'dart:convert' show jsonEncode;
-import 'dart:io' show Cookie, Platform;
+import 'dart:io' show Platform;
 
-import 'package:PiliPlus/plugin/linux_webview.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
+import 'package:PiliPlus/utils/trusted_url.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
+import 'package:synchronized/synchronized.dart';
+import 'package:webview_all_linux/webview_all_linux.dart';
+import 'package:webview_platform_interface/webview_platform_interface.dart';
 
 abstract final class LinuxCookieManager {
-  static bool isBiliDomain(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null ||
-        uri.scheme != 'https' ||
-        uri.userInfo.isNotEmpty ||
-        uri.port != 443) {
-      return false;
-    }
-    final host = uri.host.toLowerCase();
-    return host == 'bilibili.com' || host.endsWith('.bilibili.com');
-  }
+  static final _lock = Lock();
+  static Account? _owner;
+  static final _websiteData = LinuxWebViewDataManager(
+    const LinuxWebViewDataManagerCreationParams(),
+  );
 
-  static List<Cookie> getCookies([Account? account]) {
-    final targetAccount = account ?? Accounts.main;
-    return targetAccount.cookieJar.toList();
-  }
+  static Future<void> syncForPage(Uri? page) => _sync(
+    writeCookies: page != null && TrustedUrl.isBilibili(page),
+  );
 
-  static Future<void> deleteAllCookies() async {
+  static Future<void> onMainAccountChanged() async {
     if (!Platform.isLinux) return;
     try {
-      await LinuxWebviewPlugin.clearAllCookies();
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('LinuxCookieManager: deleteAllCookies failed: $e');
-      }
+      await _sync(writeCookies: true);
+    } catch (_) {
+      // The next WebView retries before it may load content.
+      if (kDebugMode) debugPrint('Linux WebView account sync failed');
     }
   }
 
-  static String generateCookieInjectionJs([List<Cookie>? cookieList]) {
-    final cookies = cookieList ?? getCookies();
-    if (cookies.isEmpty) return '';
+  static Future<void> _sync({required bool writeCookies}) => _lock.synchronized(
+    () async {
+      do {
+        final account = Accounts.main;
+        try {
+          if (!identical(account, _owner)) {
+            final result = await _websiteData.clearWebsiteDataFor(
+              const WebViewDataTarget(
+                scope: WebViewDataScope.domain,
+                value: 'bilibili.com',
+              ),
+              dataTypes: const {WebViewDataType.cookies},
+            );
+            if (!result.isComplete) throw StateError('清理网页登录状态失败');
+          }
+          if (writeCookies) await _writeCookies(account);
+          _owner = account;
+        } catch (_) {
+          _owner = null;
+          rethrow;
+        }
+        // Switching accounts can happen while WebKit is still writing.
+      } while (!identical(_owner, Accounts.main));
+    },
+  );
 
-    final cookieMaps = cookies.map((c) {
-      final rawDomain = c.domain ?? 'bilibili.com';
-      final domain = rawDomain.startsWith('.') ? rawDomain : '.$rawDomain';
-      return {
-        'name': c.name,
-        'value': c.value,
-        'domain': domain,
-        'path': c.path ?? '/',
-        'secure': c.secure,
-      };
-    }).toList();
+  static Future<void> _writeCookies(Account account) async {
+    final store = LinuxWebViewCookieManager(
+      const LinuxWebViewCookieManagerCreationParams(),
+    );
+    final now = DateTime.now().toUtc();
+    await Future.wait(
+      account.cookieJar.toList().map((cookie) async {
+        final rawDomain = cookie.domain?.toLowerCase() ?? 'bilibili.com';
+        final domain = rawDomain.startsWith('.')
+            ? rawDomain.substring(1)
+            : rawDomain;
+        if (domain != 'bilibili.com' && !domain.endsWith('.bilibili.com')) {
+          return;
+        }
+        final maxAge = cookie.maxAge;
+        await store.setCookie(
+          WebViewCookie(
+            name: cookie.name,
+            value: cookie.value,
+            domain: '.$domain',
+            path: cookie.path ?? '/',
+            expires: maxAge == null
+                ? cookie.expires
+                : now.add(Duration(seconds: maxAge)),
+            isSecure: true,
+            isHttpOnly: cookie.httpOnly,
+            sameSite: WebViewCookieSameSite.lax,
+          ),
+        );
+      }),
+    );
+  }
 
-    final jsonStr = jsonEncode(cookieMaps);
-
-    return '''
-(function() {
-  if (location.protocol !== 'https:' ||
-      !(location.hostname === 'bilibili.com' || location.hostname.endsWith('.bilibili.com'))) return;
-  try {
-    var cookies = $jsonStr;
-    for (var i = 0; i < cookies.length; i++) {
-      var c = cookies[i];
-      var str = c.name + '=' + c.value + '; path=' + (c.path || '/') + '; domain=' + c.domain + '; max-age=31536000; SameSite=Lax';
-      if (c.secure) str += '; Secure';
-      document.cookie = str;
+  static Future<void> clearAllWebsiteData() => _lock.synchronized(() async {
+    _owner = null;
+    final result = await _websiteData.clearAllWebsiteData();
+    if (!result.isComplete) {
+      final errors = result.failures.values.toSet().join('; ');
+      throw StateError(errors.isEmpty ? '未能清理全部网站数据' : errors);
     }
-  } catch (e) {
-    console.error('[LinuxWebview] Cookie injection error:', e);
-  }
-})();
-''';
-  }
+  });
 }

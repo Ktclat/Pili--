@@ -119,6 +119,47 @@ void main() {
       });
     }
 
+    test('accepts messages from the main document of the active note', () {
+      final page = Uri.parse('https://www.bilibili.com/h5/note-app?oid=1');
+      expect(
+        TrustedUrl.isCurrentNoteMessage(
+          source: page,
+          origin: page.origin,
+          mainFrame: true,
+          current: page.replace(fragment: 'section'),
+        ),
+        isTrue,
+      );
+    });
+
+    test(
+      'ignores missing metadata, subframes and messages after navigation',
+      () {
+        final page = Uri.parse('https://www.bilibili.com/h5/note-app?oid=1');
+        for (final (source, origin, frame, current) in [
+          (null, page.origin, true, page),
+          (page, null, true, page),
+          (page, 'null', true, page),
+          (page, 'https://live.bilibili.com', true, page),
+          (page, page.origin, null, page),
+          (page, page.origin, false, page),
+          (page, page.origin, true, null),
+          (page, page.origin, true, page.replace(query: 'oid=2')),
+          (page, page.origin, true, page.replace(path: '/video')),
+        ]) {
+          expect(
+            TrustedUrl.isCurrentNoteMessage(
+              source: source,
+              origin: origin,
+              mainFrame: frame,
+              current: current,
+            ),
+            isFalse,
+          );
+        }
+      },
+    );
+
     for (final query in [
       '',
       '?oid=',

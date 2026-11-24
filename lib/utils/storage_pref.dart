@@ -13,6 +13,7 @@ import 'package:PiliPlus/models/common/member/tab_type.dart';
 import 'package:PiliPlus/models/common/mine_tab_type.dart';
 import 'package:PiliPlus/models/common/msg/msg_unread_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
+import 'package:PiliPlus/models/common/rcmd_source.dart';
 import 'package:PiliPlus/models/common/reply/reply_sort_type.dart';
 import 'package:PiliPlus/models/common/sponsor_block/segment_type.dart';
 import 'package:PiliPlus/models/common/sponsor_block/skip_type.dart';
@@ -305,8 +306,16 @@ abstract final class Pref {
   static String get banWordForZone =>
       _setting.get(SettingBoxKey.banWordForZone, defaultValue: '');
 
-  static bool get appRcmd =>
-      _setting.get(SettingBoxKey.appRcmd, defaultValue: true);
+  static bool get appRcmd => _setting.get(SettingBoxKey.appRcmd) != false;
+
+  /// 首页推荐来源。新键优先，旧版本只存了 [appRcmd] 布尔值，按原语义映射。
+  static RcmdSource get rcmdSource {
+    final index = _setting.get(SettingBoxKey.rcmdSource);
+    if (index is int && index >= 0 && index < RcmdSource.values.length) {
+      return RcmdSource.values[index];
+    }
+    return appRcmd ? RcmdSource.app : RcmdSource.web;
+  }
 
   static String get systemProxyHost =>
       _setting.get(SettingBoxKey.systemProxyHost, defaultValue: '');
@@ -1102,4 +1111,16 @@ abstract final class Pref {
 
   static bool get filterIntro =>
       _setting.get(SettingBoxKey.filterIntro, defaultValue: false);
+
+  static int get foldDepth =>
+      _setting.get(SettingBoxKey.foldDepth, defaultValue: 0);
+
+  static bool get showRefreshFAB =>
+      _setting.get(SettingBoxKey.showRefreshFAB, defaultValue: true);
+
+  static bool get cachePlayInfo =>
+      _setting.get(SettingBoxKey.cachePlayInfo, defaultValue: true);
+
+  static bool get autoWearMedal =>
+      _setting.get(SettingBoxKey.autoWearMedal, defaultValue: false);
 }

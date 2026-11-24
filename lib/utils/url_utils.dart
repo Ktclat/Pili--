@@ -3,39 +3,33 @@ import 'package:PiliPlus/http/search.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
+import 'package:PiliPlus/utils/trusted_url.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart' show kDebugMode, debugPrint;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 
 abstract final class UrlUtils {
   // 302重定向路由截取
-  static Future<String?> parseRedirectUrl(
-    String url, [
-    bool returnOri = false,
-  ]) async {
-    String? redirectUrl;
+  static Future<String?> parseRedirectUrl(String url) async {
     try {
-      final response = await Request.dio.head(
-        url,
+      final source = Uri.parse(url);
+      if (!TrustedUrl.isWebLink(source)) return null;
+      final response = await Request.dio.headUri<void>(
+        source,
         options: Options(
           followRedirects: false,
-          validateStatus: (status) {
-            return 200 <= status! && status < 400;
-          },
+          validateStatus: (status) =>
+              status != null && status >= 200 && status < 400,
           extra: {'account': AnonymousAccount()},
         ),
       );
-      redirectUrl = response.headers['location']?.firstOrNull;
-      if (kDebugMode) debugPrint('redirectUrl: $redirectUrl');
-      if (redirectUrl != null && !redirectUrl.startsWith('http')) {
-        redirectUrl = Uri.parse(url).resolve(redirectUrl).toString();
-      }
-    } catch (_) {}
-    if (returnOri && redirectUrl == null) redirectUrl = url;
-    if (redirectUrl != null && redirectUrl.endsWith('/')) {
-      redirectUrl = redirectUrl.substring(0, redirectUrl.length - 1);
+      if ((response.statusCode ?? 0) < 300) return null;
+      final location = response.headers.value('location');
+      if (location == null || location.isEmpty) return null;
+      final target = source.resolve(location);
+      return TrustedUrl.isWebLink(target) ? target.toString() : null;
+    } catch (_) {
+      return null;
     }
-    return redirectUrl;
   }
 
   // 匹配url路由跳转

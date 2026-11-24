@@ -110,8 +110,7 @@ abstract final class ReplyGrpc {
     Int64? rpid,
     required Mode mode,
     required String? offset,
-    required Int64? cursorNext,
-    int pageSize = 20,
+    // Int64? cursorNext,
   }) async {
     final res = await GrpcReq.request(
       GrpcUrl.mainList,
@@ -124,14 +123,19 @@ abstract final class ReplyGrpc {
         //   next: cursorNext,
         // ),
         mode: mode,
-        pagination: FeedPagination(offset: offset, pageSize: pageSize),
+        pagination: offset == null ? null : FeedPagination(offset: offset),
       ),
       MainListReply.fromBuffer,
     );
     if (res case Success(:final response)) {
       // keyword filter
-      if (response.hasUpTop() && needRemoveGrpc(response.upTop)) {
-        response.clearUpTop();
+      if (response.hasUpTop()) {
+        final topReply = response.upTop;
+        if (needRemoveGrpc(topReply)) {
+          response.clearUpTop();
+        } else {
+          topReply.replies.removeWhere(needRemoveGrpc);
+        }
       }
 
       if (response.replies.isNotEmpty) {
@@ -142,6 +146,19 @@ abstract final class ReplyGrpc {
           }
           return hasMatch;
         });
+      }
+
+      if (response.replies.isEmpty && !response.hasUpTop()) {
+        final offset = response.paginationReply.nextOffset;
+        if (offset.isNotEmpty && !response.cursor.isEnd) {
+          return mainList(
+            type: type,
+            oid: oid,
+            rpid: rpid,
+            mode: mode,
+            offset: offset,
+          );
+        }
       }
     }
     return res;
@@ -154,7 +171,7 @@ abstract final class ReplyGrpc {
     required int rpid,
     required Mode mode,
     required String? offset,
-    int pageSize = 20,
+    Map<Int64, ReplyInfo>? removed,
   }) async {
     final res = await GrpcReq.request(
       GrpcUrl.detailList,
@@ -165,11 +182,20 @@ abstract final class ReplyGrpc {
         rpid: Int64(rpid),
         scene: DetailListScene.REPLY,
         mode: mode,
-        pagination: FeedPagination(offset: offset, pageSize: pageSize),
+        pagination: offset == null ? null : FeedPagination(offset: offset),
       ),
       DetailListReply.fromBuffer,
     );
-    return res..dataOrNull?.root.replies.removeWhere(needRemoveGrpc);
+    return res
+      ..dataOrNull?.root.replies.removeWhere(
+        removed == null
+            ? needRemoveGrpc
+            : (i) {
+                final flag = needRemoveGrpc(i);
+                if (flag) removed[i.id] = i;
+                return flag;
+              },
+      );
   }
 
   static Future<LoadingState<FoldListResp>> foldList({
@@ -195,7 +221,6 @@ abstract final class ReplyGrpc {
     required int root,
     required int dialog,
     required String? offset,
-    int pageSize = 20,
   }) async {
     final res = await GrpcReq.request(
       GrpcUrl.dialogList,
@@ -204,7 +229,7 @@ abstract final class ReplyGrpc {
         type: Int64(type),
         root: Int64(root),
         dialog: Int64(dialog),
-        pagination: FeedPagination(offset: offset, pageSize: pageSize),
+        pagination: offset == null ? null : FeedPagination(offset: offset),
       ),
       DialogListReply.fromBuffer,
     );

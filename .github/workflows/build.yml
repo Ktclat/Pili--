@@ -23,7 +23,7 @@ jobs:
           distribution: temurin
           java-version: '17'
       - name: Install isolated Flutter SDK
-        run: git clone --depth 1 --branch 3.47.8 https://github.com/flutter/flutter.git .tools/flutter
+        run: git clone --depth 1 --branch 3.47.9 https://github.com/flutter/flutter.git .tools/flutter
       - name: Resolve dependencies and apply upstream patches
         shell: pwsh
         run: ./scripts/prepare_android.ps1

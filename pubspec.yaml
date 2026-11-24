@@ -17,11 +17,11 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
 # update when release
-version: 0.6.0+7
+version: 0.6.1+8
 
 environment:
   sdk: ">=3.13.0"
-  flutter: 3.47.8
+  flutter: 3.47.9
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -42,7 +42,10 @@ dependencies:
       url: https://github.com/bggRGjQaUbCoE/audio_service.git
       path: audio_service
       ref: 9f91eb8d6aa0905661ab3914ebdd3c9fb5c37cc2
-  audio_service_mpris: ^1.0.0-beta.2
+  audio_service_mpris:
+    git:
+      url: https://github.com/Tobiichi-Origuchi/audio-service-mpris.git
+      ref: 9a60ad52c7102c82dc919bfd082f17fd8e7b62d7
   audio_session:
     git:
       url: https://github.com/bggRGjQaUbCoE/audio_session.git
@@ -57,7 +60,7 @@ dependencies:
   canvas_danmaku:
     git:
       url: https://github.com/bggRGjQaUbCoE/canvas_danmaku.git
-      ref: 275046d8647a6a26cba1d0dadb9e28688cb3dbf1
+      ref: 435063d093bdc0dde70616a2c30552411c9e13e0
   catcher_2:
     git:
       url: https://github.com/My-Responsitories/catcher_2.git
@@ -67,7 +70,7 @@ dependencies:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_chat_packages.git
       path: packages/chat_bottom_container
-      ref: a39a5b2a0d108c33608fabd054ea97334d21ad6f
+      ref: 8a04b5fff08ac1267c59eec35d2299dca04fe92b
   collection: ^1.19.1
   connectivity_plus: ^7.1.1
   cookie_jar: ^4.0.8
@@ -76,7 +79,7 @@ dependencies:
   device_info_plus: ^13.1.0
   dio: ^5.9.1
   dio_http2_adapter: ^2.7.1
-  dlna_dart: ^0.1.0
+  dlna_dart: ^0.1.2
   dynamic_color: ^2.1.0
   easy_debounce: ^2.0.3
   encrypt: ^5.0.3
@@ -98,7 +101,7 @@ dependencies:
   flutter_smart_dialog:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_smart_dialog.git
-      ref: 5a1be84314e8c53efa3b7324cd8dc535fefe931a
+      ref: 2991ccd510b2eebfea5f394a289737b184dac74a
   flutter_sortable_wrap:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_sortable_wrap.git
@@ -117,7 +120,7 @@ dependencies:
   hive_ce: ^2.19.3
   html: ^0.15.4
   http2: ^2.3.1
-  image_cropper: ^12.0.0
+  image_cropper: ^13.0.0
   image_picker: ^1.1.2
   intl: ^0.20.2
   jni: ^1.0.0
@@ -173,11 +176,10 @@ dependencies:
     git:
       url: https://github.com/wgh136/webdav_client.git
       ref: 2f669c98fb81cff1c64fee93466a1475c77e4273
+  webview_all_linux: ^1.4.9
+  webview_platform_interface: ^1.4.9
   win32: ^6.3.0
-  window_manager:
-    git:
-      url: https://github.com/leanflutter/window_manager.git
-      ref: 80acd536a1ea1c121c36e32d30e638a295087ed1
+  window_manager: ^0.6.0
 
 dependency_overrides:
   flutter_inappwebview_android:
@@ -231,6 +233,10 @@ dependency_overrides:
       url: https://github.com/bggRGjQaUbCoE/audio_service.git
       path: audio_service
       ref: 9f91eb8d6aa0905661ab3914ebdd3c9fb5c37cc2
+  audio_service_mpris:
+    git:
+      url: https://github.com/Tobiichi-Origuchi/audio-service-mpris.git
+      ref: 9a60ad52c7102c82dc919bfd082f17fd8e7b62d7
   audio_session:
     git:
       url: https://github.com/bggRGjQaUbCoE/audio_session.git
@@ -243,7 +249,7 @@ dependency_overrides:
   canvas_danmaku:
     git:
       url: https://github.com/bggRGjQaUbCoE/canvas_danmaku.git
-      ref: 275046d8647a6a26cba1d0dadb9e28688cb3dbf1
+      ref: 435063d093bdc0dde70616a2c30552411c9e13e0
   catcher_2:
     git:
       url: https://github.com/My-Responsitories/catcher_2.git
@@ -252,7 +258,7 @@ dependency_overrides:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_chat_packages.git
       path: packages/chat_bottom_container
-      ref: a39a5b2a0d108c33608fabd054ea97334d21ad6f
+      ref: 8a04b5fff08ac1267c59eec35d2299dca04fe92b
   extended_nested_scroll_view:
     git:
       url: https://github.com/bggRGjQaUbCoE/extended_nested_scroll_view.git
@@ -264,7 +270,7 @@ dependency_overrides:
   flutter_smart_dialog:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_smart_dialog.git
-      ref: 5a1be84314e8c53efa3b7324cd8dc535fefe931a
+      ref: 2991ccd510b2eebfea5f394a289737b184dac74a
   flutter_sortable_wrap:
     git:
       url: https://github.com/bggRGjQaUbCoE/flutter_sortable_wrap.git
@@ -293,10 +299,6 @@ dependency_overrides:
     git:
       url: https://github.com/wgh136/webdav_client.git
       ref: 2f669c98fb81cff1c64fee93466a1475c77e4273
-  window_manager:
-    git:
-      url: https://github.com/leanflutter/window_manager.git
-      ref: 80acd536a1ea1c121c36e32d30e638a295087ed1
 
 dev_dependencies:
   flutter_test:

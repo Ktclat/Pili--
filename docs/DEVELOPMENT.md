@@ -8,7 +8,7 @@ Pili-- 基于 PiliPlus 独立维护，当前重点是 Android。环境准备、�
 
 | 工具 | 当前要求 |
 | --- | --- |
-| Flutter | 项目内 `.tools/flutter`，版本 **3.47.8**；准备脚本核对提交 `737ba8f885dc774b53b442759999a312c9461e4e` |
+| Flutter | 项目内 `.tools/flutter`，版本 **3.47.9**；准备脚本核对提交 `c197ca5199e9ee5661e865596c9c07294dfab51c` |
 | Dart | 使用该 Flutter 自带的 Dart；依赖约束见 [pubspec.yaml](../pubspec.yaml) |
 | PowerShell | **7**；Linux 可运行 `pwsh`，不要把脚本设置的环境变量当作已回传给外层 Bash |
 | Java / Android | **JDK 17、SDK 37**；Gradle 使用仓库 Wrapper，NDK 随固定 Flutter 配置 |
@@ -37,4 +37,4 @@ Pili-- 基于 PiliPlus 独立维护，当前重点是 Android。环境准备、�
 
 Android 安装 ID `io.github.ktclat.piliminus` 与 Java/JNI namespace、Dart 包名用途不同。内部仍保留 `com.example.piliplus` 与 `PiliPlus`，不能批量替换；隔离实现见 [共存说明](COEXISTENCE.md)。
 
-同步上游时核对源仓库和提交，保留署名及许可；选择提交可用 `git cherry-pick -x` 记录来源。合并后复核框架补丁、锁文件、账号请求策略、安装身份和本项目功能，再运行对应验证。来源与第三方许可见 [致谢](ACKNOWLEDGEMENTS.md) 和 [NOTICE](../NOTICE)。
+本项目从 0.5.0 开始使用独立的 Git 历史。[NOTICE](../NOTICE) 分别记录初次导入和最近整合的上游 SHA。下次同步从最近整合的 SHA 比较上游差异，逐项处理与本地功能重叠的改动，保留署名及许可。合并后复核框架补丁、锁文件、账号请求策略、安装身份和本项目功能，再运行对应验证。来源与第三方许可见 [致谢](ACKNOWLEDGEMENTS.md) 和 [NOTICE](../NOTICE)。

@@ -17,6 +17,17 @@ abstract final class TrustedUrl {
       uri.host == 'www.bilibili.com' &&
       uri.path == '/h5/note-app';
 
+  static bool isCurrentNoteMessage({
+    required Uri? source,
+    required String? origin,
+    required bool? mainFrame,
+    required Uri? current,
+  }) =>
+      mainFrame == true &&
+      origin == 'https://www.bilibili.com' &&
+      isBilibiliNote(source) &&
+      source!.removeFragment() == current?.removeFragment();
+
   static int? noteVideoId(Uri? uri) {
     if (!isBilibiliNote(uri)) return null;
     try {

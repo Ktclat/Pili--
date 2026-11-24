@@ -3,8 +3,10 @@ import 'package:PiliPlus/pages/common/common_controller.dart';
 import 'package:get/get.dart';
 
 abstract class CommonListController<R, T> extends CommonController<R, T> {
+  int _queryRevision = 0;
   int page = 1;
   bool isEnd = false;
+  bool get endIfNullOrEmpty => true;
   bool get hasFooter => false;
 
   @override
@@ -19,16 +21,24 @@ abstract class CommonListController<R, T> extends CommonController<R, T> {
 
   void checkIsEnd(int length) {}
 
+  /// Allow the replacement query to run and ignore the previous response.
+  void invalidateCurrentQuery() {
+    _queryRevision++;
+    isLoading = false;
+  }
+
   @override
   Future<void> queryData([bool isRefresh = true]) async {
     if (isLoading || (!isRefresh && isEnd)) return;
     isLoading = true;
+    final revision = _queryRevision;
     final LoadingState<R> res = await customGetData();
+    if (revision != _queryRevision) return;
     if (res case Success(:final response)) {
       if (!customHandleResponse(isRefresh, res)) {
         final dataList = getDataList(response);
         if (dataList == null || dataList.isEmpty) {
-          isEnd = true;
+          if (endIfNullOrEmpty) isEnd = true;
           if (isRefresh) {
             loadingState.value = Success(dataList);
           } else if (hasFooter) {

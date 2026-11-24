@@ -4,6 +4,12 @@
 
 验证按源码提交与安装包记录；相同版本号下可能包含多个开发提交，不能把历史结果直接用于当前代码。构建记录见 [Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml)。
 
+## 0.6.1+8 上游同步（2026-11-24）
+
+本地使用 Flutter 3.47.9 和 Dart 3.13.7，按锁文件安装依赖并应用框架补丁。358 项 Flutter 回归与 15 项 Python 检查通过，静态分析为 0 个错误、0 个警告、38 个提示。Android 包名、备份隔离和启动快捷方式的源码检查通过。
+
+新增用例覆盖强制侧栏、推荐来源切换、带查询参数的短链、离线字幕原子更新、直播与勋章的账号隔离，以及 Linux WebView 换号时的 Cookie 清理。网络时序和账号切换使用受控测试数据。三个架构的 APK 构建与成品身份由本提交的 [Android Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 记录。此次同步尚待 ARM64 真机和真实账号验收。
+
 ## 0.6.0+7：悬浮导航（2026-10-30）
 
 本轮将跟手预览与页面切换分开：拖动时连续移动选中背景，最后有效移动后停稳约 200 毫秒才提交新页；未停稳松手不补交。使用方法与设计参考见 [悬浮导航](FLOATING_NAVIGATION.md)。

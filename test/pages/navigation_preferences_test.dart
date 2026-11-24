@@ -167,6 +167,16 @@ void main() {
     },
   );
 
+  test(
+    'forcing the sidebar keeps the floating bottom bar out of the layout',
+    () {
+      settings.data[SettingBoxKey.useSideBar] = true;
+      final main = Get.put(MainController());
+      expect(main.floatingNavBar, isTrue);
+      expect(main.useBottomNav, isFalse);
+    },
+  );
+
   test('retired indexes are dropped without restoring hidden tabs', () {
     settings.data[SettingBoxKey.navBarSort] = [2, 3, 0, 2, 99];
     expect(NavigationPreferences.bars, [

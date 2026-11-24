@@ -1,20 +1,23 @@
 import 'package:PiliPlus/http/video.dart';
+import 'package:PiliPlus/models/common/rcmd_source.dart';
 import 'package:PiliPlus/pages/rcmd/controller.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
+import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/utils/recommend_filter.dart';
+import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart' hide StatefulBuilder;
 
 List<SettingsModel> get recommendSettings => [
-  const SwitchModel(
-    title: '首页使用app端推荐',
-    subtitle: '若web端推荐不太符合预期，可尝试切换至app端推荐',
-    leading: Icon(Icons.model_training_outlined),
-    setKey: SettingBoxKey.appRcmd,
-    defaultVal: true,
-    needReboot: true,
+  NormalModel(
+    title: '首页推荐来源',
+    getSubtitle: () => Pref.rcmdSource.label,
+    leading: const Icon(Icons.swap_horiz_outlined),
+    onTap: _showRcmdSourceDialog,
   ),
   SwitchModel(
     title: '保留首页推荐刷新',
@@ -106,3 +109,37 @@ List<SettingsModel> get recommendSettings => [
     onChanged: (value) => RecommendFilter.applyFilterToRelatedVideos = value,
   ),
 ];
+
+Future<void> _showRcmdSourceDialog(
+  BuildContext context,
+  VoidCallback setState,
+) async {
+  final res = await showDialog<RcmdSource>(
+    context: context,
+    builder: (context) => SelectDialog<RcmdSource>(
+      title: '首页推荐来源',
+      value: Pref.rcmdSource,
+      values: RcmdSource.values.map((e) => (e, e.label)).toList(),
+      subtitleBuilder: (context, index, type) {
+        if (type == .desktop) {
+          return const Text(
+            '沿用公开的网页推荐接口，按哔哩哔哩官方 Windows 客户端'
+            '首页实际发送的参数组合请求，不涉及私有接口与设备指纹',
+          );
+        }
+        return null;
+      },
+    ),
+  );
+  if (res == null || res == Pref.rcmdSource) return;
+  // Older versions map desktop recommendations to the web source.
+  await GStorage.setting.putAll({
+    SettingBoxKey.appRcmd: res == RcmdSource.app,
+    SettingBoxKey.rcmdSource: res.index,
+  });
+  if (Get.isRegistered<RcmdController>()) {
+    Get.find<RcmdController>().changeSource(res);
+  }
+  if (context.mounted) setState();
+  SmartDialog.showToast('已切换为${res.label}');
+}

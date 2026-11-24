@@ -7,7 +7,6 @@ import 'package:PiliPlus/main.dart' show webViewEnvironment;
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
-import 'package:PiliPlus/utils/linux_cookie_manager.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
@@ -84,9 +83,7 @@ abstract final class LoginUtils {
       ..isLogin.value = false;
 
     return Future.wait([
-      if (Platform.isLinux)
-        LinuxCookieManager.deleteAllCookies()
-      else
+      if (!Platform.isLinux)
         web.CookieManager.instance(
           webViewEnvironment: webViewEnvironment,
         ).deleteAllCookies(),

@@ -8,25 +8,29 @@ import 'package:PiliPlus/models/common/live/live_contribution_rank_type.dart';
 import 'package:PiliPlus/models/common/live/live_search_type.dart';
 import 'package:PiliPlus/models_new/live/live_area_list/area_item.dart';
 import 'package:PiliPlus/models_new/live/live_area_list/area_list.dart';
+import 'package:PiliPlus/models_new/live/live_config_plugs/data.dart';
 import 'package:PiliPlus/models_new/live/live_contribution_rank/data.dart';
 import 'package:PiliPlus/models_new/live/live_danmaku/danmaku_msg.dart';
-import 'package:PiliPlus/models_new/live/live_dm_block/data.dart';
-import 'package:PiliPlus/models_new/live/live_dm_block/shield_info.dart';
-import 'package:PiliPlus/models_new/live/live_dm_block/shield_user_list.dart';
 import 'package:PiliPlus/models_new/live/live_dm_info/data.dart';
 import 'package:PiliPlus/models_new/live/live_emote/data.dart';
 import 'package:PiliPlus/models_new/live/live_emote/datum.dart';
+import 'package:PiliPlus/models_new/live/live_fans_medal/data.dart';
 import 'package:PiliPlus/models_new/live/live_feed_index/data.dart';
 import 'package:PiliPlus/models_new/live/live_follow/data.dart';
+import 'package:PiliPlus/models_new/live/live_info_by_user/data.dart';
+import 'package:PiliPlus/models_new/live/live_info_by_user/medal.dart';
+import 'package:PiliPlus/models_new/live/live_info_by_user/shield_user_list.dart';
 import 'package:PiliPlus/models_new/live/live_medal_wall/data.dart';
 import 'package:PiliPlus/models_new/live/live_room_info_h5/data.dart';
 import 'package:PiliPlus/models_new/live/live_room_play_info/data.dart';
 import 'package:PiliPlus/models_new/live/live_search/data.dart';
 import 'package:PiliPlus/models_new/live/live_second_list/data.dart';
 import 'package:PiliPlus/models_new/live/live_superchat/data.dart';
+import 'package:PiliPlus/models_new/live/live_trace/data.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/app_sign.dart';
+import 'package:PiliPlus/utils/live_trace_utils.dart';
 import 'package:PiliPlus/utils/wbi_sign.dart';
 import 'package:dio/dio.dart';
 
@@ -486,20 +490,25 @@ abstract final class LiveHttp {
     }
   }
 
-  static Future<LoadingState<ShieldInfo?>> getLiveInfoByUser(
-    Object roomId,
-  ) async {
+  static Future<LoadingState<LiveInfoByUserData>> getLiveInfoByUser(
+    Object roomId, {
+    Account? account,
+  }) async {
+    final actor = account ?? Accounts.heartbeat;
+    final query = await WbiSign.makSign({
+      'room_id': roomId,
+      'from': 0,
+      'not_mock_enter_effect': 1,
+      'web_location': 444.8,
+    });
+    if (!identical(actor, Accounts.heartbeat)) return const Error(null);
     final res = await Request().get(
       Api.getLiveInfoByUser,
-      queryParameters: await WbiSign.makSign({
-        'room_id': roomId,
-        'from': 0,
-        'not_mock_enter_effect': 1,
-        'web_location': 444.8,
-      }),
+      options: Options(extra: {'account': actor}),
+      queryParameters: query,
     );
     if (res.data['code'] == 0) {
-      return Success(LiveDmBlockData.fromJson(res.data['data']).shieldInfo);
+      return Success(LiveInfoByUserData.fromJson(res.data['data']));
     } else {
       return Error(res.data['message']);
     }
@@ -805,6 +814,250 @@ abstract final class LiveHttp {
       } catch (e) {
         return Error(e.toString());
       }
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<LiveTraceResp>> liveTraceE({
+    required LiveTraceReq traceReq,
+    required Account heartbeat,
+    required CancelToken token,
+    required bool Function() isCurrent,
+  }) {
+    return _postLiveTrace(
+      Api.liveTraceE,
+      {
+        'id': traceReq.id,
+        'device': traceReq.device,
+        'ruid': traceReq.ruid,
+        'ts': DateTime.now().millisecondsSinceEpoch,
+        'is_patch': 0,
+        'heart_beat': const [],
+        'ua': BrowserUa.pc,
+        'web_location': '444.8',
+        'csrf': heartbeat.csrf,
+      },
+      traceReq: traceReq,
+      account: heartbeat,
+      token: token,
+      isCurrent: isCurrent,
+    );
+  }
+
+  static Future<LoadingState<LiveTraceResp>> liveTraceX({
+    required LiveTraceReq traceReq,
+    required LiveTraceResp traceResp,
+    required Account heartbeat,
+    required CancelToken token,
+    required bool Function() isCurrent,
+  }) async {
+    final tsMs = DateTime.now().millisecondsSinceEpoch;
+    final s = LiveTraceUtils.buildX25KnSignature(
+      traceReq: traceReq,
+      traceResp: traceResp,
+      tsMs: tsMs,
+    );
+    if (s == null) return const Error(null);
+    return _postLiveTrace(
+      Api.liveTraceX,
+      {
+        's': s,
+        'id': traceReq.id,
+        'device': traceReq.device,
+        'ruid': traceReq.ruid,
+        'ets': traceResp.timestamp,
+        'benchmark': traceResp.secretKey,
+        'time': traceResp.interval,
+        'ts': tsMs,
+        'ua': BrowserUa.pc,
+        'trackid': '-99998',
+        'web_location': '444.8',
+        'csrf': heartbeat.csrf,
+      },
+      traceReq: traceReq,
+      account: heartbeat,
+      token: token,
+      isCurrent: isCurrent,
+    );
+  }
+
+  static Future<LoadingState<LiveTraceResp>> _postLiveTrace(
+    String url,
+    Map<String, Object> params, {
+    required LiveTraceReq traceReq,
+    required Account account,
+    required CancelToken token,
+    required bool Function() isCurrent,
+  }) async {
+    final query = await WbiSign.makSign(params);
+    if (!isCurrent()) return const Error(null);
+    try {
+      // Pausing the player cancels this background request without a network toast.
+      final res = await Request.dio.post(
+        url,
+        queryParameters: query,
+        options: Options(extra: {'account': account}),
+        cancelToken: token,
+      );
+      if (!isCurrent()) return const Error(null);
+      if (res.data['code'] != 0) return Error(res.data['message']);
+      final response = LiveTraceResp.fromJson(res.data['data']);
+      traceReq.seqId++;
+      return Success(response);
+    } on DioException {
+      return const Error(null);
+    }
+  }
+
+  static Future<LoadingState<FansMedalData>> fansMedalPanel({
+    required Account account,
+    required int page,
+    int pageSize = 20,
+    Object? roomId,
+    Object? targetId, // ruid
+  }) async {
+    final res = await Request().get(
+      Api.fansMedalPanel,
+      options: Options(extra: {'account': account}),
+      queryParameters: {
+        'page': page,
+        'page_size': pageSize,
+        'room_id': ?roomId,
+        'target_id': ?targetId,
+      },
+    );
+    if (res.data['code'] == 0) {
+      return Success(FansMedalData.fromJson(res.data['data']));
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<Medal>> userMedalInfo({
+    required Account account,
+    required Object upId,
+  }) async {
+    final res = await Request().get(
+      Api.userMedalInfo,
+      options: Options(extra: {'account': account}),
+      queryParameters: {
+        'uid': account.mid,
+        'up_uid': upId,
+      },
+    );
+    if (res.data['code'] == 0) {
+      return Success(Medal.fromJson(res.data['data']));
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<void>> wearFansMedal({
+    required Account account,
+    required Object medalId,
+  }) async {
+    final csrf = account.csrf;
+    final res = await Request().post(
+      Api.wearFansMedal,
+      data: {
+        'medal_id': medalId,
+        'target_id': 0,
+        'room_id': 0,
+        'csrf_token': csrf,
+        'csrf': csrf,
+      },
+      options: Options(
+        contentType: Headers.formUrlEncodedContentType,
+        extra: {'account': account},
+      ),
+    );
+    if (res.data['code'] == 0) {
+      return const Success(null);
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<void>> takeOffFansMedal({
+    required Account account,
+  }) async {
+    final csrf = account.csrf;
+    final res = await Request().post(
+      Api.takeOffFansMedal,
+      data: {
+        'target_id': 0,
+        'room_id': 0,
+        'csrf_token': csrf,
+        'csrf': csrf,
+      },
+      options: Options(
+        contentType: Headers.formUrlEncodedContentType,
+        extra: {'account': account},
+      ),
+    );
+    if (res.data['code'] == 0) {
+      return const Success(null);
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<void>> delFansMedal({
+    required Object medalId,
+  }) async {
+    final csrf = Accounts.main.csrf;
+    final res = await Request().post(
+      Api.delFansMedal,
+      data: {
+        'medal_id': medalId,
+        'csrf_token': csrf,
+        'csrf': csrf,
+      },
+      options: Options(contentType: Headers.formUrlEncodedContentType),
+    );
+    if (res.data['code'] == 0) {
+      return const Success(null);
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<ConfigPlusData>> liveConfigPlugs({
+    required Account account,
+  }) async {
+    final res = await Request().get(
+      Api.liveConfigPlugs,
+      options: Options(extra: {'account': account}),
+    );
+    if (res.data['code'] == 0) {
+      return Success(ConfigPlusData.fromJson(res.data['data']));
+    } else {
+      return Error(res.data['message']);
+    }
+  }
+
+  static Future<LoadingState<void>> liveEditPlugs({
+    required Account account,
+    required String key,
+    required int status,
+  }) async {
+    final csrf = account.csrf;
+    final res = await Request().post(
+      Api.liveEditPlugs,
+      data: {
+        'key': key,
+        'status': status,
+        'csrf_token': csrf,
+        'csrf': csrf,
+      },
+      options: Options(
+        contentType: Headers.formUrlEncodedContentType,
+        extra: {'account': account},
+      ),
+    );
+    if (res.data['code'] == 0) {
+      return const Success(null);
     } else {
       return Error(res.data['message']);
     }

@@ -11,7 +11,7 @@ Development, releases, and support are independently maintained by [Ktclat](http
 
 ## Status and downloads
 
-The current version is **0.6.0+7**, available as the [v0.6.0-beta.1 prerelease](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) with the floating navigation update. There is no stable release yet. Download the appropriate `test-signed.apk` and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
+The main branch is at **0.6.1+8** and includes playback, comment, casting and offline cache fixes from PiliPlus 2.2.1. The latest published build is **0.6.0+7**, available as the [v0.6.0-beta.1 prerelease](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) with the floating navigation update. There is no stable release yet. Download the appropriate `test-signed.apk` and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
 
 This prerelease uses an Actions test signing key, not a permanent release key. Test keys can differ between CI runs, so in-place upgrades are not guaranteed. Preserve your data if Android reports a signature conflict. The in-app stable update check ignores prereleases; download this version manually. Development artifacts remain available from successful [Actions runs](https://github.com/Ktclat/Pili--/actions/workflows/build.yml); those artifacts require a GitHub account and expire after 14 days. See [installation](docs/INSTALL.md) and [coexistence](docs/COEXISTENCE.md) for details (Chinese).
 
@@ -32,7 +32,7 @@ The source snapshot starts a new Git history; the previous history and required 
 
 ## Development and validation
 
-Use isolated **Flutter 3.47.8**, **JDK 17**, **Android SDK 37**, and **PowerShell 7**. Follow the [build guide](docs/BUILD.md) to apply the required upstream framework patches and use the committed dependency lockfile. Do not patch a shared Flutter SDK.
+Use isolated **Flutter 3.47.9**, **JDK 17**, **Android SDK 37**, and **PowerShell 7**. Follow the [build guide](docs/BUILD.md) to apply the required upstream framework patches and use the committed dependency lockfile. Do not patch a shared Flutter SDK.
 
 CI runs static analysis, regression tests, three ABI builds, and packaged identity/provider/shortcut checks. [Validation records](docs/VALIDATION.md) identify the tested commits and distinguish automated checks, live API requests, and installed APK testing. ARM64 real-device acceptance and long-running device tests remain outstanding. Other platform sources are retained without a validation claim.
 

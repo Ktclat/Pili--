@@ -40,8 +40,8 @@ if ([IO.Path]::GetFullPath($sdkRoot) -ne [IO.Path]::GetFullPath($expectedSdk)) {
     throw 'Use the isolated .tools/flutter checkout; shared SDKs are never modified.'
 }
 $revision = (git -C $sdkRoot rev-parse HEAD).Trim()
-if ($revision -ne '737ba8f885dc774b53b442759999a312c9461e4e') {
-    throw 'Flutter 3.47.8 is required. See README.md.'
+if ($revision -ne 'c197ca5199e9ee5661e865596c9c07294dfab51c') {
+    throw 'Flutter 3.47.9 is required. See README.md.'
 }
 Push-Location $projectRoot
 try {
@@ -57,7 +57,7 @@ try {
         'scroll_position.patch', 'scrollable.patch', 'scrollable_gesture.patch',
         'draggable_scrollable_sheet.patch', 'scaffold.patch', 'text.patch',
         'text_painter.patch', 'sliver.patch', 'refresh_indicator.patch',
-        'double_tap_gesture.patch', 'bottom_sheet_android.patch', 'scroll_view.patch',
+        'double_tap_gesture.patch', 'media_query.patch', 'bottom_sheet_android.patch', 'scroll_view.patch',
         'navigator.patch'
     )
     foreach ($patch in $patches) { Invoke-CheckedPatch $sdkRoot $patch }

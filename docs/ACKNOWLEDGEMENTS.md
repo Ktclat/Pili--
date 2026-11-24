@@ -14,6 +14,8 @@ Pili-- 是基于 **PiliPlus** 修改、由 [Ktclat](https://github.com/Ktclat) �
 
 本仓库记录的初始导入基线为 PiliPlus 提交 [`72ec31e`](https://github.com/bggRGjQaUbCoE/PiliPlus/commit/72ec31edd6b34883f13ba8caf4e4d76e548ce884)（完整 SHA：`72ec31edd6b34883f13ba8caf4e4d76e548ce884`）。来源说明可对照[该版本的上游 README](https://github.com/bggRGjQaUbCoE/PiliPlus/blob/72ec31edd6b34883f13ba8caf4e4d76e548ce884/README.md)及本仓库的 [NOTICE](../NOTICE)。
 
+Pili-- 0.6.1+8 同步到上游正式版 [2.2.1](https://github.com/bggRGjQaUbCoE/PiliPlus/releases/tag/2.2.1)，同步基点为 `217fb54f51f6764176319bbdedab2a7522d75401`。初始导入至此次同步的改动可在[上游比较页](https://github.com/bggRGjQaUbCoE/PiliPlus/compare/72ec31edd6b34883f13ba8caf4e4d76e548ce884...217fb54f51f6764176319bbdedab2a7522d75401)核对。
+
 Pili-- 不是上述项目维护团队发行的版本，也不是哔哩哔哩官方客户端。上游作者与贡献者不会因代码被继承而自动成为本项目的维护者，也不承担本项目特有改动的发布和支持责任。
 
 ## 维护责任与来源署名

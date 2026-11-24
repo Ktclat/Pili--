@@ -11,7 +11,7 @@
 
 ## 当前状态
 
-当前版本为 **0.6.0+7**，已提供 [v0.6.0-beta.1 预发布下载](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，包含悬浮导航更新，尚无稳定发行版。预发布包使用 Actions 测试签名；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
+主分支源码 **0.6.1+8** 已同步 PiliPlus 2.2.1 的播放、评论、投屏和离线缓存修复。最新已发布版本为 **0.6.0+7**，提供 [v0.6.0-beta.1 预发布下载](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，包含悬浮导航更新，尚无稳定发行版。预发布包使用 Actions 测试签名；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
 
 本项目不是哔哩哔哩官方客户端。其他平台源码保留，目前仅对 Android 提供构建与验证说明。
 
@@ -48,7 +48,7 @@
 
 ## 开发与反馈
 
-项目使用隔离的 **Flutter 3.47.8、JDK 17、Android SDK 37、PowerShell 7** 和已提交的锁文件。上游 Flutter 补丁需要按 [构建指南](docs/BUILD.md) 准备，不能直接使用共享 SDK 构建。
+项目使用隔离的 **Flutter 3.47.9、JDK 17、Android SDK 37、PowerShell 7** 和已提交的锁文件。上游 Flutter 补丁需要按 [构建指南](docs/BUILD.md) 准备，不能直接使用共享 SDK 构建。
 
 - [贡献指南](CONTRIBUTING.md)：开发流程、测试范围和提交方式。
 - [验证记录](docs/VALIDATION.md)：自动测试、实际设备结果和未验收项目。

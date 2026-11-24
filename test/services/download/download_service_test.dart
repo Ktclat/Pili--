@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
+import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
+import 'package:PiliPlus/utils/path_utils.dart' as paths;
 import 'package:flutter_test/flutter_test.dart';
 
 class _DownloadService extends DownloadService {
@@ -44,6 +47,189 @@ void main() {
 
   tearDown(() => directory.delete(recursive: true));
 
+  Subtitle track(int id) =>
+      Subtitle(id: id, lan: 'zh-CN', subtitleUrl: 'https://example.test/$id');
+
+  Future<List<LocalSubtitle>> readTracks(BiliDownloadEntryInfo video) async {
+    final saved = jsonDecode(
+      await File('${video.entryDirPath}/entry.json').readAsString(),
+    ) as Map<String, dynamic>;
+    return BiliDownloadEntryInfo.fromJson(
+      saved,
+      video.entryDirPath,
+    ).subtitles!.cast<LocalSubtitle>();
+  }
+
+  test(
+    'metadata switches only after all subtitle files are readable',
+    () async {
+      final video = entry(1);
+      final fetching = Completer<void>();
+      final response = Completer<List<int>>();
+      final saving = service.savePlayInfo(
+        video,
+        [track(2)],
+        null,
+        fetch: (_) {
+          fetching.complete();
+          return response.future;
+        },
+      );
+      await fetching.future;
+      expect(video.subtitles, isNull);
+      expect(File('${video.entryDirPath}/entry.json').existsSync(), isFalse);
+
+      response.complete(utf8.encode('{"body":[]}'));
+      await saving;
+      final saved = (await readTracks(video)).single;
+      expect(await File(saved.path).readAsString(), '{"body":[]}');
+      expect(saved.id, 2);
+    },
+  );
+
+  test(
+    'a partial refresh preserves legacy tracks, then retries the full set',
+    () async {
+      final video = entry(1);
+      final oldTrack = track(1).toLocal(video.entryDirPath);
+      final oldFile = File(oldTrack.path);
+      await oldFile.create(recursive: true);
+      await oldFile.writeAsString('previous');
+      video.subtitles = [oldTrack];
+      final manifest = File('${video.entryDirPath}/entry.json');
+      await manifest.writeAsString(jsonEncode(video.toJson()));
+      final before = await manifest.readAsString();
+      final second = track(2);
+      final firstWritten = Completer<void>();
+      final fail = Completer<List<int>?>();
+      final saving = service.savePlayInfo(
+        video,
+        [track(1), second],
+        null,
+        fetch: (url) async {
+          if (url == second.subtitleUrl) return fail.future;
+          firstWritten.complete();
+          return utf8.encode('replacement');
+        },
+      );
+      await firstWritten.future;
+      fail.complete(null);
+      await expectLater(saving, throwsFormatException);
+      expect(await manifest.readAsString(), before);
+      expect(
+        await File((await readTracks(video)).single.path).readAsString(),
+        'previous',
+      );
+      expect(oldFile.parent.listSync().map((item) => item.path), [
+        oldFile.path,
+      ]);
+
+      await service.savePlayInfo(
+        video,
+        [track(1), second],
+        null,
+        fetch: (_) async => utf8.encode('new'),
+      );
+      final saved = await readTracks(video);
+      expect(saved.map((sub) => sub.id), [1, 2]);
+      expect(saved[0].batch, isNotNull);
+      expect(saved[1].batch, saved[0].batch);
+      for (final sub in saved) {
+        expect(await File(sub.path).readAsString(), 'new');
+      }
+      expect(await oldFile.readAsString(), 'previous');
+    },
+  );
+
+  test(
+    'failed metadata replacement keeps the previous generation readable',
+    () async {
+      final video = entry(1);
+      await service.savePlayInfo(
+        video,
+        [track(1), track(2)],
+        null,
+        fetch: (_) async => [1],
+      );
+      final saved = await readTracks(video);
+      await Directory('${video.entryDirPath}/entry.json.tmp').create();
+      await expectLater(
+        service.savePlayInfo(
+          video,
+          [track(1), track(2)],
+          null,
+          fetch: (_) async => [2],
+        ),
+        throwsA(isA<FileSystemException>()),
+      );
+      expect(
+        (await readTracks(video)).map((s) => s.path),
+        saved.map((s) => s.path),
+      );
+      expect(
+        video.subtitles!.cast<LocalSubtitle>().map((s) => s.path),
+        saved.map((s) => s.path),
+      );
+      for (final sub in saved) {
+        expect(await File(sub.path).readAsBytes(), [1]);
+      }
+    },
+  );
+
+  test('overlapping subtitle updates publish coherent file sets', () async {
+    final video = entry(1);
+    final waiting = Completer<void>();
+    final delayed = Completer<List<int>>();
+    final first = service.savePlayInfo(
+      video,
+      [track(1), track(2)],
+      null,
+      fetch: (url) async {
+        if (url.endsWith('/2')) {
+          waiting.complete();
+          return delayed.future;
+        }
+        return [1];
+      },
+    );
+    await waiting.future;
+    await service.savePlayInfo(
+      video,
+      [track(1), track(2)],
+      null,
+      fetch: (_) async => [2],
+    );
+    final before = await readTracks(video);
+    delayed.complete([1]);
+    await first;
+    final after = await readTracks(video);
+    expect(after.first.batch, isNot(before.first.batch));
+    for (final sub in before) {
+      expect(await File(sub.path).readAsBytes(), [2]);
+    }
+    for (final sub in after) {
+      expect(await File(sub.path).readAsBytes(), [1]);
+    }
+
+    // Reload from another directory just as after moving an existing cache.
+    TestWidgetsFlutterBinding.ensureInitialized();
+    final page = await Directory('${directory.path}/page').create();
+    final moved = await Directory(video.entryDirPath).rename('${page.path}/1');
+    paths.downloadPath = directory.path;
+    final restarted = _DownloadService()..onInit();
+    await restarted.waitForInitialization;
+    final restored = restarted.waitDownloadQueue.single;
+    final currentTracks = restored.subtitles!.cast<LocalSubtitle>();
+    expect(currentTracks.first.path, startsWith(moved.path));
+    for (final sub in currentTracks) {
+      expect(await File(sub.path).readAsBytes(), [1]);
+    }
+    final dir = Directory('${moved.path}/${paths.PathUtils.subtitleDir}');
+    expect(dir.listSync().map((sub) => sub.path), [
+      '${dir.path}/${after.first.batch}',
+    ]);
+  });
+
   test('completion persists the entry and advances the queue once', () async {
     final finished = entry(1);
     service.waitDownloadQueue.add(finished);
@@ -69,7 +255,7 @@ void main() {
     service.curDownload.value = finished;
 
     final completion = service.completeDownload();
-    // File.writeAsString has yielded, as when startDownload selects another
+    // File.writeAsString has yielded, as when queueDownload selects another
     // queued task while the previous manager's void onDone callback finishes.
     service.curDownload.value = active;
     await completion;
