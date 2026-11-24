@@ -4,6 +4,16 @@
 
 验证按源码提交与安装包记录；相同版本号下可能包含多个开发提交，不能把历史结果直接用于当前代码。构建记录见 [Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml)。
 
+## 0.6.1+8 外部 App 登录授权（2026-11-24）
+
+代码提交 `0eb74d185` 通过 400 项 Flutter 测试和 17 项项目检查。静态分析为 0 个错误、0 个警告，另有 38 条提示。GitHub Actions 构建了三个架构的测试签名 APK，并核验了成品包名、Provider 和启动快捷方式。[构建记录](https://github.com/Ktclat/Pili--/actions/runs/45444746013) · [测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45444746013/artifacts/14947410379)
+
+Android 11（API 30）x86_64 游客模拟器安装同一提交的本地 `.dev` 包。标准 `ACTION_VIEW` 和 Pili-- 专用授权动作均能在冷启动打开网页登录请求，在已运行时打开 TV 登录请求。确认页显示期间再发一个请求，会保留原请求。取消或按系统返回后可回到 Pili-- 首页。旧版 Pili-- 的包名能匹配普通 HTTPS 链接，不能匹配新增的专用动作。
+
+另外安装了该次 Actions 的 x86_64 APK（`io.github.ktclat.piliminus`）。在一个独立 Android 测试 App 中点击登录，使用接入文档里的专用动作和包名进入了「其他 App 请求登录」页。游客点「去登录 Pili--」能进入本应用的账号登录页，再按返回会回到首页，旧请求已清除。原 App 仍需用户手动切回。[实测截图](validation/0.6.1/external-login-guest.png)
+
+测试使用合成登录链接。真实账号确认后由哔哩哔哩向原 App 建立会话的步骤，仍待真实设备与账号验证。
+
 ## 0.6.1+8 同步后复查（2026-11-24）
 
 本轮本地全量通过 388 项 Flutter 测试和 15 项 Python 检查，静态分析有 38 条提示，错误和警告均为 0。新增 30 项回归覆盖下载准备期间暂停与删除、跨目录重扫、分页时刷新、混合分享输入、密钥缓存失败恢复、直播点赞和换号时的迟到响应。Android WebView 测试通过插件通道模拟 Cookie 写入，用独立测试账号检查换号、退出与重试。
