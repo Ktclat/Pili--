@@ -7,7 +7,6 @@ import 'package:PiliPlus/pages/common/common_list_controller.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:get/get.dart' show Get, RxnInt;
 
 class FansMedalController
@@ -123,22 +122,5 @@ class FansMedalController
       res.toast();
       return false;
     }
-  }
-
-  Future<void> onDel(FansMedalItem item) async {
-    if (kDebugMode) {
-      loadingState
-        ..value.data!.remove(item)
-        ..refresh();
-      return;
-    }
-    // final res = await LiveHttp.delFansMedal(medalId: item.uinfoMedal.id!);
-    // if (res.isSuccess) {
-    //   loadingState
-    //     ..value.data!.remove(item)
-    //     ..refresh();
-    // } else {
-    //   res.toast();
-    // }
   }
 }

@@ -45,7 +45,11 @@ class LinkRecognitionService with WidgetsBindingObserver {
     if (_disposed) return;
     WidgetsBinding.instance.addObserver(this);
     _settings = GStorage.setting.watch().listen((event) {
-      if (event.key == SettingBoxKey.recognizeClipboardLinks) {
+      if (event.key == SettingBoxKey.receiveSharedLinks &&
+          !event.deleted &&
+          event.value != true) {
+        _controller.discardPendingShares();
+      } else if (event.key == SettingBoxKey.recognizeClipboardLinks) {
         _controller.invalidateClipboard(forget: true);
         if (Pref.recognizeClipboardLinks) _run(_controller.checkClipboard());
       }

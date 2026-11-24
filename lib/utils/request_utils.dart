@@ -49,6 +49,7 @@ abstract final class RequestUtils {
       return;
     }
     final res = await UserHttp.historyStatus(account: account);
+    if (!identical(account, Accounts.history)) return;
     if (res case Success(:final response)) {
       GStorage.localCache.put(LocalCacheKey.historyPause, response);
     }

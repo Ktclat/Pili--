@@ -33,6 +33,7 @@ import 'package:PiliPlus/plugin/pl_player/models/bottom_progress_behavior.dart';
 import 'package:PiliPlus/plugin/pl_player/models/fullscreen_mode.dart';
 import 'package:PiliPlus/plugin/pl_player/models/hwdec_type.dart';
 import 'package:PiliPlus/plugin/pl_player/models/play_repeat.dart';
+import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/device_utils.dart';
 import 'package:PiliPlus/utils/extension/iterable_ext.dart';
 import 'package:PiliPlus/utils/global_data.dart';
@@ -64,8 +65,12 @@ abstract final class Pref {
   static final Box _video = GStorage.video;
   static final Box _localCache = GStorage.localCache;
 
-  static UserInfoData? get userInfoCache =>
-      GStorage.userInfo.get('userInfoCache');
+  static UserInfoData? get userInfoCache {
+    final cached = GStorage.userInfo.get('userInfoCache');
+    if (cached == null) return null;
+    final account = Accounts.main;
+    return account.isLogin && cached.mid == account.mid ? cached : null;
+  }
 
   static List<double> get dynamicDetailRatio => List<double>.from(
     _setting.get(

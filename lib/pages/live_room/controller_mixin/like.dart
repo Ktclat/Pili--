@@ -1,45 +1,51 @@
 part of 'package:PiliPlus/pages/live_room/controller.dart';
 
-mixin _LiveLikeMixin on GetxController, _LiveDataMixin {
+mixin LiveLikeMixin on GetxController {
+  Account get heartbeat;
+  int get roomId;
+  int? get ruid;
+
   Timer? _likeClickTimer;
   final RxInt likeClickTime = 0.obs;
 
-  void _stopLiveLikeTimer() {
-    _likeClickTimer?.cancel();
-    _likeClickTimer = null;
-  }
+  bool get _isCurrent =>
+      !isClosed &&
+      heartbeat.isLogin &&
+      identical(heartbeat, Accounts.heartbeat);
 
-  void onLikeTapDown(_) {
-    _stopLiveLikeTimer();
-    likeClickTime.value++;
-  }
-
-  void onLikeTapUp([_]) {
-    _likeClickTimer ??= Timer(const Duration(milliseconds: 800), onLike);
-  }
-
-  Future<void> onLike() async {
-    if (!isMainLogin) {
-      likeClickTime.value = 0;
+  void onLikeTap() {
+    if (!_isCurrent) {
+      SmartDialog.showToast(
+        heartbeat.isLogin ? '记录观看账号已切换，请重新进入直播间' : '记录观看账号未登录',
+      );
       return;
     }
+    likeClickTime.value++;
+    _likeClickTimer?.cancel();
+    _likeClickTimer = Timer(const Duration(milliseconds: 800), _sendLikes);
+  }
+
+  Future<void> _sendLikes() async {
+    final count = likeClickTime.value;
+    likeClickTime.value = 0;
+    if (!_isCurrent) return;
     final res = await LiveHttp.liveLikeReport(
-      clickTime: likeClickTime.value,
+      account: heartbeat,
+      clickTime: count,
       roomId: roomId,
-      uid: mid,
-      anchorId: roomInfoH5.value?.roomInfo?.uid,
+      anchorId: ruid,
     );
+    if (!_isCurrent) return;
     if (res.isSuccess) {
       SmartDialog.showToast('点赞成功');
     } else {
       res.toast();
     }
-    likeClickTime.value = 0;
   }
 
   @override
   void onClose() {
-    _stopLiveLikeTimer();
+    _likeClickTimer?.cancel();
     super.onClose();
   }
 }

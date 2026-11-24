@@ -86,7 +86,7 @@ class LiveRoomController extends GetxController
         _LiveDMTrimMixin,
         _LiveDMStreamMixin,
         _LiveSizeMixin,
-        _LiveLikeMixin {
+        LiveLikeMixin {
   LiveRoomController(this.heroTag);
   final String heroTag;
 
@@ -116,7 +116,7 @@ class LiveRoomController extends GetxController
       [queryLiveUrl(autoFullScreenFlag: true), queryLiveInfoH5()],
     ).then((_) => _startLiveTraceTimer());
     if (heartbeat.isLogin && !Pref.historyPause) {
-      VideoHttp.roomEntryAction(roomId: roomId);
+      VideoHttp.roomEntryAction(roomId: roomId, account: heartbeat);
     }
   }
 

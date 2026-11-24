@@ -2,7 +2,7 @@ import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
-import 'package:PiliPlus/utils/linux_cookie_manager.dart';
+import 'package:PiliPlus/utils/native_account_cookies.dart';
 import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:hive_ce/hive.dart';
@@ -43,7 +43,7 @@ abstract final class Accounts {
       }
     }
     return Future.wait([
-      LinuxCookieManager.onMainAccountChanged(),
+      NativeAccountCookies.onMainAccountChanged(),
       ...(accountMode.toSet()..removeWhere((i) => i.activated)).map(
         Request.buvidActive,
       ),
@@ -57,7 +57,7 @@ abstract final class Accounts {
     }
     await Future.wait([
       AnonymousAccount().delete(),
-      LinuxCookieManager.onMainAccountChanged(),
+      NativeAccountCookies.onMainAccountChanged(),
     ]);
     Request.buvidActive(AnonymousAccount());
   }
@@ -71,7 +71,7 @@ abstract final class Accounts {
     }
     await Future.wait([
       if (!identical(previousMain, Accounts.main))
-        LinuxCookieManager.onMainAccountChanged(),
+        NativeAccountCookies.onMainAccountChanged(),
       ...accounts.map((i) => i.delete()),
     ]);
     if (previousMain.isLogin && !Accounts.main.isLogin) {
@@ -82,12 +82,16 @@ abstract final class Accounts {
   static Future<void> set(AccountType key, Account account) async {
     final oldAccount = accountMode[key.index]..type.remove(key);
     accountMode[key.index] = account..type.add(key);
+    if (key == AccountType.main && !identical(account, oldAccount)) {
+      LoginUtils.clearMainProfile();
+    }
     await Future.wait([
-      if (key == AccountType.main) LinuxCookieManager.onMainAccountChanged(),
+      if (key == AccountType.main) NativeAccountCookies.onMainAccountChanged(),
       ?account.onChange(),
       ?oldAccount.onChange(),
     ]);
     if (!account.activated) await Request.buvidActive(account);
+    if (!identical(accountMode[key.index], account)) return;
     switch (key) {
       case AccountType.main:
         await (account.isLogin

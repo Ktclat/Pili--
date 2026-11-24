@@ -12,7 +12,7 @@ import 'package:PiliPlus/utils/app_scheme.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/string_ext.dart';
 import 'package:PiliPlus/utils/linux_cookie_manager.dart';
-import 'package:PiliPlus/utils/login_utils.dart';
+import 'package:PiliPlus/utils/native_account_cookies.dart';
 import 'package:PiliPlus/utils/page_utils.dart';
 import 'package:PiliPlus/utils/trusted_url.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -80,6 +80,10 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
     _webViewController = null;
     super.dispose();
   }
+
+  late Future<void> _initialCookies = NativeAccountCookies.syncForPage(
+    Uri.tryParse(_currentUrl),
+  );
 
   bool _isPop = false;
   @override
@@ -184,8 +188,13 @@ class _WebviewPageState extends State<WebviewPage> with RouteAware {
             if (mounted) SmartDialog.showToast('网页登录状态同步失败');
           }
         } else {
-          await LoginUtils.setWebCookie();
-          SmartDialog.showToast('设置成功，刷新或重新打开网页');
+          try {
+            final url = await _webViewController?.getUrl();
+            await NativeAccountCookies.syncForPage(url?.uriValue);
+            if (mounted) await _webViewController?.reload();
+          } catch (_) {
+            if (mounted) SmartDialog.showToast('网页登录状态同步失败');
+          }
         }
         break;
     }
@@ -324,6 +333,28 @@ document.addEventListener('click', function(e) {
     );
   }
 
+  Widget _afterCookieSync({required Widget child}) => FutureBuilder<void>(
+    future: _initialCookies,
+    builder: (context, snapshot) {
+      if (snapshot.connectionState != ConnectionState.done) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (snapshot.hasError) {
+        return Center(
+          child: TextButton(
+            onPressed: () => setState(() {
+              _initialCookies = NativeAccountCookies.syncForPage(
+                Uri.tryParse(_currentUrl),
+              );
+            }),
+            child: const Text('网页登录状态同步失败，点此重试'),
+          ),
+        );
+      }
+      return SafeArea(child: child);
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     if (Platform.isLinux) {
@@ -352,7 +383,7 @@ document.addEventListener('click', function(e) {
             ),
       body: _isPop
           ? null
-          : SafeArea(
+          : _afterCookieSync(
               child: InAppWebView(
                 webViewEnvironment: webViewEnvironment,
                 initialSettings: InAppWebViewSettings(

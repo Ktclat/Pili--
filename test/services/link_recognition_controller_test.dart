@@ -263,6 +263,27 @@ void main() {
     expect(h.shown, isEmpty);
   });
 
+  test(
+    'disabling and reenabling sharing discards queued old confirmations',
+    () async {
+      final dismissed = Completer<void>();
+      h.onPresent = (_, _) => dismissed.future;
+      final first = h.controller.receiveShare('first', _video);
+      await h.controller.receiveShare('queued', 'https://b23.tv/old');
+      h.shares = false;
+      h.controller.discardPendingShares();
+      await h.controller.receiveShare('disabled', 'https://b23.tv/disabled');
+      h.shares = true;
+      await h.controller.receiveShare('new', 'https://b23.tv/new');
+      dismissed.complete();
+      await first;
+      expect(h.shown.map((event) => event.$1.single.toString()), [
+        _video,
+        'https://b23.tv/new',
+      ]);
+    },
+  );
+
   test('multiple shares never present overlapping confirmations', () async {
     final gates = List.generate(3, (_) => Completer<void>());
     int active = 0;

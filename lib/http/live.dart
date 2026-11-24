@@ -601,22 +601,29 @@ abstract final class LiveHttp {
   }
 
   static Future<LoadingState<void>> liveLikeReport({
+    required Account account,
     required int clickTime,
     required Object roomId,
-    required Object uid,
     Object? anchorId,
   }) async {
+    final data = await WbiSign.makSign({
+      'click_time': clickTime,
+      'room_id': roomId,
+      'uid': account.mid,
+      'anchor_id': ?anchorId,
+      'web_location': 444.8,
+      'csrf': account.csrf,
+    });
+    if (!account.isLogin || !identical(account, Accounts.heartbeat)) {
+      return const Error('记录观看账号已切换');
+    }
     final res = await Request().post(
       Api.liveLikeReport,
-      data: await WbiSign.makSign({
-        'click_time': clickTime,
-        'room_id': roomId,
-        'uid': uid,
-        'anchor_id': ?anchorId,
-        'web_location': 444.8,
-        'csrf': Accounts.heartbeat.csrf,
-      }),
-      options: Options(contentType: Headers.formUrlEncodedContentType),
+      data: data,
+      options: Options(
+        contentType: Headers.formUrlEncodedContentType,
+        extra: {'account': account},
+      ),
     );
     if (res.data['code'] == 0) {
       return const Success(null);
@@ -995,26 +1002,6 @@ abstract final class LiveHttp {
         contentType: Headers.formUrlEncodedContentType,
         extra: {'account': account},
       ),
-    );
-    if (res.data['code'] == 0) {
-      return const Success(null);
-    } else {
-      return Error(res.data['message']);
-    }
-  }
-
-  static Future<LoadingState<void>> delFansMedal({
-    required Object medalId,
-  }) async {
-    final csrf = Accounts.main.csrf;
-    final res = await Request().post(
-      Api.delFansMedal,
-      data: {
-        'medal_id': medalId,
-        'csrf_token': csrf,
-        'csrf': csrf,
-      },
-      options: Options(contentType: Headers.formUrlEncodedContentType),
     );
     if (res.data['code'] == 0) {
       return const Success(null);

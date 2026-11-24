@@ -901,7 +901,6 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                 ),
                 Builder(
                   builder: (context) {
-                    final isLogin = kDebugMode || liveController.isMainLogin;
                     final colorScheme = ColorScheme.of(context);
                     return Material(
                       type: MaterialType.transparency,
@@ -911,18 +910,7 @@ class _LiveRoomPageState extends State<LiveRoomPage>
                           InkWell(
                             overlayColor: _overlayColor(colorScheme),
                             customBorder: const CircleBorder(),
-                            onTap: isLogin
-                                ? null
-                                : liveController.toastNotLogin,
-                            onTapDown: isLogin
-                                ? liveController.onLikeTapDown
-                                : null,
-                            onTapUp: isLogin
-                                ? liveController.onLikeTapUp
-                                : null,
-                            onTapCancel: isLogin
-                                ? liveController.onLikeTapUp
-                                : null,
+                            onTap: liveController.onLikeTap,
                             child: const SizedBox.square(
                               dimension: 34,
                               child: Icon(

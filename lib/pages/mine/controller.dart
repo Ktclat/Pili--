@@ -118,6 +118,8 @@ class MineController extends GetxController with AccountMixin {
     final userInfoCache = Pref.userInfoCache;
     if (userInfoCache != null) {
       userInfo.value = userInfoCache;
+    }
+    if (Accounts.main.isLogin) {
       queryUserInfo();
       tabCtr().forEach((ctr) => ctr.queryData());
     }
@@ -126,7 +128,10 @@ class MineController extends GetxController with AccountMixin {
   bool get isLogin => accountService.isLogin.value;
 
   Future<void> queryUserInfo() async {
-    final res = await UserHttp.userInfo();
+    final account = Accounts.main;
+    if (!account.isLogin) return;
+    final res = await UserHttp.userInfo(account);
+    if (isClosed || !identical(account, Accounts.main)) return;
     if (res case Success(:final response)) {
       if (response.isLogin == true) {
         userInfo.value = response;
@@ -134,27 +139,28 @@ class MineController extends GetxController with AccountMixin {
           GStorage.userInfo.put('userInfoCache', response);
         }
         accountService
-          ..face.value = response.face!
+          ..face.value = response.face ?? ''
           ..isLogin.value = true;
       } else {
-        _onLogoutMain();
+        await Accounts.deleteAll({account});
         return;
       }
     } else {
       final errMsg = res.toString();
       SmartDialog.showToast(errMsg);
       if (errMsg == '账号未登录') {
-        _onLogoutMain();
+        await Accounts.deleteAll({account});
         return;
       }
     }
-    queryUserStatOwner();
+    await queryUserStatOwner();
   }
 
-  void _onLogoutMain() => Accounts.deleteAll({Accounts.main});
-
   Future<void> queryUserStatOwner() async {
-    final res = await UserHttp.userStatOwner();
+    final account = Accounts.main;
+    if (!account.isLogin) return;
+    final res = await UserHttp.userStatOwner(account);
+    if (isClosed || !identical(account, Accounts.main)) return;
     if (res case Success(:final response)) {
       userStat.value = response;
     }
@@ -302,25 +308,21 @@ class MineController extends GetxController with AccountMixin {
     if (!accountService.isLogin.value) {
       return Future.syncValue(null);
     }
-    if (isManual) {
-      queryUserInfo();
-    }
-    return Future.wait(
-      tabCtr().map((ctr) => ctr.onRefresh(isManual: isManual)),
-    );
+    return Future.wait([
+      if (isManual) queryUserInfo(),
+      ...tabCtr().map((ctr) => ctr.onRefresh(isManual: isManual)),
+    ]);
   }
 
   @override
   void onChangeAccount(bool isLogin) {
-    if (isLogin) {
-      onRefresh();
-    } else {
-      userInfo.value = UserInfoData();
-      userStat.value = const UserStat();
-      tabCtr().forEach(
-        (ctr) => ctr.loadingState.value = LoadingState.loading(),
-      );
+    userInfo.value = Pref.userInfoCache ?? UserInfoData();
+    userStat.value = const UserStat();
+    for (final ctr in tabCtr()) {
+      ctr.invalidateCurrentQuery();
+      ctr.loadingState.value = LoadingState.loading();
     }
+    if (isLogin) onRefresh();
   }
 }
 

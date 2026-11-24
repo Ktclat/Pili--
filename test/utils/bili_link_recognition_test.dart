@@ -41,6 +41,42 @@ void main() {
     ]);
   });
 
+  test(
+    'mixes standalone IDs and URLs in source order and deduplicates both',
+    () {
+      expect(
+        BiliLinkRecognition.parse(
+          'AV170001 $video BV1xx411c7mD b23.tv/abc av170002',
+        ),
+        [
+          Uri.parse('https://www.bilibili.com/video/av170001'),
+          Uri.parse(video),
+          Uri.parse('https://b23.tv/abc'),
+          Uri.parse('https://www.bilibili.com/video/av170002'),
+        ],
+      );
+    },
+  );
+
+  test('an out-of-range port cannot discard later links in the same share', () {
+    expect(
+      BiliLinkRecognition.parse(
+        'https://www.bilibili.com:9999999999999999999999/video/av123 AV17',
+      ),
+      [Uri.parse('https://www.bilibili.com/video/av17')],
+    );
+  });
+
+  test('skips whole unrelated URLs while retaining a standalone video ID', () {
+    expect(
+      BiliLinkRecognition.parse(
+        'https://example.org/?note=(av123) file:///folder/(av456) '
+        'example.org/path/(av789) BV1xx411c7mD',
+      ),
+      [Uri.parse(video)],
+    );
+  });
+
   for (final input in [
     'https://@www.bilibili.com/video/BV1xx411c7mD',
     '',

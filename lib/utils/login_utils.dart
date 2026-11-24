@@ -1,55 +1,32 @@
-import 'dart:async' show FutureOr;
-import 'dart:io' show Platform;
-
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/user.dart';
-import 'package:PiliPlus/main.dart' show webViewEnvironment;
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
-import 'package:PiliPlus/utils/accounts/account.dart';
+import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/request_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:collection/collection.dart';
 import 'package:crypto/crypto.dart' show Digest;
-import 'package:flutter_inappwebview/flutter_inappwebview.dart' as web;
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 
 abstract final class LoginUtils {
-  static FutureOr setWebCookie([Account? account]) {
-    if (Platform.isLinux) return null;
-    final cookies = (account ?? Accounts.main).cookieJar.toList();
-    final webManager = web.CookieManager.instance(
-      webViewEnvironment: webViewEnvironment,
-    );
-    return Future.wait(
-      cookies.map(
-        (cookie) => webManager.setCookie(
-          url: web.WebUri(
-            '${Platform.isWindows ? 'https://' : ''}${cookie.domain}',
-          ),
-          name: cookie.name,
-          value: cookie.value,
-          path: cookie.path ?? '/',
-          domain: cookie.domain,
-          isSecure: cookie.secure,
-          isHttpOnly: cookie.httpOnly,
-        ),
-      ),
-    );
-  }
-
   static Future<void> onLoginMain() async {
     final account = Accounts.main;
-    final res = await UserHttp.userInfo();
+    if (!account.isLogin) return;
+    final res = await UserHttp.userInfo(account);
+    if (!identical(account, Accounts.main)) return;
     if (res case Success(:final response)) {
-      setWebCookie(account);
       RequestUtils.syncHistoryStatus();
       if (response.isLogin == true) {
+        if (response != Pref.userInfoCache) {
+          await GStorage.userInfo.put('userInfoCache', response);
+          if (!identical(account, Accounts.main)) return;
+        }
         final accountService = Get.find<AccountService>()
-          ..face.value = response.face!;
+          ..face.value = response.face ?? '';
 
         if (accountService.isLogin.value) {
           accountService.isLogin.refresh();
@@ -58,9 +35,6 @@ abstract final class LoginUtils {
         }
 
         SmartDialog.showToast('main登录成功');
-        if (response != Pref.userInfoCache) {
-          await GStorage.userInfo.put('userInfoCache', response);
-        }
       }
     } else {
       // 获取用户信息失败
@@ -77,18 +51,16 @@ abstract final class LoginUtils {
     }
   }
 
-  static Future<void> onLogoutMain() {
+  static void clearMainProfile() {
+    GlobalData().coins = null;
     Get.find<AccountService>()
       ..face.value = ''
       ..isLogin.value = false;
+  }
 
-    return Future.wait([
-      if (!Platform.isLinux)
-        web.CookieManager.instance(
-          webViewEnvironment: webViewEnvironment,
-        ).deleteAllCookies(),
-      GStorage.userInfo.delete('userInfoCache'),
-    ]);
+  static Future<void> onLogoutMain() {
+    clearMainProfile();
+    return GStorage.userInfo.delete('userInfoCache');
   }
 
   static String generateBuvid() {

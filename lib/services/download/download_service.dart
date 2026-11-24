@@ -45,6 +45,8 @@ class DownloadService extends GetxService {
   static const _maxDanmakuConcurrency = 4;
 
   final _downloadLock = Lock();
+  int _downloadRevision = 0;
+  Completer<void>? _preparationWrites;
   final _metadataLock = Lock();
   final _subtitleBatchPrefix =
       'tracks-${DateTime.now().microsecondsSinceEpoch}-';
@@ -68,6 +70,8 @@ class DownloadService extends GetxService {
   DownloadManager? _downloadManager;
   DownloadManager? _audioDownloadManager;
 
+  final _directoryLock = Lock();
+  int _directoryRevision = 0;
   late Future<void> waitForInitialization;
 
   late bool cachePlayInfo = Pref.cachePlayInfo;
@@ -79,24 +83,47 @@ class DownloadService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    waitForInitialization = _readDownloadList(cleanSubtitleBatches: true);
+    _loadDirectory(cleanSubtitleBatches: true);
   }
 
-  void initDownloadList() {
-    waitForInitialization = _readDownloadList();
-  }
+  void initDownloadList() => _loadDirectory(cleanSubtitleBatches: false);
 
-  Future<void> _readDownloadList({bool cleanSubtitleBatches = false}) async {
+  void _loadDirectory({required bool cleanSubtitleBatches}) {
+    final revision = ++_directoryRevision;
+    final root = Directory(downloadPath);
+    // Invalidate old rows before a late transfer or UI action can select them.
     downloadList.clear();
-    final downloadDir = Directory(await _getDownloadPath());
-    await for (final dir in downloadDir.list()) {
-      if (dir is Directory) {
-        downloadList.addAll(
-          await _readDownloadDirectory(dir, cleanSubtitleBatches),
-        );
+    waitDownloadQueue.clear();
+    final stopped = revision == 1
+        ? Future<void>.value()
+        : cancelDownload(isDelete: true, downloadNext: false);
+    waitForInitialization = _directoryLock.synchronized(() async {
+      await stopped;
+      if (revision != _directoryRevision) return;
+      await root.create(recursive: true);
+      final completed = <BiliDownloadEntryInfo>[];
+      final pending = <BiliDownloadEntryInfo>[];
+      await for (final dir in root.list()) {
+        if (revision != _directoryRevision) return;
+        if (dir is Directory) {
+          for (final entry in await _readDownloadDirectory(
+            dir,
+            cleanSubtitleBatches,
+          )) {
+            if (entry.isCompleted) {
+              completed.add(entry);
+            } else {
+              pending.add(entry..status = DownloadStatus.wait);
+            }
+          }
+        }
       }
-    }
-    downloadList.sort((a, b) => b.timeUpdateStamp.compareTo(a.timeUpdateStamp));
+      if (revision != _directoryRevision) return;
+      completed.sort((a, b) => b.timeUpdateStamp.compareTo(a.timeUpdateStamp));
+      downloadList.addAll(completed);
+      waitDownloadQueue.assignAll(pending);
+      flagNotifier.refresh();
+    });
   }
 
   @pragma('vm:notify-debugger-on-exception')
@@ -125,13 +152,11 @@ class DownloadService extends GetxService {
                   ..pageDirPath = pageDir.path
                   ..entryDirPath = entryDirPath;
             if (cleanSubtitleBatches) await _cleanSubtitleBatches(entry);
-            if (entry.isCompleted) {
-              result.add(entry);
-            } else {
-              waitDownloadQueue.add(entry..status = DownloadStatus.wait);
-            }
-          } catch (_) {
-            if (kDebugMode) rethrow;
+            result.add(entry);
+          } on Exception catch (e) {
+            if (kDebugMode) debugPrint('Cannot read cached entry: $e');
+          } on TypeError catch (e) {
+            if (kDebugMode) debugPrint('Invalid cached entry: $e');
           }
         }
       }
@@ -275,22 +300,34 @@ class DownloadService extends GetxService {
     _createDownload(entry);
   }
 
-  Future<void> _createDownload(BiliDownloadEntryInfo entry) async {
-    final entryDir = await _getDownloadEntryDir(entry);
-    final entryDirPath = entryDir.path;
-    final entryJsonFile = File(path.join(entryDirPath, _entryFile));
-    await entryJsonFile.writeAsString(jsonEncode(entry.toJson()));
-    entry
-      ..pageDirPath = entryDir.parent.path
-      ..entryDirPath = entryDirPath
-      ..status = DownloadStatus.wait;
-    waitDownloadQueue.add(entry);
-    if (curDownload.value?.status.isDownloading != true) {
-      queueDownload(entry);
-    }
+  Future<void> _createDownload(BiliDownloadEntryInfo entry) {
+    final revision = _directoryRevision;
+    final root = downloadPath;
+    return _directoryLock.synchronized(() async {
+      // A scan or another tap may have discovered this CID while we waited.
+      if (revision != _directoryRevision ||
+          downloadList.contains(entry) ||
+          waitDownloadQueue.contains(entry)) {
+        return;
+      }
+      final entryDir = await _getDownloadEntryDir(entry, root);
+      entry
+        ..pageDirPath = entryDir.parent.path
+        ..entryDirPath = entryDir.path
+        ..status = DownloadStatus.wait;
+      await _updateBiliDownloadEntryJson(entry);
+      if (revision != _directoryRevision) return;
+      waitDownloadQueue.add(entry);
+      if (curDownload.value?.status.isDownloading != true) {
+        unawaited(queueDownload(entry));
+      }
+    });
   }
 
-  Future<Directory> _getDownloadEntryDir(BiliDownloadEntryInfo entry) async {
+  Future<Directory> _getDownloadEntryDir(
+    BiliDownloadEntryInfo entry,
+    String root,
+  ) async {
     late final String dirName;
     late final String pageDirName;
     if (entry.ep case final ep?) {
@@ -301,7 +338,7 @@ class DownloadService extends GetxService {
       pageDirName = 'c_${page.cid}';
     }
     final pageDir = Directory(
-      path.join(await _getDownloadPath(), dirName, pageDirName),
+      path.join(root, dirName, pageDirName),
     );
     if (!pageDir.existsSync()) {
       await pageDir.create(recursive: true);
@@ -309,39 +346,54 @@ class DownloadService extends GetxService {
     return pageDir;
   }
 
-  static Future<String> _getDownloadPath() async {
-    final dir = Directory(downloadPath);
-    if (!dir.existsSync()) {
-      await dir.create(recursive: true);
-    }
-    return dir.path;
-  }
-
   Future<void> queueDownload(BiliDownloadEntryInfo entry) {
-    return _downloadLock.synchronized(() => _prepareDownload(entry));
+    bool queued() => waitDownloadQueue.any((item) => identical(item, entry));
+    if (!queued()) return Future.value();
+    final revision = ++_downloadRevision;
+    return _downloadLock.synchronized(() async {
+      if (revision != _downloadRevision || !queued()) return;
+      await _stopManagers();
+      if (revision != _downloadRevision || !queued()) return;
+      if (curDownload.value case final previous?) {
+        if (previous.status.isDownloading) previous.status = .pause;
+      }
+      _curCid = entry.cid;
+      curDownload.value = entry;
+      waitDownloadQueue.refresh();
+      await _startDownload(entry, revision);
+    });
   }
 
-  Future<void> _prepareDownload(BiliDownloadEntryInfo entry) async {
-    await _downloadManager?.cancel(isDelete: false);
-    await _audioDownloadManager?.cancel(isDelete: false);
-    _downloadManager = null;
-    _audioDownloadManager = null;
-    if (curDownload.value case final curEntry?) {
-      if (curEntry.status.isDownloading) {
-        curEntry.status = .pause;
-      }
-    }
+  Future<void> _stopManagers({bool isDelete = false}) async {
+    // Capture both before yielding so a later selection cannot be cancelled.
+    final video = _downloadManager;
+    final audio = _audioDownloadManager;
+    await Future.wait([
+      if (video != null) video.cancel(isDelete: isDelete),
+      if (audio != null) audio.cancel(isDelete: isDelete),
+    ]);
+    if (identical(video, _downloadManager)) _downloadManager = null;
+    if (identical(audio, _audioDownloadManager)) _audioDownloadManager = null;
+  }
 
-    _curCid = entry.cid;
-    curDownload.value = entry;
-    waitDownloadQueue.refresh();
-    await _startDownload(entry);
+  // A directory can be removed as soon as the writes already started by its
+  // preparation finish. Invalidated network responses cannot start new writes.
+  Future<void> _trackPreparationWrites(Future<void> writes) async {
+    final pending = _preparationWrites = Completer<void>();
+    try {
+      await writes;
+    } finally {
+      _preparationWrites = null;
+      pending.complete();
+    }
   }
 
   Future<bool> downloadDanmaku({
     required BiliDownloadEntryInfo entry,
     bool isUpdate = false,
   }) async {
+    final revision = _downloadRevision;
+    bool isCurrent() => isUpdate || revision == _downloadRevision;
     final cid = entry.pageData?.cid ?? entry.source?.cid;
     if (cid == null) return false;
     final danmakuFile = File(
@@ -362,6 +414,7 @@ class DownloadService extends GetxService {
           segmentIndex: 1,
         )).data;
         for (var start = 2; start <= seg; start += _maxDanmakuConcurrency) {
+          if (!isCurrent()) return false;
           final end = start + _maxDanmakuConcurrency - 1;
           final responses = await Future.wait([
             for (var index = start; index <= seg && index <= end; index++)
@@ -372,10 +425,17 @@ class DownloadService extends GetxService {
           }
           responses.clear();
         }
-        await danmakuFile.writeAsBytes(danmaku.writeToBuffer());
+        if (!isCurrent()) return false;
+        final write = danmakuFile.writeAsBytes(danmaku.writeToBuffer());
+        if (isUpdate) {
+          await write;
+        } else {
+          await _trackPreparationWrites(write);
+        }
 
         return true;
       } catch (e) {
+        if (!isCurrent()) return false;
         if (!isUpdate) {
           _updateCurStatus(DownloadStatus.failDanmaku);
         }
@@ -664,48 +724,57 @@ class DownloadService extends GetxService {
     return false;
   }
 
-  Future<void> _startDownload(BiliDownloadEntryInfo entry) async {
+  Future<void> _startDownload(BiliDownloadEntryInfo entry, int revision) async {
+    bool isCurrent() =>
+        revision == _downloadRevision && identical(curDownload.value, entry);
     try {
-      if (!await downloadDanmaku(entry: entry)) {
-        return;
-      }
-
+      if (!await downloadDanmaku(entry: entry) || !isCurrent()) return;
       _updateCurStatus(DownloadStatus.getPlayUrl);
 
       final noSegmentBefore = entry.segments == null;
       final noVolumeBefore = entry.volume == null;
-
       final qaBefore = entry.preferedVideoQuality;
       final mediaFileInfo = await DownloadHttp.getVideoUrl(
         entry: entry,
         ep: entry.ep,
         source: entry.source,
         pageData: entry.pageData,
+        isCurrent: isCurrent,
       );
+      if (mediaFileInfo == null || !isCurrent()) return;
       if (qaBefore != entry.preferedVideoQuality) waitDownloadQueue.refresh();
 
-      // pgc segments, volume
-      if ((noSegmentBefore && entry.segments != null) ||
-          (noVolumeBefore && entry.volume != null)) {
-        await _updateBiliDownloadEntryJson(entry);
-      }
-
       final videoDir = Directory(path.join(entry.entryDirPath, entry.typeTag));
-      if (!videoDir.existsSync()) {
-        await videoDir.create(recursive: true);
+      Future<void> writeMediaFiles() async {
+        if ((noSegmentBefore && entry.segments != null) ||
+            (noVolumeBefore && entry.volume != null)) {
+          await _updateBiliDownloadEntryJson(entry);
+        }
+        if (!isCurrent()) return;
+        await videoDir.create();
+        if (!isCurrent()) return;
+        final index = File(path.join(videoDir.path, _indexFile));
+        await Future.wait([
+          index.writeAsString(jsonEncode(mediaFileInfo.toJson())),
+          _downloadCover(entry: entry),
+          if (entry.pageData != null && Pref.enableSponsorBlock)
+            updateUgcSegments(entry),
+          if (cachePlayInfo) updatePlayInfo(entry),
+        ]);
       }
 
-      final mediaJsonFile = File(path.join(videoDir.path, _indexFile));
-      await Future.wait([
-        mediaJsonFile.writeAsString(jsonEncode(mediaFileInfo.toJson())),
-        _downloadCover(entry: entry),
-        if (entry.pageData != null && Pref.enableSponsorBlock)
-          updateUgcSegments(entry),
-        if (cachePlayInfo) updatePlayInfo(entry),
-      ]);
+      await _trackPreparationWrites(writeMediaFiles());
+      if (!isCurrent()) return;
+      void onReceive(int progress, int total) {
+        if (isCurrent()) _onReceive(progress, total);
+      }
 
-      if (curDownload.value?.cid != entry.cid) {
-        return;
+      void onDone([Object? error]) {
+        if (isCurrent()) _onDone(error);
+      }
+
+      void onAudioDone([Object? error]) {
+        if (isCurrent()) _onAudioDone(error);
       }
 
       switch (mediaFileInfo) {
@@ -714,16 +783,16 @@ class DownloadService extends GetxService {
           _downloadManager = DownloadManager(
             url: first.url,
             path: path.join(videoDir.path, PathUtils.videoNameType1),
-            onReceiveProgress: _onReceive,
-            onDone: _onDone,
+            onReceiveProgress: onReceive,
+            onDone: onDone,
           );
           break;
         case Type2 mediaFileInfo:
           _downloadManager = DownloadManager(
             url: mediaFileInfo.video.first.baseUrl,
             path: path.join(videoDir.path, PathUtils.videoNameType2),
-            onReceiveProgress: _onReceive,
-            onDone: _onDone,
+            onReceiveProgress: onReceive,
+            onDone: onDone,
           );
           final audio = mediaFileInfo.audio;
           if (audio != null && audio.isNotEmpty) {
@@ -731,7 +800,7 @@ class DownloadService extends GetxService {
               url: audio.first.baseUrl,
               path: path.join(videoDir.path, PathUtils.audioNameType2),
               onReceiveProgress: null,
-              onDone: _onAudioDone,
+              onDone: onAudioDone,
             );
           }
           late final first = mediaFileInfo.video.first;
@@ -747,6 +816,7 @@ class DownloadService extends GetxService {
           break;
       }
     } catch (e, s) {
+      if (!isCurrent()) return;
       _updateCurStatus(DownloadStatus.failPlayUrl);
       if (kDebugMode) {
         debugPrint('get download url error: $e\n\n$s');
@@ -895,28 +965,21 @@ class DownloadService extends GetxService {
     bool downloadNext = true,
   }) async {
     if (removeList) {
-      downloadList.remove(entry);
+      downloadList.removeWhere((item) => identical(item, entry));
     }
     if (removeQueue) {
-      waitDownloadQueue.remove(entry);
+      waitDownloadQueue.removeWhere((item) => identical(item, entry));
     }
-    if (curDownload.value?.cid == entry.cid) {
+    if (identical(curDownload.value, entry)) {
       await cancelDownload(
         isDelete: true,
         downloadNext: downloadNext,
       );
     }
-    final downloadDir = Directory(entry.pageDirPath);
-    if (downloadDir.existsSync()) {
-      if (!await downloadDir.lengthGte(2)) {
-        await downloadDir.tryDel(recursive: true);
-      } else {
-        final entryDir = Directory(entry.entryDirPath);
-        if (entryDir.existsSync()) {
-          await entryDir.tryDel(recursive: true);
-        }
-      }
-    }
+    await Directory(entry.entryDirPath).tryDel(recursive: true);
+    // Removing an empty parent is safe even if a sibling was added or the
+    // same row was already deleted by another view.
+    await Directory(entry.pageDirPath).tryDel();
     if (refresh) {
       flagNotifier.refresh();
     }
@@ -937,21 +1000,21 @@ class DownloadService extends GetxService {
     required bool isDelete,
     bool downloadNext = true,
   }) async {
-    await _downloadManager?.cancel(isDelete: isDelete);
-    await _audioDownloadManager?.cancel(isDelete: isDelete);
-    _downloadManager = null;
-    _audioDownloadManager = null;
-    if (!isDelete) {
-      final entry = curDownload.value;
-      if (entry != null) {
-        await _updateBiliDownloadEntryJson(entry);
-      }
-    }
+    final revision = ++_downloadRevision;
+    final entry = curDownload.value;
+    final pendingWrites = _preparationWrites;
     if (isDelete) {
       _curCid = null;
       curDownload.value = null;
     } else {
       _updateCurStatus(DownloadStatus.pause);
+    }
+    await _stopManagers(isDelete: isDelete);
+    if (isDelete) await pendingWrites?.future;
+    if (revision != _downloadRevision) return;
+    if (!isDelete && entry != null) {
+      await _updateBiliDownloadEntryJson(entry);
+      if (revision != _downloadRevision) return;
     }
     if (downloadNext) {
       nextDownload();

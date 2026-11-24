@@ -2,10 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/models_new/download/bili_download_entry_info.dart';
 import 'package:PiliPlus/models_new/video/video_play_info/subtitle.dart';
 import 'package:PiliPlus/services/download/download_service.dart';
 import 'package:PiliPlus/utils/path_utils.dart' as paths;
+import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
+import 'package:dio/dio.dart';
+import 'package:hive_ce/hive.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 class _DownloadService extends DownloadService {
@@ -13,6 +18,32 @@ class _DownloadService extends DownloadService {
 
   @override
   void nextDownload() => nextCalls++;
+}
+
+class _BlockedDanmaku extends _DownloadService {
+  final started = Completer<void>();
+  final response = Completer<bool>();
+
+  @override
+  Future<bool> downloadDanmaku({
+    required BiliDownloadEntryInfo entry,
+    bool isUpdate = false,
+  }) {
+    entry.status = DownloadStatus.getDanmaku;
+    started.complete();
+    return response.future;
+  }
+}
+
+class _Settings extends Fake implements Box<dynamic> {
+  @override
+  dynamic get(dynamic key, {dynamic defaultValue}) {
+    if (key == LocalCacheKey.mixinKey) return 'cached-wbi-key';
+    if (key == LocalCacheKey.timeStamp) {
+      return DateTime.now().millisecondsSinceEpoch;
+    }
+    return defaultValue;
+  }
 }
 
 void main() {
@@ -228,6 +259,107 @@ void main() {
     expect(dir.listSync().map((sub) => sub.path), [
       '${dir.path}/${after.first.batch}',
     ]);
+  });
+
+  test('a paused preparation ignores the late danmaku response', () async {
+    final blocked = _BlockedDanmaku();
+    final video = entry(1);
+    blocked.waitDownloadQueue.add(video);
+    final preparing = blocked.queueDownload(video);
+    await blocked.started.future;
+    await blocked.cancelDownload(isDelete: false, downloadNext: false);
+    blocked.response.complete(true);
+    await preparing;
+
+    expect(video.status, DownloadStatus.pause);
+    expect(blocked.curDownload.value, same(video));
+    expect(blocked.waitDownloadQueue, [video]);
+    expect(blocked.nextCalls, 0);
+  });
+
+  test(
+    'deleting while waiting for the play URL cannot recreate the files',
+    () async {
+      final video = entry(1);
+      final folder = Directory(video.entryDirPath);
+      await Directory('${directory.path}/another-entry').create();
+      await File('${folder.path}/${paths.PathUtils.danmakuName}').create();
+      final requested = Completer<void>();
+      final release = Completer<void>();
+      GStorage.setting = _Settings();
+      GStorage.localCache = _Settings();
+      Request();
+      Request.dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) async {
+            if (options.uri.path.endsWith('/finger/spi')) {
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  data: {
+                    'code': 0,
+                    'data': {'b_3': 'guest', 'b_4': 'guest'},
+                  },
+                ),
+              );
+              return;
+            }
+            expect(options.uri.path, contains('playurl'));
+            requested.complete();
+            await release.future;
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                data: {
+                  'code': 0,
+                  'data': {
+                    'format': 'mp4',
+                    'quality': 32,
+                    'durl': [
+                      {
+                        'url': 'https://example.test/video.mp4',
+                        'order': 1,
+                        'size': 3,
+                        'length': 100,
+                      },
+                    ],
+                  },
+                },
+              ),
+            );
+          },
+        ),
+      );
+      addTearDown(() => Request.dio.close(force: true));
+      service.waitDownloadQueue.add(video);
+      final preparing = service.queueDownload(video);
+      await requested.future;
+      await service.deleteDownload(
+        entry: video,
+        removeQueue: true,
+        downloadNext: false,
+      );
+      expect(folder.existsSync(), isFalse);
+      release.complete();
+      await preparing;
+
+      expect(folder.existsSync(), isFalse);
+      expect(service.curDownload.value, isNull);
+      expect(service.waitDownloadQueue, isEmpty);
+      expect(video.videoQuality, isNull);
+    },
+  );
+
+  test('retrying a deletion leaves a sibling download intact', () async {
+    final first = entry(1);
+    final sibling = entry(2);
+    final media = File('${sibling.entryDirPath}/video.m4s');
+    await media.writeAsBytes([1, 2, 3]);
+    service.downloadList.addAll([first, sibling]);
+    await service.deleteDownload(entry: first, removeList: true);
+    await service.deleteDownload(entry: first, removeList: true);
+    expect(await media.readAsBytes(), [1, 2, 3]);
+    expect(service.downloadList, [sibling]);
   });
 
   test('completion persists the entry and advances the queue once', () async {

@@ -11,7 +11,6 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/accounts/account_manager/account_mgr.dart';
 import 'package:PiliPlus/utils/global_data.dart';
-import 'package:PiliPlus/utils/login_utils.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:brotli/brotli.dart';
@@ -39,7 +38,6 @@ class Request {
     accountManager = AccountManager();
     dio.interceptors.add(accountManager);
     Accounts.refresh();
-    LoginUtils.setWebCookie();
 
     if (Accounts.main.isLogin) {
       final coin = Pref.userInfoCache?.money;
@@ -52,7 +50,9 @@ class Request {
   }
 
   static Future<void> setCoin() async {
-    final res = await UserHttp.getCoin();
+    final account = Accounts.main;
+    final res = await UserHttp.getCoin(account);
+    if (!identical(account, Accounts.main)) return;
     if (res case Success(:final response)) {
       GlobalData().coins = response;
     }

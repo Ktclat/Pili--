@@ -43,6 +43,8 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   LoadingState<AccountMyInfoData> _loadingState =
       LoadingState<AccountMyInfoData>.loading();
+  late final _owner = Accounts.main;
+  bool get _isCurrent => mounted && identical(_owner, Accounts.main);
   late final TextEditingController _textController;
   late final _imagePicker = ImagePicker();
   AccountService accountService = Get.find<AccountService>();
@@ -76,6 +78,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _getInfo() async {
+    if (!_isCurrent) return;
     Map<String, String> data = {
       'build': '2001100',
       'c_locale': 'zh_CN',
@@ -89,9 +92,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
         .get(
           '${HttpString.appBaseUrl}/x/v2/account/myinfo',
           queryParameters: data,
+          options: Options(extra: {'account': _owner}),
         )
         .then((res) {
-          if (mounted) {
+          if (_isCurrent) {
             setState(() {
               if (res.data['code'] == 0) {
                 AccountMyInfoData data = AccountMyInfoData.fromJson(
@@ -338,11 +342,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     required ProfileType type,
     dynamic datum,
   }) async {
-    final accessKey = Accounts.main.accessKey;
+    if (!_isCurrent) return;
+    final accessKey = _owner.accessKey;
     if (accessKey == null || accessKey.isEmpty) {
       SmartDialog.showToast('请退出账号后重新登录');
       return;
     }
+    final text = _textController.text;
     final data = <String, String>{
       'access_key': accessKey,
       'build': '2001100',
@@ -353,9 +359,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
       's_locale': 'zh_CN',
       'statistics': Constants.statistics,
       if (type == ProfileType.uname)
-        'uname': _textController.text
+        'uname': text
       else if (type == ProfileType.sign)
-        'user_sign': _textController.text
+        'user_sign': text
       else if (type == ProfileType.birthday)
         'birthday': datum
       else if (type == ProfileType.sex)
@@ -368,27 +374,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
           data: data,
           options: Options(
             contentType: Headers.formUrlEncodedContentType,
+            extra: {'account': _owner},
           ),
         )
         .then((res) {
+          if (!_isCurrent) return;
           if (res.data['code'] == 0) {
             AccountMyInfoData data = _loadingState.data;
             if (type == ProfileType.uname) {
               data
-                ..name = _textController.text
+                ..name = text
                 ..coins = data.coins! - 6;
               try {
                 UserInfoData userInfo = Pref.userInfoCache!
-                  ..uname = _textController.text;
+                  ..uname = text;
                 GStorage.userInfo.put('userInfoCache', userInfo);
               } catch (_) {}
               try {
                 Get.find<MineController>().userInfo
-                  ..value.uname = _textController.text
+                  ..value.uname = text
                   ..refresh();
               } catch (_) {}
             } else if (type == ProfileType.sign) {
-              data.sign = _textController.text;
+              data.sign = text;
             } else if (type == ProfileType.birthday) {
               data.birthday = datum;
             } else if (type == ProfileType.sex) {
@@ -470,7 +478,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         imageQuality: 100,
         requestFullMetadata: false,
       );
-      if (pickedFile != null && mounted) {
+      if (pickedFile != null && _isCurrent) {
         String? imagePath = pickedFile.path;
         String? mimeType = (pickedFile.mimeType ?? lookupMimeType(imagePath))
             ?.split('/')
@@ -508,19 +516,29 @@ class _EditProfilePageState extends State<EditProfilePage> {
           imagePath = croppedFile?.path;
         }
         if (imagePath != null) {
+          final face = await MultipartFile.fromFile(imagePath);
+          if (!_isCurrent) {
+            if (PlatformUtils.isMobile) await File(imagePath).tryDel();
+            return;
+          }
           Request()
               .post(
                 '/x/member/web/face/update',
                 queryParameters: {
-                  'csrf': Accounts.main.csrf,
+                  'csrf': _owner.csrf,
                 },
+                options: Options(extra: {'account': _owner}),
                 data: FormData.fromMap({
                   'dopost': 'save',
                   'DisplayRank': 10000,
-                  'face': await MultipartFile.fromFile(imagePath),
+                  'face': face,
                 }),
               )
               .then((res) {
+                if (PlatformUtils.isMobile && imagePath != null) {
+                  File(imagePath).tryDel();
+                }
+                if (!_isCurrent) return;
                 if (res.data['code'] == 0) {
                   SmartDialog.showToast('修改成功');
                   Timer(const Duration(milliseconds: 500), () {
@@ -530,9 +548,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   });
                 } else {
                   SmartDialog.showToast(res.data['message']);
-                }
-                if (PlatformUtils.isMobile && imagePath != null) {
-                  File(imagePath).tryDel();
                 }
               });
         }

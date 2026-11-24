@@ -17,10 +17,11 @@ class RcmdController extends CommonListController with RefreshImplMixin {
     if (_rcmdSource == value) return;
     _rcmdSource = value;
     lastRefreshAt = null;
-    invalidateCurrentQuery();
     await onReload();
   }
 
+  // Cursor of the visible feed while a replacement first page is in flight.
+  int _retainedPage = 0;
   int? lastRefreshAt;
   late bool savedRcmdTip = Pref.savedRcmdTip;
 
@@ -50,30 +51,28 @@ class RcmdController extends CommonListController with RefreshImplMixin {
 
   @override
   bool handleError(String? errMsg) {
-    return enableSaveLastData &&
-        (loadingState.value.dataOrNull?.isNotEmpty ?? false);
+    if (enableSaveLastData &&
+        (loadingState.value.dataOrNull?.isNotEmpty ?? false)) {
+      page = _retainedPage;
+      return true;
+    }
+    return false;
   }
 
   @override
   void handleListResponse(List dataList) {
-    if (enableSaveLastData && page == 0) {
-      if (loadingState.value case Success(:final response)) {
-        if (response != null && response.isNotEmpty) {
-          if (savedRcmdTip) {
-            lastRefreshAt = dataList.length;
-          }
-          if (response.length > 200) {
-            dataList.addAll(response.take(50));
-          } else {
-            dataList.addAll(response);
-          }
-        }
-      }
-    }
+    if (page != 0) return;
+    lastRefreshAt = null;
+    final previous = loadingState.value.dataOrNull;
+    if (!enableSaveLastData || previous == null || previous.isEmpty) return;
+    if (savedRcmdTip) lastRefreshAt = dataList.length;
+    dataList.addAll(previous.length > 200 ? previous.take(50) : previous);
   }
 
   @override
   Future<void> onRefresh() {
+    if (page > 0) _retainedPage = page;
+    invalidateCurrentQuery();
     page = 0;
     isEnd = false;
     return queryData();

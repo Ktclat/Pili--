@@ -35,19 +35,28 @@ abstract final class UserHttp {
   //   }
   // }
 
-  static Future<LoadingState<UserInfoData>> userInfo() async {
-    final res = await Request().get(Api.userInfo);
+  static Future<LoadingState<UserInfoData>> userInfo(Account account) async {
+    final res = await Request().get(
+      Api.userInfo,
+      options: Options(extra: {'account': account}),
+    );
     if (res.data['code'] == 0) {
       UserInfoData data = UserInfoData.fromJson(res.data['data']);
-      GlobalData().coins = data.money;
+      if (data.isLogin == true && data.mid != account.mid) {
+        return const Error('账号资料与当前账号不一致');
+      }
+      if (identical(account, Accounts.main)) GlobalData().coins = data.money;
       return Success(data);
     } else {
       return Error(res.data['message']);
     }
   }
 
-  static Future<LoadingState<UserStat>> userStatOwner() async {
-    final res = await Request().get(Api.userStatOwner);
+  static Future<LoadingState<UserStat>> userStatOwner(Account account) async {
+    final res = await Request().get(
+      Api.userStatOwner,
+      options: Options(extra: {'account': account}),
+    );
     if (res.data['code'] == 0) {
       return Success(UserStat.fromJson(res.data['data']));
     } else {
@@ -384,8 +393,11 @@ abstract final class UserHttp {
     }
   }
 
-  static Future<LoadingState<num?>> getCoin() async {
-    final res = await Request().get(Api.getCoin);
+  static Future<LoadingState<num?>> getCoin(Account account) async {
+    final res = await Request().get(
+      Api.getCoin,
+      options: Options(extra: {'account': account}),
+    );
     if (res.data['code'] == 0) {
       return Success(res.data['data']?['money']);
     } else {

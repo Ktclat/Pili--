@@ -31,6 +31,8 @@ class LinkRecognitionController {
     if (forget) _lastClipboard = null;
   }
 
+  void discardPendingShares() => _shares.clear();
+
   Future<void> receiveShare(String id, String text) async {
     if (_disposed || !allowShares() || !_seenShareIds.add(id)) return;
     if (_seenShareIds.length > 64) _seenShareIds.remove(_seenShareIds.first);

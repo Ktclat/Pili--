@@ -16,8 +16,9 @@ abstract final class DownloadHttp {
   static const String referer = "https://www.bilibili.com/";
   static const String userAgent = "Bilibili Freedoooooom/MarkII";
 
-  static Future<BiliDownloadMediaInfo> getVideoUrl({
+  static Future<BiliDownloadMediaInfo?> getVideoUrl({
     required BiliDownloadEntryInfo entry,
+    required bool Function() isCurrent,
     SourceInfo? source,
     PageInfo? pageData,
     EpInfo? ep,
@@ -38,6 +39,7 @@ abstract final class DownloadHttp {
       },
       voiceBalance: true,
     );
+    if (!isCurrent()) return null;
     if (res case Success(:final response)) {
       final dash = response.dash;
 

@@ -51,7 +51,7 @@ abstract final class WbiSign {
     13,
   ];
 
-  static Future<String>? _future;
+  static Future<String>? _pendingRefresh;
 
   // 对 imgKey 和 subKey 进行字符顺序打乱编码
   static String getMixinKey(String orig) {
@@ -74,38 +74,45 @@ abstract final class WbiSign {
         .toString(); // 计算 w_rid
   }
 
-  static Future<String> _getWbiKeys() async {
+  static Future<String> _refreshKey(DateTime requestedAt) async {
     final resp = await Request().get(Api.userInfo);
+    final String mixinKey;
     try {
       final wbiUrls = resp.data['data']['wbi_img'];
-
-      final mixinKey = getMixinKey(
+      mixinKey = getMixinKey(
         Utils.getFileName(wbiUrls['img_url'], fileExt: false) +
             Utils.getFileName(wbiUrls['sub_url'], fileExt: false),
       );
-
-      _localCache.put(LocalCacheKey.mixinKey, mixinKey);
-
-      return mixinKey;
     } catch (_) {
       return '';
     }
+
+    try {
+      await _localCache.putAll({
+        LocalCacheKey.mixinKey: mixinKey,
+        LocalCacheKey.timeStamp: requestedAt.millisecondsSinceEpoch,
+      });
+    } catch (_) {
+      // A storage failure must not discard a key we can use for this request.
+    }
+    return mixinKey;
   }
 
   static FutureOr<String> getWbiKeys() {
-    final nowDate = DateTime.now();
-    if (DateTime.fromMillisecondsSinceEpoch(
-          _localCache.get(LocalCacheKey.timeStamp, defaultValue: 0) as int,
-        ).day ==
-        nowDate.day) {
-      final String? mixinKey = _localCache.get(LocalCacheKey.mixinKey);
-      if (mixinKey != null) return mixinKey;
-      return _future ??= _getWbiKeys();
-    } else {
-      return _future = _localCache
-          .put(LocalCacheKey.timeStamp, nowDate.millisecondsSinceEpoch)
-          .then((_) => _getWbiKeys());
+    final now = DateTime.now();
+    final stamp = _localCache.get(LocalCacheKey.timeStamp);
+    final key = _localCache.get(LocalCacheKey.mixinKey);
+    if (stamp is int && key is String && key.isNotEmpty) {
+      final dayStart = DateTime(now.year, now.month, now.day);
+      final nextDay = DateTime(now.year, now.month, now.day + 1);
+      if (stamp >= dayStart.millisecondsSinceEpoch &&
+          stamp < nextDay.millisecondsSinceEpoch) {
+        return key;
+      }
     }
+    return _pendingRefresh ??= _refreshKey(now).whenComplete(() {
+      _pendingRefresh = null;
+    });
   }
 
   static Future<Map<String, Object>> makSign(

@@ -1037,8 +1037,6 @@ abstract final class Api {
 
   static const String takeOffFansMedal = '$_fansMedal/take_off';
 
-  static const String delFansMedal = '$_fansMedal/web_room/del_medal';
-
   static const String liveConfigPlugs =
       '${HttpString.liveBaseUrl}/xlive/web-ucenter/v1/labs/ConfigPlugs';
 
