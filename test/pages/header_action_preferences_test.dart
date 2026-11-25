@@ -170,9 +170,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: HeaderActionSettingsPage(initialPage: HeaderActionPage.home),
-      ),
+      const MaterialApp(home: HeaderActionSettingsPage()),
     );
     await tester.pumpAndSettle();
     Finder row(String label) => find.widgetWithText(CheckboxListTile, label);

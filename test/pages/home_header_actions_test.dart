@@ -105,7 +105,7 @@ void main() {
       await tester.tap(find.byTooltip('更多操作'));
       await tester.pumpAndSettle();
       expect(find.text('消息'), findsNothing);
-      expect(find.text('编辑按钮'), findsOneWidget);
+      expect(find.text('编辑按钮'), findsNothing);
       await tester.tap(find.text('识别链接'));
       await tester.pumpAndSettle();
       expect(find.text('识别页面'), findsOneWidget);
@@ -134,11 +134,11 @@ void main() {
       await tester.tap(find.byTooltip('更多操作'));
       await tester.pumpAndSettle();
       expect(find.text('我的'), findsOneWidget);
-      expect(find.text('编辑按钮'), findsOneWidget);
+      expect(find.text('编辑按钮'), findsNothing);
     },
   );
 
-  testWidgets('rotating a phone keeps an all-collapsed toolbar editable', (
+  testWidgets('rotating a phone keeps all collapsed tools in More', (
     tester,
   ) async {
     await show(tester, const Size(360, 640));
@@ -156,7 +156,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('扫一扫'), findsOneWidget);
     expect(find.text('识别链接'), findsOneWidget);
-    expect(find.text('编辑按钮'), findsOneWidget);
+    expect(find.text('编辑按钮'), findsNothing);
+  });
+
+  testWidgets('the last available slot shows a shortcut when all tools fit', (
+    tester,
+  ) async {
+    // Portrait has 28 dp of outer padding, 96 dp for search and three 48 dp slots.
+    await show(tester, const Size(268, 640));
+    await HeaderActionPreferences.save(.home, [
+      for (final entry in HeaderActionPage.home.defaults)
+        (action: entry.action, pinned: entry.action != HeaderAction.messages),
+    ]);
+    await tester.pumpAndSettle();
+
+    final more = find.byTooltip('更多操作');
+    expect(find.byTooltip('扫一扫'), findsOneWidget);
+    expect(find.byTooltip('点击登录'), findsOneWidget);
+    expect(find.byTooltip('识别链接'), findsOneWidget);
+    expect(more, findsNothing);
+
+    tester.view.physicalSize = const Size(267, 640);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('扫一扫'), findsOneWidget);
+    expect(find.byTooltip('识别链接'), findsNothing);
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    expect(find.text('我的'), findsOneWidget);
+    expect(find.text('识别链接'), findsOneWidget);
+    expect(find.text('编辑按钮'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets(

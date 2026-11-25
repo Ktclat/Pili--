@@ -3,12 +3,7 @@ import 'package:get/get.dart';
 import 'package:material_ui/material_ui.dart';
 
 class HeaderActionSettingsPage extends StatelessWidget {
-  const HeaderActionSettingsPage({
-    super.key,
-    this.initialPage = HeaderActionPage.home,
-  });
-
-  final HeaderActionPage initialPage;
+  const HeaderActionSettingsPage({super.key});
 
   Future<void> _persist(BuildContext context, Future<void> write) async {
     try {
@@ -24,7 +19,6 @@ class HeaderActionSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DefaultTabController(
-    initialIndex: initialPage.index,
     length: HeaderActionPage.values.length,
     child: Builder(
       builder: (context) => Scaffold(

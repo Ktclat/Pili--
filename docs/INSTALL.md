@@ -19,7 +19,7 @@
 
 最低 Android 版本为 **7.0 / API 24**。不确定架构时可查看设备资料；开发者可运行 `adb shell getprop ro.product.cpu.abilist`。构建标为 `release` 仅指编译模式，CI 包仍使用测试签名。
 
-主分支 **0.6.3+11** 的三个架构测试包可从本次构建下载。已核对公开 Actions 附件，+10 与 +11 使用不同的临时证书，Android 无法直接从这两次构建中的 +10 覆盖安装到 +11。历史测试版本的安装、签名与设备验证按源码分别记录。[0.6.3+11 测试包](https://github.com/Ktclat/Pili--/actions/runs/45558391018/artifacts/14998000754) · [验证记录](VALIDATION.md)
+此前 **0.6.3+11** 的三个架构测试包可从本次构建下载。已核对公开 Actions 附件，+10 与 +11 使用不同的临时证书，Android 无法直接从这两次构建中的 +10 覆盖安装到 +11。历史测试版本的安装、签名与设备验证按源码分别记录。[0.6.3+11 测试包](https://github.com/Ktclat/Pili--/actions/runs/45558391018/artifacts/14998000754) · [验证记录](VALIDATION.md)
 
 开发测试包也可从成功的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 下载：选择目标提交，在 **Artifacts** 获取 `Pili--Android-test-signed` 并解压。Actions 附件需登录 GitHub，默认保留 14 天，其中 APK 使用 `app-<ABI>-release.apk` 命名；这项期限不适用于已上传的 Release 附件。取消或失败的运行不能视为已验证版本。
 
@@ -41,7 +41,7 @@ Pili-- 使用 `io.github.ktclat.piliminus`，上游 PiliPlus 使用 `com.example
 
 ## 编辑首页和「我的」右上角按钮
 
-从 0.6.3 起，在对应页面点「⋮ → 编辑按钮」，或打开「设置 → 外观设置 → 右上角按钮」。分别选择首页或「我的」，调整按钮顺序并选择哪些直接显示。其余工具和窄屏放不下的按钮可从「更多操作」打开。恢复默认仅影响当前选中的页面。
+打开「设置 → 外观设置 → 右上角按钮」，在「首页」或「我的」标签下勾选要直接显示的工具，拖动右侧手柄排序。「恢复默认」只影响当前页。从 0.6.3+12 起，所有可用工具均已勾选且能排下时，顶栏会用满可用位置。有工具收起或放不下时，点「⋮」即可打开。
 
 「我的」默认把扫一扫和识别链接收在「更多操作」中。常用扫码时，可在「我的」的编辑页将它放回右上角。
 

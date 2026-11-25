@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:PiliPlus/models/user/info.dart';
@@ -5,10 +6,12 @@ import 'package:PiliPlus/pages/link_recognition/view.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/mine/view.dart';
 import 'package:PiliPlus/pages/scan/view.dart';
+import 'package:PiliPlus/pages/setting/view.dart';
 import 'package:PiliPlus/services/account_service.dart';
 import 'package:PiliPlus/utils/accounts.dart';
 import 'package:PiliPlus/utils/accounts/account.dart';
 import 'package:PiliPlus/utils/header_action_preferences.dart';
+import 'package:PiliPlus/utils/path_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +31,9 @@ class _Box<T> extends Fake implements Box<T> {
   }
 
   @override
+  bool get isEmpty => data.isEmpty;
+
+  @override
   bool get isNotEmpty => data.isNotEmpty;
 }
 
@@ -36,6 +42,9 @@ void main() {
   late MainController main;
 
   setUpAll(() {
+    final directory = Directory.systemTemp.createTempSync('mine-header-test');
+    appSupportDirPath = directory.path;
+    addTearDown(() => directory.deleteSync(recursive: true));
     GStorage.userInfo = _Box<UserInfoData>();
     GStorage.setting = settings;
     GStorage.reply = _Box<Uint8List>();
@@ -75,10 +84,7 @@ void main() {
             name: '/recognizeLink',
             page: () => const LinkRecognitionPage(),
           ),
-          GetPage(
-            name: '/setting',
-            page: () => const Scaffold(body: Text('设置页面')),
-          ),
+          GetPage(name: '/setting', page: () => const SettingPage()),
           GetPage(
             name: '/search',
             page: () => const Scaffold(body: Text('搜索页面')),
@@ -120,6 +126,7 @@ void main() {
       Future<void> select(String label) async {
         await tester.tap(more);
         await tester.pumpAndSettle();
+        expect(find.text('编辑按钮'), findsNothing);
         expect(find.text('扫一扫'), findsOneWidget);
         expect(find.text('识别链接'), findsOneWidget);
         await tester.tap(find.text(label));
@@ -136,7 +143,7 @@ void main() {
       expect(find.byType(ScanPage), findsOneWidget);
       await back();
       await select('设置');
-      expect(find.text('设置页面'), findsOneWidget);
+      expect(find.byType(SettingPage), findsOneWidget);
       await back();
 
       tester.view.physicalSize = const Size(680, 320);
@@ -168,9 +175,15 @@ void main() {
       await mount(tester, const Size(680, 850), withHome: true);
       expect(find.byTooltip('搜索'), findsNothing);
       final more = find.byTooltip('更多操作');
-      await tester.tap(more);
+      await tester.tap(find.byTooltip('设置'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('编辑按钮'));
+      await tester.scrollUntilVisible(find.text('外观设置'), 160);
+      await tester.tap(find.text('外观设置'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('右上角按钮'), 160);
+      await tester.tap(find.text('右上角按钮'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(Tab, '我的'));
       await tester.pumpAndSettle();
 
       final search = find.widgetWithText(CheckboxListTile, '搜索');
@@ -183,7 +196,7 @@ void main() {
       expect(tester.widget<CheckboxListTile>(scan).value, isFalse);
       await tester.tap(scan);
       await tester.pumpAndSettle();
-      Get.back<void>();
+      Get.until((route) => route.isFirst);
       await tester.pumpAndSettle();
       expect(find.byTooltip('扫一扫'), findsOneWidget);
       expect(find.byTooltip('识别链接'), findsNothing);
@@ -241,8 +254,41 @@ void main() {
       await tester.tap(more);
       await tester.pumpAndSettle();
       expect(find.text('消息'), findsNothing);
-      expect(find.text('编辑按钮'), findsOneWidget);
+      expect(find.text('编辑按钮'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('Mine uses the last slot for a tool when all actions fit', (
+    tester,
+  ) async {
+    final entries = HeaderActionPreferences.read(.mine);
+    await HeaderActionPreferences.save(.mine, [
+      for (final entry in entries) (action: entry.action, pinned: true),
+    ]);
+    // Nine actions plus the back button, with 8 dp padding on either side.
+    await mount(tester, const Size(496, 750));
+    final more = find.byTooltip('更多操作');
+    expect(more, findsNothing);
+    expect(find.byType(BackButton), findsOneWidget);
+    expect(find.byTooltip('识别链接'), findsOneWidget);
+
+    tester.view.physicalSize = const Size(495, 750);
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('识别链接'), findsNothing);
+    await tester.tap(more);
+    await tester.pumpAndSettle();
+    expect(find.text('编辑按钮'), findsNothing);
+    expect(find.text('扫一扫'), findsOneWidget);
+    expect(find.text('识别链接'), findsOneWidget);
+    Get.back<void>();
+    await tester.pumpAndSettle();
+
+    Get.find<AccountService>().isLogin.value = false;
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('消息'), findsNothing);
+    expect(find.byTooltip('识别链接'), findsOneWidget);
+    expect(more, findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 }

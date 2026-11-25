@@ -243,13 +243,8 @@ class _HomeHeaderBar extends StatelessWidget {
           .toList();
       // Keep the search field or scrollable tabs usable before pinning shortcuts.
       const slot = kMinInteractiveDimension;
-      final slots = ((constraints.maxWidth - 96) / slot).floor() - 1;
-      final pinned = entries
-          .where((entry) => entry.pinned)
-          .take(slots.clamp(0, entries.length))
-          .map((entry) => entry.action)
-          .toSet();
-      final more = entries.where((entry) => !pinned.contains(entry.action));
+      final slots = ((constraints.maxWidth - 96) / slot).floor();
+      final (:pinned, :more) = splitHeaderActions(entries, slots);
       return Row(
         children: [
           Expanded(child: leading),
@@ -265,26 +260,26 @@ class _HomeHeaderBar extends StatelessWidget {
                 icon: buttons[action]!.icon,
               ),
             ),
-          SizedBox(
-            width: constraints.maxWidth.clamp(0.0, slot),
-            child: HeaderMoreButton(
-              page: HeaderActionPage.home,
-              icon: loggedIn && !pinned.contains(HeaderAction.messages)
-                  ? messageBadgeIcon(
-                      mainController,
-                      child: const Icon(Icons.more_vert),
-                    )
-                  : const Icon(Icons.more_vert),
-              items: [
-                for (final entry in more)
-                  headerMenuItem(
-                    label: entry.action.label,
-                    icon: buttons[entry.action]!.icon,
-                    onPressed: buttons[entry.action]!.open,
-                  ),
-              ],
+          if (more.isNotEmpty)
+            SizedBox(
+              width: constraints.maxWidth.clamp(0.0, slot),
+              child: HeaderMoreButton(
+                icon: loggedIn && !pinned.contains(HeaderAction.messages)
+                    ? messageBadgeIcon(
+                        mainController,
+                        child: const Icon(Icons.more_vert),
+                      )
+                    : const Icon(Icons.more_vert),
+                items: [
+                  for (final action in more)
+                    headerMenuItem(
+                      label: action.label,
+                      icon: buttons[action]!.icon,
+                      onPressed: buttons[action]!.open,
+                    ),
+                ],
+              ),
             ),
-          ),
         ],
       );
     }),

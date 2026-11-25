@@ -196,21 +196,13 @@ class _MediaPageState extends CommonPageState<MinePage>
         _ => action.label,
       };
       final entries = HeaderActionPreferences.read(.mine)
-          .where((entry) => actions.containsKey(entry.action));
+          .where((entry) => actions.containsKey(entry.action))
+          .toList();
       const slot = kMinInteractiveDimension;
       final slots =
           ((constraints.maxWidth - 16) / slot).floor() -
-          1 -
           (widget.showBackBtn ? 1 : 0);
-      final pinned = entries
-          .where((entry) => entry.pinned)
-          .take(slots.clamp(0, actions.length))
-          .map((entry) => entry.action)
-          .toSet();
-      final menu = entries
-          .map((entry) => entry.action)
-          .where((action) => !pinned.contains(action))
-          .toList();
+      final (:pinned, :more) = splitHeaderActions(entries, slots);
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
@@ -228,26 +220,26 @@ class _MediaPageState extends CommonPageState<MinePage>
                   onPressed: actions[action]!.open,
                 ),
               ),
-            SizedBox.square(
-              dimension: slot,
-              child: HeaderMoreButton(
-                page: HeaderActionPage.mine,
-                icon: menu.contains(HeaderAction.messages)
-                    ? messageBadgeIcon(
-                        _mainController,
-                        child: const Icon(Icons.more_vert),
-                      )
-                    : const Icon(Icons.more_vert),
-                items: [
-                  for (final action in menu)
-                    headerMenuItem(
-                      label: label(action),
-                      icon: actions[action]!.icon,
-                      onPressed: actions[action]!.open,
-                    ),
-                ],
+            if (more.isNotEmpty)
+              SizedBox.square(
+                dimension: slot,
+                child: HeaderMoreButton(
+                  icon: more.contains(HeaderAction.messages)
+                      ? messageBadgeIcon(
+                          _mainController,
+                          child: const Icon(Icons.more_vert),
+                        )
+                      : const Icon(Icons.more_vert),
+                  items: [
+                    for (final action in more)
+                      headerMenuItem(
+                        label: label(action),
+                        icon: actions[action]!.icon,
+                        onPressed: actions[action]!.open,
+                      ),
+                  ],
+                ),
               ),
-            ),
           ],
         ),
       );

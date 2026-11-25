@@ -11,9 +11,9 @@ Development, releases, and support are independently maintained by [Ktclat](http
 
 ## Status and downloads
 
-The main branch is at **0.6.3+11** and includes playback, comment, casting and offline cache fixes from PiliPlus 2.2.1. The latest published build is **0.6.0+7**, available as the [v0.6.0-beta.1 prerelease](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) with the floating navigation update. There is no stable release yet. Download the appropriate `test-signed.apk` and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
+The main branch is at **0.6.3+12** and includes playback, comment, casting and offline cache fixes from PiliPlus 2.2.1. The latest published build is **0.6.0+7**, available as the [v0.6.0-beta.1 prerelease](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) with the floating navigation update. There is no stable release yet. Download the appropriate `test-signed.apk` and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
 
-On the home and profile screens, open the top-right **⋮** menu to edit each toolbar. Choose which actions appear directly, reorder them, or restore the defaults for that screen.
+In **Settings → Appearance → Top-right buttons**, choose and reorder the tools for Home and Profile independently. The **⋮** menu appears only when an action is collapsed or the toolbar runs out of space.
 
 Starting with 0.6.3+11, tapping **Download update** on Android checks the stable release metadata against the installed package ID, signing certificate, device ABI and build number. Android rejects an in-place upgrade if the certificates differ. If you choose to replace a test build, export the data you want to keep first. Future stable versions share one download link. [Stable download](https://github.com/Ktclat/Pili--/releases/latest) · [Migration guide (Chinese)](docs/INSTALL.md#旧测试签名迁移)
 
