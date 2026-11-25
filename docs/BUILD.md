@@ -47,7 +47,7 @@ python3 scripts/configure_android_signing.py --keystore /path/to/PiliMinus-relea
 
 1. 每次发新版先提高 `pubspec.yaml` 的版本名和构建号，写入更新记录。在 `main` 运行 [Android validation build](../.github/workflows/build.yml)。设置密钥前已经完成的运行需要重新构建。
 2. 核对 `Sign Android release APKs` 成功及其产物 `Pili--Android-release-signed`。签名任务在独立的 Runner 上复用该次已验证的三包，核对每个 APK 的包名、ABI、版本、源码提交与证书指纹。PR 只运行测试构建。
-3. 运行 [Publish Android release](../.github/workflows/release.yml)，填入该次 `run_id` 和版本标签，例如 `v0.6.2`。发布器核验已有包、构建信息与远端附件摘要；稳定更新要求签名连续、版本与构建号递增。公开版本保留其原标签和附件。
+3. 运行 [Publish Android release](../.github/workflows/release.yml)，填入该次 `run_id` 和版本标签，例如 `v0.6.3`。发布器核验已有包、构建信息与远端附件摘要；稳定更新要求签名连续、版本与构建号递增。公开版本保留其原标签和附件。
 4. 用户始终打开同一个稳定下载地址。首次发布稳定版后，常用的 64 位 ARM 安装包也有固定地址。[稳定版](https://github.com/Ktclat/Pili--/releases/latest) · [ARM64 APK](https://github.com/Ktclat/Pili--/releases/latest/download/PiliMinus-arm64-v8a.apk)
 
 预发布使用与源码相符的 `vX.Y.Z-beta.N`、`-alpha.N` 或 `-rc.N` 标签；未启用固定签名时仅可发布测试预览包。应用内检查更新跟随稳定版。

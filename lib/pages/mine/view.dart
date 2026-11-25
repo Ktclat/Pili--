@@ -4,6 +4,7 @@ import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
+import 'package:PiliPlus/common/widgets/header_more_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/mine_tab_type.dart';
@@ -21,6 +22,7 @@ import 'package:PiliPlus/utils/bili_utils.dart';
 import 'package:PiliPlus/utils/extension/get_ext.dart';
 import 'package:PiliPlus/utils/extension/num_ext.dart';
 import 'package:PiliPlus/utils/extension/theme_ext.dart';
+import 'package:PiliPlus/utils/header_action_preferences.dart';
 import 'package:PiliPlus/utils/platform_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:flutter_svg/svg.dart';
@@ -148,51 +150,67 @@ class _MediaPageState extends CommonPageState<MinePage>
   Widget get _buildHeaderActions => LayoutBuilder(
     builder: (context, constraints) => Obx(() {
       final anonymity = MineController.anonymity.value;
-      final showMessages =
-          !_mainController.hasHome &&
-          _mainController.accountService.isLogin.value;
-      final actions = <({String label, Widget icon, VoidCallback onPressed})>[
-        if (!_mainController.hasHome)
-          (
-            label: '搜索',
-            icon: const Icon(Icons.search),
-            onPressed: () => Get.toNamed('/search'),
+      final actions = <HeaderAction, ({Widget icon, VoidCallback open})>{
+        if (_mainController.accountService.isLogin.value)
+          .messages: (
+            icon: messageBadgeIcon(_mainController),
+            open: () => openMessages(_mainController),
           ),
+        .search: (
+          icon: const Icon(Icons.search),
+          open: () => Get.toNamed('/search'),
+        ),
         if (GStorage.reply != null)
-          (
-            label: '评论记录',
+          .replyHistory: (
             icon: const Icon(Icons.message_outlined),
-            onPressed: () => Get.toNamed('/myReply'),
+            open: () => Get.toNamed('/myReply'),
           ),
-        (
-          label: "${anonymity ? '退出' : '进入'}无痕模式",
+        .incognito: (
           icon: Icon(anonymity ? MdiIcons.incognito : MdiIcons.incognitoOff),
-          onPressed: MineController.onChangeAnonymity,
+          open: MineController.onChangeAnonymity,
         ),
-        (
-          label: '切换账号',
+        .switchAccount: (
           icon: const Icon(Icons.switch_account_outlined),
-          onPressed: () => LoginPageController.switchAccountDialog(context),
+          open: () => LoginPageController.switchAccountDialog(context),
         ),
-        (
-          label: '切换至${controller.nextThemeType.label}主题',
+        .theme: (
           icon: controller.themeType.value.icon,
-          onPressed: controller.onChangeTheme,
+          open: controller.onChangeTheme,
         ),
-        (
-          label: '设置',
+        .settings: (
           icon: const Icon(Icons.settings_outlined),
-          onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
+          open: () => Get.toNamed('/setting', preventDuplicates: false),
         ),
-      ];
+        .scan: (
+          icon: const Icon(Icons.qr_code_scanner),
+          open: () => Get.toNamed('/scan'),
+        ),
+        .recognizeLink: (
+          icon: const Icon(Icons.link),
+          open: () => Get.toNamed('/recognizeLink'),
+        ),
+      };
+      String label(HeaderAction action) => switch (action) {
+        HeaderAction.incognito => "${anonymity ? '退出' : '进入'}无痕模式",
+        HeaderAction.theme => '切换至${controller.nextThemeType.label}主题',
+        _ => action.label,
+      };
+      final entries = HeaderActionPreferences.read(.mine)
+          .where((entry) => actions.containsKey(entry.action));
       const slot = kMinInteractiveDimension;
-      final slots = ((constraints.maxWidth - 16) / slot).floor();
-      final reserved =
-          1 + (widget.showBackBtn ? 1 : 0) + (showMessages ? 1 : 0);
-      final overflow = (actions.length + reserved - slots).clamp(
-        0,
-        actions.length,
-      );
+      final slots =
+          ((constraints.maxWidth - 16) / slot).floor() -
+          1 -
+          (widget.showBackBtn ? 1 : 0);
+      final pinned = entries
+          .where((entry) => entry.pinned)
+          .take(slots.clamp(0, actions.length))
+          .map((entry) => entry.action)
+          .toSet();
+      final menu = entries
+          .map((entry) => entry.action)
+          .where((action) => !pinned.contains(action))
+          .toList();
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Row(
@@ -200,42 +218,33 @@ class _MediaPageState extends CommonPageState<MinePage>
             if (widget.showBackBtn)
               const SizedBox.square(dimension: slot, child: BackButton()),
             const Spacer(),
-            if (showMessages)
-              SizedBox.square(
-                dimension: slot,
-                child: msgBadge(_mainController),
-              ),
-            for (final action in actions.skip(overflow))
+            for (final action in pinned)
               SizedBox.square(
                 dimension: slot,
                 child: IconButton(
                   iconSize: 22,
-                  tooltip: action.label,
-                  icon: action.icon,
-                  onPressed: action.onPressed,
+                  tooltip: label(action),
+                  icon: actions[action]!.icon,
+                  onPressed: actions[action]!.open,
                 ),
               ),
             SizedBox.square(
               dimension: slot,
-              child: PopupMenuButton<VoidCallback>(
-                tooltip: '更多操作',
-                icon: const Icon(Icons.more_vert),
-                position: PopupMenuPosition.under,
-                onSelected: (open) => open(),
-                itemBuilder: (_) => [
-                  _menuItem(
-                    '扫一扫',
-                    const Icon(Icons.qr_code_scanner),
-                    () => Get.toNamed('/scan'),
-                  ),
-                  _menuItem(
-                    '识别链接',
-                    const Icon(Icons.link),
-                    () => Get.toNamed('/recognizeLink'),
-                  ),
-                  if (overflow > 0) const PopupMenuDivider(),
-                  for (final action in actions.take(overflow))
-                    _menuItem(action.label, action.icon, action.onPressed),
+              child: HeaderMoreButton(
+                page: HeaderActionPage.mine,
+                icon: menu.contains(HeaderAction.messages)
+                    ? messageBadgeIcon(
+                        _mainController,
+                        child: const Icon(Icons.more_vert),
+                      )
+                    : const Icon(Icons.more_vert),
+                items: [
+                  for (final action in menu)
+                    headerMenuItem(
+                      label: label(action),
+                      icon: actions[action]!.icon,
+                      onPressed: actions[action]!.open,
+                    ),
                 ],
               ),
             ),
@@ -243,22 +252,6 @@ class _MediaPageState extends CommonPageState<MinePage>
         ),
       );
     }),
-  );
-
-  PopupMenuItem<VoidCallback> _menuItem(
-    String label,
-    Widget icon,
-    VoidCallback open,
-  ) => PopupMenuItem(
-    value: open,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      spacing: 12,
-      children: [
-        icon,
-        Flexible(child: Text(label)),
-      ],
-    ),
   );
 
   Widget _buildUserInfo(ThemeData theme, Color secondary) {

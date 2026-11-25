@@ -11,7 +11,9 @@ Development, releases, and support are independently maintained by [Ktclat](http
 
 ## Status and downloads
 
-The main branch is at **0.6.2+9** and includes playback, comment, casting and offline cache fixes from PiliPlus 2.2.1. The latest published build is **0.6.0+7**, available as the [v0.6.0-beta.1 prerelease](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) with the floating navigation update. There is no stable release yet. Download the appropriate `test-signed.apk` and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
+The main branch is at **0.6.3+10** and includes playback, comment, casting and offline cache fixes from PiliPlus 2.2.1. The latest published build is **0.6.0+7**, available as the [v0.6.0-beta.1 prerelease](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) with the floating navigation update. There is no stable release yet. Download the appropriate `test-signed.apk` and verify it against `SHA256SUMS.txt`. Most current Android phones use `arm64-v8a`; `armeabi-v7a` is for compatible 32-bit devices, and `x86_64` is typically for emulators. Minimum Android version: 7.0 (API 24). The release also includes the exact source archive and `BUILD_INFO.json`.
+
+On the home and profile screens, open the top-right **⋮** menu to edit each toolbar. Choose which actions appear directly, reorder them, or restore the defaults for that screen.
 
 Once the first stable build is published, subsequent updates will use the same signing certificate and a higher Android build number. Bookmark the [stable download](https://github.com/Ktclat/Pili--/releases/latest).
 

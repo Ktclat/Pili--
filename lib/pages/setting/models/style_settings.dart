@@ -25,6 +25,7 @@ import 'package:PiliPlus/models/common/theme/theme_type.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
 import 'package:PiliPlus/pages/setting/models/model.dart';
+import 'package:PiliPlus/pages/setting/pages/header_actions.dart';
 import 'package:PiliPlus/pages/setting/slide_color_picker.dart';
 import 'package:PiliPlus/pages/setting/widgets/dual_slider_dialog.dart';
 import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
@@ -139,6 +140,13 @@ List<SettingsModel> get styleSettings => [
     setKey: SettingBoxKey.enableMYBar,
     defaultVal: true,
     needReboot: true,
+  ),
+  NormalModel(
+    title: '右上角按钮',
+    subtitle: '调整首页和我的按钮顺序，选择直接显示或收进更多操作',
+    leading: const Icon(Icons.more_horiz),
+    onTap: (context, setState) =>
+        Get.to(() => const HeaderActionSettingsPage()),
   ),
   SwitchModel(
     title: '悬浮底栏',
