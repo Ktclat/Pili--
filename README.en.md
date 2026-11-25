@@ -42,7 +42,7 @@ Use isolated **Flutter 3.47.9**, **JDK 17**, **Android SDK 37**, and **PowerShel
 
 CI runs static analysis, regression tests, three ABI builds, and packaged identity/provider/shortcut checks. [Validation records](docs/VALIDATION.md) identify the tested commits and distinguish automated checks, live API requests, and installed APK testing. ARM64 real-device acceptance and long-running device tests remain outstanding. Other platform sources are retained without a validation claim.
 
-Version 0.6.3+10 passed 425 Flutter tests, 31 project script tests and APK identity checks on all three Android architectures. An Android 11 emulator retained app data across same-signer upgrades and kept both toolbar configurations after restart. [CI build](https://github.com/Ktclat/Pili--/actions/runs/45554529199) · [Historical 0.6.3+10 test APKs](https://github.com/Ktclat/Pili--/actions/runs/45554529199/artifacts/14996072103) · [Device results](docs/VALIDATION.md)
+Version 0.6.3+11 passed 437 Flutter tests, 31 project script tests and APK identity checks on all three Android architectures. An Android 11 emulator retained settings and customized toolbar buttons when upgrading from build 10 to build 11 with the same test certificate. [CI build](https://github.com/Ktclat/Pili--/actions/runs/45558391018) · [0.6.3+11 test APKs](https://github.com/Ktclat/Pili--/actions/runs/45558391018/artifacts/14998000754) · [Device results](docs/VALIDATION.md)
 
 See [contributing](CONTRIBUTING.md), the [roadmap](docs/ROADMAP.md), and [security reporting](SECURITY.md). The project is not an official Bilibili product.
 

@@ -19,7 +19,7 @@
 
 最低 Android 版本为 **7.0 / API 24**。不确定架构时可查看设备资料；开发者可运行 `adb shell getprop ro.product.cpu.abilist`。构建标为 `release` 仅指编译模式，CI 包仍使用测试签名。
 
-主分支源码为 **0.6.3+11**。此前的 **0.6.3+10** 有单独的测试包与设备验证记录。[历史测试包](https://github.com/Ktclat/Pili--/actions/runs/45554529199/artifacts/14996072103) · [验证记录](VALIDATION.md)
+主分支 **0.6.3+11** 的三个架构测试包可从本次构建下载。已核对公开 Actions 附件，+10 与 +11 使用不同的临时证书，Android 无法直接从这两次构建中的 +10 覆盖安装到 +11。历史测试版本的安装、签名与设备验证按源码分别记录。[0.6.3+11 测试包](https://github.com/Ktclat/Pili--/actions/runs/45558391018/artifacts/14998000754) · [验证记录](VALIDATION.md)
 
 开发测试包也可从成功的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 下载：选择目标提交，在 **Artifacts** 获取 `Pili--Android-test-signed` 并解压。Actions 附件需登录 GitHub，默认保留 14 天，其中 APK 使用 `app-<ABI>-release.apk` 命名；这项期限不适用于已上传的 Release 附件。取消或失败的运行不能视为已验证版本。
 
