@@ -471,7 +471,7 @@ abstract final class PiliScheme {
 
   static bool _showLoginLinkHelp() {
     if (Get.context != null) {
-      SmartDialog.showToast('请在「我的 → 更多操作（⋮）→ 扫一扫」扫描二维码或粘贴哔哩哔哩登录链接');
+      SmartDialog.showToast('请打开「扫一扫」扫描二维码或粘贴哔哩哔哩登录链接。入口在首页或「我的」右上角，收起时点「⋮」。');
     }
     // Returning true also stops callers from opening or saving the URL.
     return true;
