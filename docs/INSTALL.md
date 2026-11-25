@@ -19,7 +19,7 @@
 
 最低 Android 版本为 **7.0 / API 24**。不确定架构时可查看设备资料；开发者可运行 `adb shell getprop ro.product.cpu.abilist`。构建标为 `release` 仅指编译模式，CI 包仍使用测试签名。
 
-**0.6.3+12** 是此前的工具栏测试版本。公开的 +11 和 +12 Actions 包签名不同，从 +11 更换为 +12 前请在「设置 → 关于」导出要保留的数据。[0.6.3+12 测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45592612772/artifacts/15011943766) · [验证记录](VALIDATION.md)
+**0.6.3+13** 提供三个架构的测试包，包含可隐藏的顶栏工具、新扫码图标及扫码页右上角的识别链接入口。公开的 +12 和 +13 使用不同的测试签名。从公开 +12 换包前，请在「设置 → 关于」导出要保留的数据。[0.6.3+13 测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45600396159/artifacts/15015587940) · [验证记录](VALIDATION.md)
 
 下载开发测试包时，先登录 GitHub，选择对应提交的成功构建，在 **Artifacts** 下载并解压 `Pili--Android-test-signed`。其中的安装包按 `app-<ABI>-release.apk` 命名，Actions 附件默认保留 14 天。[Android 构建列表](https://github.com/Ktclat/Pili--/actions/workflows/build.yml)
 

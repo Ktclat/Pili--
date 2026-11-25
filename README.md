@@ -13,7 +13,7 @@
 
 主分支 **0.6.3+13** 更新了首页和「我的」工具栏，并包含 PiliPlus 2.2.1 的播放、评论、投屏和离线缓存修复。最新发行版 **0.6.0+7** 为 Android 预发布测试包，包含悬浮导航更新。[预发布下载](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) · [安装与签名](docs/INSTALL.md)
 
-0.6.3+12 已通过 439 项 Flutter 测试、31 项项目脚本测试和三个 Android 架构的安装包检查。在 Android 11 模拟器上用相同测试证书从 +11 升至 +12 后，原有按钮设置得到保留。[0.6.3+12 测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45592612772/artifacts/15011943766) · [构建记录](https://github.com/Ktclat/Pili--/actions/runs/45592612772) · [设备记录](docs/VALIDATION.md)
+0.6.3+13 已通过 448 项 Flutter 测试、31 项项目脚本测试和三个 Android 架构的安装包检查。已在 Android 11 模拟器上验证窄屏搜索、工具换行和扫码页的识别链接入口。[0.6.3+13 测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45600396159/artifacts/15015587940) · [构建记录](https://github.com/Ktclat/Pili--/actions/runs/45600396159) · [设备截图与结果](docs/VALIDATION.md)
 
 ## 主要功能
 

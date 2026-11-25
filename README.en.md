@@ -42,7 +42,7 @@ Use isolated **Flutter 3.47.9**, **JDK 17**, **Android SDK 37**, and **PowerShel
 
 CI runs static analysis, regression tests and builds for three Android architectures. It checks the application ID, providers and launcher shortcuts in the compiled APKs. Device results are recorded by version. [Validation records](docs/VALIDATION.md)
 
-Version 0.6.3+12 passed 439 Flutter tests, 31 project script tests and APK identity checks on all three Android architectures. An Android 11 emulator retained the customized toolbar layout when upgrading from build 11 to build 12 with the same test certificate. [0.6.3+12 test APKs](https://github.com/Ktclat/Pili--/actions/runs/45592612772/artifacts/15011943766) · [CI build](https://github.com/Ktclat/Pili--/actions/runs/45592612772) · [Device results](docs/VALIDATION.md)
+Version 0.6.3+13 passed 448 Flutter tests, 31 project script tests and APK identity checks on all three Android architectures. On Android 11 we verified compact search, wrapping toolbar buttons and the link recognition shortcut in the scanner. [0.6.3+13 test APKs](https://github.com/Ktclat/Pili--/actions/runs/45600396159/artifacts/15015587940) · [CI build](https://github.com/Ktclat/Pili--/actions/runs/45600396159) · [Device screenshots and results](docs/VALIDATION.md)
 
 See [contributing](CONTRIBUTING.md), the [roadmap](docs/ROADMAP.md), and [security reporting](SECURITY.md).
 
