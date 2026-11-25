@@ -11,11 +11,11 @@
 
 ## 当前状态
 
-主分支源码 **0.6.3+10** 已同步 PiliPlus 2.2.1 的播放、评论、投屏和离线缓存修复。最新已发布版本为 **0.6.0+7**，提供 [v0.6.0-beta.1 预发布下载](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，包含悬浮导航更新，尚无稳定发行版。预发布包使用 Actions 测试签名；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
+主分支源码 **0.6.3+11** 已同步 PiliPlus 2.2.1 的播放、评论、投屏和离线缓存修复。最新已发布版本为 **0.6.0+7**，提供 [v0.6.0-beta.1 预发布下载](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，包含悬浮导航更新，尚无稳定发行版。预发布包使用 Actions 测试签名；安装和升级前请阅读 [签名说明](docs/INSTALL.md)。构建成功不等于所有真机与业务场景已验收，具体结果按提交记录在 [验证记录](docs/VALIDATION.md)。
 
 本项目不是哔哩哔哩官方客户端。其他平台源码保留，目前仅对 Android 提供构建与验证说明。
 
-0.6.3+10 已通过 425 项 Flutter 测试、31 项项目脚本测试及三个 Android 架构的安装包检查。Android 11 模拟器上已验证同签名覆盖升级和重启后保留自定义按钮。[构建记录](https://github.com/Ktclat/Pili--/actions/runs/45554529199) · [测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45554529199/artifacts/14996072103) · [设备记录](docs/VALIDATION.md)
+0.6.3+10 已通过 425 项 Flutter 测试、31 项项目脚本测试及三个 Android 架构的安装包检查。Android 11 模拟器上已验证同签名覆盖升级和重启后保留自定义按钮。[构建记录](https://github.com/Ktclat/Pili--/actions/runs/45554529199) · [历史测试包 0.6.3+10](https://github.com/Ktclat/Pili--/actions/runs/45554529199/artifacts/14996072103) · [设备记录](docs/VALIDATION.md)
 
 ## 主要功能
 
@@ -47,7 +47,7 @@
 2. 使用同页的 `SHA256SUMS.txt` 核对下载内容；源码包和 `BUILD_INFO.json` 记录该包的源码及构建来源。
 3. 保留已安装的 PiliPlus，安装 Pili--。两者安装 ID 分别为 `com.example.piliplus` 与 `io.github.ktclat.piliminus`。
 
-稳定版发布后，可收藏[固定下载入口](https://github.com/Ktclat/Pili--/releases/latest)。同一发行证书和包名配合递增的构建号，支持直接覆盖升级。
+从 0.6.3+11 起，Android 用户在应用内点「下载更新」时，应用会核对正式版发布记录中的包名、签名指纹、架构和构建号。签名不同时可先在「设置 → 关于」导出数据，再决定是否迁移。首次正式发布后，各版本共用同一个下载入口。[稳定版](https://github.com/Ktclat/Pili--/releases/latest) · [签名与迁移](docs/INSTALL.md#旧测试签名迁移)
 
 预发布版不会触发应用内稳定更新提示，请手动下载。不同 CI 构建的测试签名可能不同，不能保证覆盖升级；遇到签名冲突先核对来源并保留应用数据。开发测试包仍可从 [Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 获取，其附件需登录下载、默认保留 14 天。详见 [安装说明](docs/INSTALL.md) 和 [共存说明](docs/COEXISTENCE.md)。
 

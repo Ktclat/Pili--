@@ -4,7 +4,7 @@
 
 ## 获取预发布测试包
 
-当前版本 `0.6.0+7` 已发布为 [v0.6.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)，包含悬浮导航更新，使用 Actions 临时测试签名，尚无固定发行密钥签名的稳定版。
+最近的预发布版为 **0.6.0+7**，包含悬浮导航更新，使用 Actions 临时测试签名。首次稳定版仍待发行。[v0.6.0-beta.1 下载页](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1)
 
 1. 打开上述 Release，在 **Assets** 中按下表下载一个 APK；不要把源码压缩包当作安装包。
 2. 下载同页的 `SHA256SUMS.txt`，核对所选 APK 的 SHA-256。
@@ -18,6 +18,8 @@
 | `PiliMinus-0.6.0+7-x86_64-test-signed.apk` | x86_64 Android 设备或模拟器 |
 
 最低 Android 版本为 **7.0 / API 24**。不确定架构时可查看设备资料；开发者可运行 `adb shell getprop ro.product.cpu.abilist`。构建标为 `release` 仅指编译模式，CI 包仍使用测试签名。
+
+主分支源码为 **0.6.3+11**。此前的 **0.6.3+10** 有单独的测试包与设备验证记录。[历史测试包](https://github.com/Ktclat/Pili--/actions/runs/45554529199/artifacts/14996072103) · [验证记录](VALIDATION.md)
 
 开发测试包也可从成功的 [Android validation build](https://github.com/Ktclat/Pili--/actions/workflows/build.yml) 下载：选择目标提交，在 **Artifacts** 获取 `Pili--Android-test-signed` 并解压。Actions 附件需登录 GitHub，默认保留 14 天，其中 APK 使用 `app-<ABI>-release.apk` 命名；这项期限不适用于已上传的 Release 附件。取消或失败的运行不能视为已验证版本。
 
@@ -63,8 +65,17 @@ Pili-- 使用 `io.github.ktclat.piliminus`，上游 PiliPlus 使用 `com.example
 
 稳定渠道保留安装包名 `io.github.ktclat.piliminus`，使用同一张发行证书，并随版本提高 Android 构建号。每次使用最新稳定版的同架构 APK 覆盖安装即可保留数据。首次发布稳定版后可长期收藏同一个入口。[最新稳定版](https://github.com/Ktclat/Pili--/releases/latest)
 
+从 **0.6.3+11** 起，在应用内点「下载更新」时，应用读取相应稳定版的 `BUILD_INFO.json`，核对包名、签名指纹、兼容架构与构建号后打开对应 APK。遇到发布信息缺失或网络异常，可重试或打开该版本的发布页核对。下载完成后由 Android 系统验证安装包并确认安装。
+
 在 Actions 中，`Pili--Android-release-signed` 是使用维护者固定证书的安装包；`Pili--Android-test-signed` 是本次运行的临时测试包。需要长期覆盖升级时，请选稳定 Release，或从同一证书的发行签名附件下载。
 
-遇到“与现有软件包冲突”或签名不匹配时，先核对包来源与错误信息。不要为解决 Pili-- 的签名问题卸载 PiliPlus，也不要未经备份就清除 Pili-- 数据。v0.5.0-beta.1 和 v0.6.0-beta.1 使用不同的测试证书。旧包只有与发行证书一致才能覆盖安装。签名配置见[维护者构建指南](BUILD.md)。
+### 旧测试签名迁移
+
+v0.5.0-beta.1 和 v0.6.0-beta.1 使用不同的测试证书。若测试包和目标 APK 的签名不同，Android 会拒绝覆盖安装。可以继续使用旧版。如果决定更换签名，先在旧 Pili-- 中完成导出。
+
+1. 打开「设置 → 关于 → 导入/导出所有数据 → 导出到压缩包」，将 ZIP 保存到自己可访问的「下载」或文档目录。用系统文件管理器确认文件存在并能打开。ZIP 包含设置、登录资料、黑名单和搜索记录，还可能含已记录的评论和自定义字体。请自行保管，账号会话过期时需要重新登录。
+2. 只想迁移设置时，在「设置 → 关于 → 导入/导出设置」选「导出文件至本地」，保存设置 JSON，新安装后重新登录。离线视频、音频和下载任务需要单独处理。卸载前请记录仍要观看的内容，以便在新安装中重新下载。
+3. 确认备份可用并决定更换后，卸载旧 **Pili--** 并安装目标 APK。上游 **PiliPlus** 使用独立包名，可以继续保留。
+4. 在新安装的「设置 → 关于」打开原来的导入/导出项。ZIP 选「从压缩包导入」，设置 JSON 选「从本地文件导入」。导入会覆盖对应的本地数据。阅读应用的导入结果，重启后核对账号与设置。
 
 预发布包仍需 ARM64 真机及真实账号网页／TV 授权验收；已执行与未执行的范围见 [验证记录](VALIDATION.md)。反馈请附应用版本/提交、下载的 Release 或 Actions 链接、设备型号与 Android 版本。
