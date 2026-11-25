@@ -173,7 +173,7 @@ abstract final class PiliScheme {
                   secondRpId: secondRpId,
                 );
               } else {
-                videoPush(
+                await videoPush(
                   aid != null ? int.parse(aid) : null,
                   bvid,
                   off: off,
@@ -260,7 +260,7 @@ abstract final class PiliScheme {
                 );
               } else {
                 if (type == 1) {
-                  videoPush(
+                  await videoPush(
                     int.parse(oid),
                     null,
                     rootRpId: rootRpId,
@@ -445,7 +445,7 @@ abstract final class PiliScheme {
         final aid = IdUtils.avRegexExact.matchAsPrefix(path)?.group(1);
         final bvid = IdUtils.bvRegexExact.matchAsPrefix(path)?.group(0);
         if (aid != null || bvid != null) {
-          videoPush(
+          await videoPush(
             aid != null ? int.parse(aid) : null,
             bvid,
             off: off,
@@ -471,7 +471,7 @@ abstract final class PiliScheme {
 
   static bool _showLoginLinkHelp() {
     if (Get.context != null) {
-      SmartDialog.showToast('请在「我的 → 扫码授权登录」扫描二维码或粘贴哔哩哔哩登录链接');
+      SmartDialog.showToast('请在「我的 → 扫一扫」扫描二维码或粘贴哔哩哔哩登录链接');
     }
     // Returning true also stops callers from opening or saving the URL.
     return true;
@@ -680,7 +680,7 @@ abstract final class PiliScheme {
               );
             }
           } else {
-            videoPush(null, bvid, off: off);
+            await videoPush(null, bvid, off: off);
           }
           return true;
         }
@@ -705,7 +705,7 @@ abstract final class PiliScheme {
           final queryParameters = uri.queryParameters;
           final part = queryParameters['p'];
           final (rootRpId, secondRpId) = parseCommentId(queryParameters);
-          videoPush(
+          await videoPush(
             res.av,
             res.bv,
             off: off,
@@ -809,7 +809,7 @@ abstract final class PiliScheme {
               secondRpId: secondRpId,
             );
           } else {
-            videoPush(
+            await videoPush(
               int.parse(oid),
               null,
               rootRpId: rootRpId,
@@ -886,7 +886,7 @@ abstract final class PiliScheme {
       default:
         final res = IdUtils.matchAvorBv(input: area?.split('?').first);
         if (res.isNotEmpty) {
-          videoPush(
+          await videoPush(
             res.av,
             res.bv,
             off: off,
@@ -942,37 +942,37 @@ abstract final class PiliScheme {
     int? rootRpId,
     int? secondRpId,
   }) async {
+    const openFailure = '暂时无法打开视频，请核对链接后重试';
     try {
+      if (showDialog) {
+        SmartDialog.showLoading<dynamic>(msg: '正在获取视频信息…');
+      }
       aid ??= IdUtils.bv2av(bvid!);
       bvid ??= IdUtils.av2bv(aid);
-      if (showDialog) {
-        SmartDialog.showLoading<dynamic>(msg: '获取中...');
-      }
-      final res = await SearchHttp.ab2cWithDimension(
-        bvid: bvid,
+      final page = await SearchHttp.ab2cWithDimension(
         aid: aid,
+        bvid: bvid,
         part: parseIntOrNull(part),
+        showError: false,
       );
-      final cid = res?.cid;
-      if (showDialog) {
-        SmartDialog.dismiss();
+      if (page == null || page.cid <= 0) {
+        SmartDialog.showToast(openFailure);
+        return;
       }
-      if (cid != null) {
-        PageUtils.toVideoPage(
-          aid: aid,
-          bvid: bvid,
-          cid: cid,
-          progress: progress,
-          off: off,
-          dimension: res!.dimension,
-          // title: res.title,
-          rootRpId: rootRpId,
-          secondRpId: secondRpId,
-        );
-      }
-    } catch (e) {
-      SmartDialog.dismiss();
-      SmartDialog.showToast('video获取失败: $e');
+      PageUtils.toVideoPage(
+        aid: aid,
+        bvid: bvid,
+        cid: page.cid,
+        progress: progress,
+        off: off,
+        dimension: page.dimension,
+        rootRpId: rootRpId,
+        secondRpId: secondRpId,
+      );
+    } catch (_) {
+      SmartDialog.showToast(openFailure);
+    } finally {
+      if (showDialog) SmartDialog.dismiss(status: SmartStatus.loading);
     }
   }
 }

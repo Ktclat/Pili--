@@ -1,3 +1,5 @@
+import 'package:PiliPlus/utils/trusted_url.dart';
+
 /// Extract public Bilibili content from shared text without network access.
 /// Login/authorization links deliberately belong to the scanner's own flow.
 abstract final class BiliLinkRecognition {
@@ -33,6 +35,9 @@ abstract final class BiliLinkRecognition {
     r'^(?:www\.bilibili\.com|b23\.tv)/',
     caseSensitive: false,
   );
+  // A raw CJK delimiter in a content path ends the shared link. After a
+  // query or fragment marker, punctuation can be part of the link's value.
+  static final _pathEnd = RegExp(r'[?#，。！？；：、（）【】《》〈〉「」『』]');
   static final _trailing = RegExp(r'[.,!?;:，。！？；：、）)】\]》〉」』]+$');
 
   static List<Uri> parse(String text) {
@@ -43,11 +48,32 @@ abstract final class BiliLinkRecognition {
     }
     final result = <Uri>[];
     final seen = <String>{};
-    for (final match in _candidate.allMatches(text)) {
-      final id = match.namedGroup('id');
-      final uri = id == null ? _parseLink(match.group(0)!) : _videoLink(id);
+    var cursor = 0;
+    while (cursor < text.length && result.length < 8) {
+      final matches = _candidate.allMatches(text, cursor).iterator;
+      if (!matches.moveNext()) break;
+      final match = matches.current;
+      cursor = match.end;
+      final raw = match.group(0)!;
+      Uri? uri;
+      if (match.namedGroup('id') != null) {
+        // Share captions also accept lowercase BV prefixes. The suffix is case-sensitive.
+        final id = raw.toLowerCase().startsWith('bv')
+            ? 'BV${raw.substring(2)}'
+            : raw;
+        uri = TrustedUrl.videoIdLink(id);
+      } else {
+        uri = _parseLink(raw);
+        // Only rescan the remaining caption after recognizing a trusted link.
+        // An unrelated URL may itself contain an apparent video ID after punctuation.
+        if (uri == null) continue;
+        final boundary = _pathEnd.firstMatch(raw);
+        if (boundary != null && boundary[0] != '?' && boundary[0] != '#') {
+          uri = _parseLink(raw.substring(0, boundary.start));
+          cursor = match.start + boundary.end;
+        }
+      }
       if (uri != null && seen.add(uri.toString())) result.add(uri);
-      if (result.length == 8) break;
     }
     return result;
   }
@@ -79,15 +105,5 @@ abstract final class BiliLinkRecognition {
       return null;
     }
     return null;
-  }
-
-  static Uri? _videoLink(String raw) {
-    final id = raw.toLowerCase().startsWith('bv')
-        ? 'BV${raw.substring(2)}'
-        : raw.toLowerCase();
-    if (id.startsWith('av') && (int.tryParse(id.substring(2)) ?? 0) <= 0) {
-      return null;
-    }
-    return Uri.https('www.bilibili.com', '/video/$id');
   }
 }

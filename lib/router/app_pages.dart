@@ -142,10 +142,8 @@ class Routes {
     // 登录页面
     GetPage(name: '/loginPage', page: () => const LoginPage()),
     GetPage(name: '/scan', page: () => const ScanPage()),
-    GetPage(
-      name: '/scanLogin',
-      page: () => const ScanPage(authorizationOnly: true),
-    ),
+    // Keep links to the former login scanner working.
+    GetPage(name: '/scanLogin', page: () => const ScanPage()),
     GetPage(name: '/recognizeLink', page: () => const LinkRecognitionPage()),
     // 用户动态
     GetPage(name: '/memberDynamics', page: () => const MemberDynamicsPage()),

@@ -49,6 +49,13 @@ void main() {
 
     for (final value in [
       '',
+      'BV2aaaaaaaaa',
+      'BV1OOOOOOOOO',
+      'BV1000000000',
+      'BV1lllllllll',
+      'BV1IIIIIIIII',
+      'av0',
+      'av2251799813685248',
       'BV1xx411c7m',
       'BV1xx411c7mDx',
       'bv1xx411c7mD',

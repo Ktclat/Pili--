@@ -98,14 +98,8 @@ class _MediaPageState extends CommonPageState<MinePage>
                     ListTile(
                       leading: const Icon(Icons.qr_code_scanner),
                       title: const Text('扫一扫'),
-                      subtitle: const Text('相机扫码或从相册识别'),
+                      subtitle: const Text('扫描内容二维码，或为网页登录和 TV 登录授权'),
                       onTap: () => Get.toNamed('/scan'),
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.qr_code_2),
-                      title: const Text('扫码授权登录'),
-                      subtitle: const Text('用当前账号授权网页或电视登录，需单独确认'),
-                      onTap: () => Get.toNamed('/scanLogin'),
                     ),
                     ListTile(
                       leading: const Icon(Icons.link),

@@ -12,9 +12,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key, this.authorizationOnly = false});
-
-  final bool authorizationOnly;
+  const ScanPage({super.key});
 
   @override
   State<ScanPage> createState() => _ScanPageState();
@@ -32,9 +30,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   bool _leaving = false;
   int _pasteRevision = 0;
   String? _error;
-  String get _cameraError => widget.authorizationOnly
-      ? '无法使用相机，可从相册识别二维码或粘贴登录链接。'
-      : '无法使用相机，请允许相机权限，或从相册识别二维码。';
+  static const _cameraError = '无法使用相机，可从相册识别二维码或粘贴登录链接。';
   bool get _supported =>
       Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
 
@@ -137,7 +133,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   }
 
   Future<void> _pasteLoginLink() async {
-    if (!widget.authorizationOnly || _busy || _leaving) return;
+    if (_busy || _leaving) return;
     final revision = _pasteRevision;
     bool isCurrent() =>
         mounted &&
@@ -188,10 +184,9 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       _openAuthorization(request);
       return;
     }
-    final parsed = Uri.tryParse(value);
-    if (widget.authorizationOnly ||
-        (parsed != null &&
-            QrLoginAuthorizationRequest.isAuthorizationUri(parsed))) {
+    final parsed = Uri.tryParse(value.trim());
+    if (parsed != null &&
+        QrLoginAuthorizationRequest.isAuthorizationUri(parsed)) {
       await showDialog<void>(
         context: context,
         builder: (context) => AlertDialog(
@@ -314,14 +309,13 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: Text(widget.authorizationOnly ? '扫码授权登录' : '扫一扫'),
+      title: const Text('扫一扫'),
       actions: [
-        if (widget.authorizationOnly)
-          TextButton.icon(
-            onPressed: _pasteLoginLink,
-            icon: const Icon(Icons.content_paste),
-            label: const Text('粘贴登录链接'),
-          ),
+        TextButton.icon(
+          onPressed: _pasteLoginLink,
+          icon: const Icon(Icons.content_paste),
+          label: const Text('粘贴登录链接'),
+        ),
         IconButton(
           tooltip: '识别链接',
           icon: const Icon(Icons.link),
@@ -360,10 +354,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
           Padding(
             padding: const EdgeInsets.all(16),
             child: Text(
-              _error ??
-                  (widget.authorizationOnly
-                      ? '扫描你本人设备上的 B 站登录码，或粘贴对应登录链接，再核对账号与登录位置。'
-                      : '将二维码放入框内，内容链接与登录授权都需确认'),
+              _error ?? '扫描内容二维码或你本人发起的哔哩哔哩登录码。登录前请核对账号和登录位置。',
             ),
           ),
           if (_supported)

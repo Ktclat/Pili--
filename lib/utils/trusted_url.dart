@@ -1,3 +1,5 @@
+import 'package:PiliPlus/utils/id_utils.dart';
+
 /// Central policy for account-bearing requests and scanned links.
 abstract final class TrustedUrl {
   static bool isBilibili(Uri uri) =>
@@ -38,17 +40,27 @@ abstract final class TrustedUrl {
     }
   }
 
+  /// Converts a standalone content ID to its public watch URL.
+  static Uri? videoIdLink(String id) {
+    if (id.length == 12 &&
+        id.startsWith('BV1') &&
+        id.codeUnits.skip(3).every(IdUtils.invData.containsKey)) {
+      return Uri.https('www.bilibili.com', '/video/$id');
+    }
+
+    final av = IdUtils.avRegexExact.firstMatch(id);
+    final aid = av == null ? null : int.tryParse(av.group(1)!);
+    if (aid == null || aid <= 0 || aid >= IdUtils.MAX_AID) return null;
+    return Uri.https('www.bilibili.com', '/video/${id.toLowerCase()}');
+  }
+
   static Uri? scanLink(String value) {
     final text = value.trim();
     if (text.length > 8192 || text.contains(RegExp(r'[\x00-\x20\x7f]'))) {
       return null;
     }
-    if (RegExp(r'^BV[0-9A-Za-z]{10}$').hasMatch(text)) {
-      return Uri.https('www.bilibili.com', '/video/$text');
-    }
-    if (RegExp(r'^av[0-9]+$', caseSensitive: false).hasMatch(text)) {
-      return Uri.https('www.bilibili.com', '/video/${text.toLowerCase()}');
-    }
+    final videoLink = videoIdLink(text);
+    if (videoLink != null) return videoLink;
     final uri = Uri.tryParse(text);
     return uri != null && isWebLink(uri) ? uri : null;
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:PiliPlus/pages/scan/authorization.dart';
 import 'package:PiliPlus/pages/scan/view.dart';
+import 'package:PiliPlus/router/app_pages.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -12,17 +13,18 @@ const _loginLink =
 
 Future<void> _showScanner(
   WidgetTester tester, {
-  bool authorizationOnly = true,
+  String route = '/scan',
 }) async {
   tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
   await tester.pumpWidget(
     GetMaterialApp(
+      getPages: Routes.getPages
+          .where((page) => page.name == '/scan' || page.name == '/scanLogin')
+          .toList(),
       home: Builder(
         builder: (context) => Scaffold(
           body: TextButton(
-            onPressed: () => Get.to(
-              () => ScanPage(authorizationOnly: authorizationOnly),
-            ),
+            onPressed: () => Get.toNamed(route),
             child: const Text('打开'),
           ),
         ),
@@ -55,13 +57,20 @@ void main() {
     Get.reset();
   });
 
-  testWidgets('only the dedicated scanner offers the paste action', (
-    tester,
-  ) async {
-    await _showScanner(tester, authorizationOnly: false);
-    expect(find.text('粘贴登录链接'), findsNothing);
-    expect(reads, 0);
-  });
+  for (final route in ['/scan', '/scanLogin']) {
+    testWidgets(
+      '$route opens the unified scanner without reading the clipboard',
+      (
+        tester,
+      ) async {
+        await _showScanner(tester, route: route);
+        expect(find.text('扫一扫'), findsOneWidget);
+        expect(find.text('粘贴登录链接'), findsOneWidget);
+        expect(find.byTooltip('识别链接'), findsOneWidget);
+        expect(reads, 0);
+      },
+    );
+  }
 
   testWidgets(
     'a deliberate paste opens one account confirmation without a camera',

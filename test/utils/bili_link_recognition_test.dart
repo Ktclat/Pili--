@@ -12,6 +12,52 @@ void main() {
     },
   );
 
+  test(
+    'Chinese punctuation separates links from one another and from prose',
+    () {
+      expect(BiliLinkRecognition.parse('b23.tv/a、b23.tv/b'), [
+        Uri.parse('https://b23.tv/a'),
+        Uri.parse('https://b23.tv/b'),
+      ]);
+      expect(BiliLinkRecognition.parse('https://b23.tv/abc，见下一个'), [
+        Uri.parse('https://b23.tv/abc'),
+      ]);
+      expect(BiliLinkRecognition.parse('$video；再看 AV170001。'), [
+        Uri.parse(video),
+        Uri.parse('https://www.bilibili.com/video/av170001'),
+      ]);
+    },
+  );
+
+  test('punctuation in a query or fragment remains part of the URL', () {
+    const withQuery = 'https://b23.tv/a?text=猫、狗&token=x%2Fy#章节，二';
+    const withFragment = 'https://b23.tv/b#章节、三';
+    expect(BiliLinkRecognition.parse('$withQuery $withFragment'), [
+      Uri.parse(withQuery),
+      Uri.parse(withFragment),
+    ]);
+    expect(
+      BiliLinkRecognition.parse('https://example.org/路径、BV1xx411c7mD'),
+      isEmpty,
+    );
+  });
+
+  test(
+    'only valid standalone IDs within the conversion range become links',
+    () {
+      expect(
+        BiliLinkRecognition.parse(
+          'BV2aaaaaaaaa BV1OOOOOOOOO BV1000000000 BV1lllllllll BV1IIIIIIIII '
+          'av2251799813685248 av2251799813685247 bv1xx411c7mD',
+        ),
+        [
+          Uri.parse('https://www.bilibili.com/video/av2251799813685247'),
+          Uri.parse(video),
+        ],
+      );
+    },
+  );
+
   test('deduplicates links in order and upgrades public HTTP links', () {
     expect(
       BiliLinkRecognition.parse('$video\n$video http://b23.tv/abc123'),
