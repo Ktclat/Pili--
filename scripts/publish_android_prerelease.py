@@ -165,12 +165,21 @@ def inspect_apk(path: Path, abi: str, version: str, code: int,
     }
 
 
+def is_local_build_material(member: str) -> bool:
+    name = member.lower()
+    return ('/.tools/' in name or '/.artifacts/' in name
+            or name.endswith(('/android/key.properties', '.jks', '.keystore', '.p12', '.pfx')))
+
+
 def source_archive(destination: Path, commit: str, version: str, code: int) -> Path:
     prefix = f'PiliMinus-{version}+{code}-source/'
     path = destination / f'PiliMinus-{version}+{code}-source.tar.gz'
     command('git', 'archive', '--format=tar.gz', f'--prefix={prefix}', f'--output={path}', commit)
     with tarfile.open(path) as archive:
         names = {entry.name for entry in archive.getmembers()}
+    if any(is_local_build_material(name) for name in names):
+        path.unlink()
+        raise ValueError('Source archive contains local tooling or signing files')
     required = {
         'LICENSE', 'NOTICE', 'pubspec.yaml', 'pubspec.lock', 'docs/BUILD.md',
         'scripts/build_android.ps1', 'scripts/prepare_android.ps1',
@@ -180,9 +189,6 @@ def source_archive(destination: Path, commit: str, version: str, code: int) -> P
     require(all(prefix + name in names for name in required), 'Source archive is missing licensing/build materials')
     require(any(name.startswith(prefix + 'lib/scripts/') and name.endswith('.patch') for name in names),
             'Source archive is missing Flutter framework patches')
-    require(not any('/.tools/' in name or '/.artifacts/' in name or name.endswith('/android/key.properties')
-                    or name.endswith(('.jks', '.keystore')) for name in names),
-            'Source archive contains local tooling or signing files')
     return path
 
 

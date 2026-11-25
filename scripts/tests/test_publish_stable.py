@@ -16,6 +16,22 @@ SHA = 'a' * 40
 
 
 class StableReleaseTests(unittest.TestCase):
+    def test_source_archive_rejects_android_keystores_in_any_directory_or_case(self):
+        for name in ('keys/signing.JkS', 'upload.kEyStOrE', 'certs/store.p12', 'store.P12',
+                     'android/keys/backup.PfX', 'android/Key.Properties'):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                with patch.object(publisher, 'ROOT', root):
+                    publisher.command('git', 'init', '-q')
+                    store = root / name
+                    store.parent.mkdir(parents=True, exist_ok=True)
+                    store.touch()
+                    publisher.command('git', 'add', '--force', '--', name)
+                    tree = publisher.command('git', 'write-tree').strip()
+                    with self.assertRaisesRegex(ValueError, 'signing files'):
+                        publisher.source_archive(root, tree, '0.6.2', 9)
+                self.assertEqual(list(root.glob('*.tar.gz')), [])
+
     def test_channel_requires_the_correct_signing_artifact(self):
         for tag in ('v0.6.2', 'v0.6.2-beta.1'):
             with self.subTest(tag=tag):
