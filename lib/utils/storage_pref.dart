@@ -210,11 +210,13 @@ abstract final class Pref {
   static double get recommendCardWidth =>
       _setting.get(SettingBoxKey.recommendCardWidth, defaultValue: 240.0);
 
-  static UpPanelPosition get upPanelPosition =>
-      UpPanelPosition.values[_setting.get(
-        SettingBoxKey.upPanelPosition,
-        defaultValue: UpPanelPosition.leftFixed.index,
-      )];
+  static UpPanelPosition get upPanelPosition {
+    // Ignore the old sidebar preference when upgrading to the horizontal strip.
+    final index = _setting.get(SettingBoxKey.upPanelPositionV2);
+    return index is int && index >= 0 && index < UpPanelPosition.values.length
+        ? UpPanelPosition.values[index]
+        : UpPanelPosition.top;
+  }
 
   static FullScreenMode get fullScreenMode {
     int? index = _setting.get(SettingBoxKey.fullScreenMode);

@@ -207,7 +207,7 @@ List<SettingsModel> get styleSettings => [
     items: UpPanelPosition.values,
     onSelected: (value, setState) {
       GStorage.setting
-          .put(SettingBoxKey.upPanelPosition, value.index)
+          .put(SettingBoxKey.upPanelPositionV2, value.index)
           .whenComplete(setState);
       SmartDialog.showToast('重启生效');
     },

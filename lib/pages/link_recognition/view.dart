@@ -106,7 +106,7 @@ class _LinkRecognitionPageState extends State<LinkRecognitionPage> {
         padding: const .all(20),
         children: [
           const Text(
-            '支持分享文案中的 B 站链接、b23.tv 短链接和 BV/av 号。要识别登录二维码，请使用「我的 → 扫一扫」。',
+            '支持分享文案中的 B 站链接、b23.tv 短链接和 BV/av 号。要识别登录二维码，请使用「我的 → 更多操作（⋮）→ 扫一扫」。',
           ),
           const SizedBox(height: 16),
           TextField(

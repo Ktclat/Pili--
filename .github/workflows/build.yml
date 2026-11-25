@@ -57,3 +57,38 @@ jobs:
           path: build/app/outputs/flutter-apk/*-release.apk
           if-no-files-found: error
           retention-days: 14
+
+  sign:
+    name: Sign Android release APKs
+    needs: android
+    if: github.repository == 'Ktclat/Pili--' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.ANDROID_RELEASE_CERT_SHA256 != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android signing tools
+        run: '"$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "build-tools;37.0.0"'
+      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: Pili--Android-test-signed
+          path: ${{ runner.temp }}/validated-apks
+      - name: Sign verified packages with the distribution certificate
+        env:
+          ANDROID_RELEASE_KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          ANDROID_RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+          ANDROID_RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
+          ANDROID_RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+          ANDROID_RELEASE_CERT_SHA256: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
+        run: python3 scripts/sign_android_artifact.py "$RUNNER_TEMP/validated-apks" "$RUNNER_TEMP/distribution-apks"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: Pili--Android-release-signed
+          path: ${{ runner.temp }}/distribution-apks/*.apk
+          if-no-files-found: error
+          retention-days: 14

@@ -29,11 +29,28 @@ Linux 主机运行回归测试时，`cnativeapi` 的原生钩子还需要 `clang
 
 当前 [v0.6.0-beta.1](https://github.com/Ktclat/Pili--/releases/tag/v0.6.0-beta.1) 来自 [构建 41070378254](https://github.com/Ktclat/Pili--/actions/runs/41070378254)，精确源码为 `8998b8fc8ee3edc649cebca05422cc78ca3e63b6`；[发布任务](https://github.com/Ktclat/Pili--/actions/runs/41997171383) 复用该次已有 APK，逐包核验后上传并检查远程摘要。本版仍使用测试签名。
 
-## 维护者发布测试预览
+## 配置一次发行签名并发布更新
 
-先运行 [构建工作流](../.github/workflows/build.yml)，确认目标 `main` 提交全部成功，再手动运行 [Android test prerelease](../.github/workflows/release.yml)，填入构建的 `run_id` 和匹配版本的预发布标签（例如 `v0.6.0-beta.1`）。发布任务使用该次已有 APK，不重新生成签名；它核对源码提交、包身份、版本、ABI 和签名，从该提交的对应更新记录生成说明，生成精确源码包、构建信息与校验清单，上传后验证远程摘要，再公开预发布。
+发行人应在自己的电脑上保管并加密备份本项目的专用密钥库及密码。如果已有需要延续的发行密钥，使用原密钥。首次建立签名时可在仓库外运行下面的命令，按提示输入密码并备份生成的文件。
 
-发布工作流只接受本仓库 `main` 的成功构建，不接受 PR 或其他来源；标签仅允许 `alpha`、`beta`、`rc` 预发布。已公开的版本不会被覆盖，已有草稿附件只有摘要相同才会复用。该流程不代替稳定发行密钥配置或设备验收。
+```sh
+keytool -genkeypair -storetype PKCS12 -keystore PiliMinus-release.p12 -alias piliminus -keyalg RSA -keysize 3072 -validity 15000
+```
+
+在已安装 Python 3、JDK 和 GitHub CLI 的维护者电脑进入本仓库，用有 Actions secrets 和 variables 写权限的账号登录 `gh` 后运行以下配置命令。将路径换成备份过的项目专用密钥库；工具会上传整个文件，使用已有密钥时请填写它的实际别名。
+
+```sh
+python3 scripts/configure_android_signing.py --keystore /path/to/PiliMinus-release.p12 --alias piliminus
+```
+
+工具在终端隐藏读取密码，设置 `ANDROID_RELEASE_KEYSTORE_BASE64`、`ANDROID_RELEASE_KEY_ALIAS`、`ANDROID_RELEASE_STORE_PASSWORD` 和 `ANDROID_RELEASE_KEY_PASSWORD` 四个仓库 secrets，最后设置公开的证书指纹变量 `ANDROID_RELEASE_CERT_SHA256`。已有指纹时仅能用相同证书重试。
+
+1. 每次发新版先提高 `pubspec.yaml` 的版本名和构建号，写入更新记录。在 `main` 运行 [Android validation build](../.github/workflows/build.yml)。设置密钥前已经完成的运行需要重新构建。
+2. 核对 `Sign Android release APKs` 成功及其产物 `Pili--Android-release-signed`。签名任务在独立的 Runner 上复用该次已验证的三包，核对每个 APK 的包名、ABI、版本、源码提交与证书指纹。PR 只运行测试构建。
+3. 运行 [Publish Android release](../.github/workflows/release.yml)，填入该次 `run_id` 和版本标签，例如 `v0.6.2`。发布器核验已有包、构建信息与远端附件摘要；稳定更新要求签名连续、版本与构建号递增。公开版本保留其原标签和附件。
+4. 用户始终打开同一个稳定下载地址。首次发布稳定版后，常用的 64 位 ARM 安装包也有固定地址。[稳定版](https://github.com/Ktclat/Pili--/releases/latest) · [ARM64 APK](https://github.com/Ktclat/Pili--/releases/latest/download/PiliMinus-arm64-v8a.apk)
+
+预发布使用与源码相符的 `vX.Y.Z-beta.N`、`-alpha.N` 或 `-rc.N` 标签；未启用固定签名时仅可发布测试预览包。应用内检查更新跟随稳定版。
 
 ## Windows 含空格路径
 

@@ -5,7 +5,6 @@ import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
-import 'package:PiliPlus/common/widgets/player_bar.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/mine_tab_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
@@ -95,18 +94,6 @@ class _MediaPageState extends CommonPageState<MinePage>
                   children: [
                     _buildUserInfo(theme, secondary),
                     _buildActions(secondary),
-                    ListTile(
-                      leading: const Icon(Icons.qr_code_scanner),
-                      title: const Text('扫一扫'),
-                      subtitle: const Text('扫描内容二维码，或为网页登录和 TV 登录授权'),
-                      onTap: () => Get.toNamed('/scan'),
-                    ),
-                    ListTile(
-                      leading: const Icon(Icons.link),
-                      title: const Text('识别链接'),
-                      subtitle: const Text('分享文案、B 站链接或 BV/av 号'),
-                      onTap: () => Get.toNamed('/recognizeLink'),
-                    ),
                     for (final tab in controller.mineTabs)
                       switch (tab) {
                         .favorite => Obx(_buildFav),
@@ -158,87 +145,121 @@ class _MediaPageState extends CommonPageState<MinePage>
     );
   }
 
-  Widget get _buildHeaderActions {
-    const iconSize = 22.0;
-    const padding = EdgeInsets.all(8);
-    const style = ButtonStyle(tapTargetSize: .shrinkWrap);
-    return PlayerBar(
-      left: widget.showBackBtn
-          ? const Padding(
-              padding: EdgeInsets.only(left: 8),
-              child: BackButton(),
-            )
-          : const SizedBox.shrink(),
-      right: Row(
-        spacing: 5,
-        mainAxisSize: .min,
-        children: [
-          if (!_mainController.hasHome) ...[
-            IconButton(
-              iconSize: iconSize,
-              padding: padding,
-              style: style,
-              tooltip: '搜索',
-              onPressed: () => Get.toNamed('/search'),
-              icon: const Icon(Icons.search),
+  Widget get _buildHeaderActions => LayoutBuilder(
+    builder: (context, constraints) => Obx(() {
+      final anonymity = MineController.anonymity.value;
+      final showMessages =
+          !_mainController.hasHome &&
+          _mainController.accountService.isLogin.value;
+      final actions = <({String label, Widget icon, VoidCallback onPressed})>[
+        if (!_mainController.hasHome)
+          (
+            label: '搜索',
+            icon: const Icon(Icons.search),
+            onPressed: () => Get.toNamed('/search'),
+          ),
+        if (GStorage.reply != null)
+          (
+            label: '评论记录',
+            icon: const Icon(Icons.message_outlined),
+            onPressed: () => Get.toNamed('/myReply'),
+          ),
+        (
+          label: "${anonymity ? '退出' : '进入'}无痕模式",
+          icon: Icon(anonymity ? MdiIcons.incognito : MdiIcons.incognitoOff),
+          onPressed: MineController.onChangeAnonymity,
+        ),
+        (
+          label: '切换账号',
+          icon: const Icon(Icons.switch_account_outlined),
+          onPressed: () => LoginPageController.switchAccountDialog(context),
+        ),
+        (
+          label: '切换至${controller.nextThemeType.label}主题',
+          icon: controller.themeType.value.icon,
+          onPressed: controller.onChangeTheme,
+        ),
+        (
+          label: '设置',
+          icon: const Icon(Icons.settings_outlined),
+          onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
+        ),
+      ];
+      const slot = kMinInteractiveDimension;
+      final slots = ((constraints.maxWidth - 16) / slot).floor();
+      final reserved =
+          1 + (widget.showBackBtn ? 1 : 0) + (showMessages ? 1 : 0);
+      final overflow = (actions.length + reserved - slots).clamp(
+        0,
+        actions.length,
+      );
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            if (widget.showBackBtn)
+              const SizedBox.square(dimension: slot, child: BackButton()),
+            const Spacer(),
+            if (showMessages)
+              SizedBox.square(
+                dimension: slot,
+                child: msgBadge(_mainController),
+              ),
+            for (final action in actions.skip(overflow))
+              SizedBox.square(
+                dimension: slot,
+                child: IconButton(
+                  iconSize: 22,
+                  tooltip: action.label,
+                  icon: action.icon,
+                  onPressed: action.onPressed,
+                ),
+              ),
+            SizedBox.square(
+              dimension: slot,
+              child: PopupMenuButton<VoidCallback>(
+                tooltip: '更多操作',
+                icon: const Icon(Icons.more_vert),
+                position: PopupMenuPosition.under,
+                onSelected: (open) => open(),
+                itemBuilder: (_) => [
+                  _menuItem(
+                    '扫一扫',
+                    const Icon(Icons.qr_code_scanner),
+                    () => Get.toNamed('/scan'),
+                  ),
+                  _menuItem(
+                    '识别链接',
+                    const Icon(Icons.link),
+                    () => Get.toNamed('/recognizeLink'),
+                  ),
+                  if (overflow > 0) const PopupMenuDivider(),
+                  for (final action in actions.take(overflow))
+                    _menuItem(action.label, action.icon, action.onPressed),
+                ],
+              ),
             ),
-            msgBadge(_mainController),
           ],
-          if (GStorage.reply != null)
-            IconButton(
-              iconSize: iconSize,
-              padding: padding,
-              style: style,
-              tooltip: '评论记录',
-              onPressed: () => Get.toNamed('/myReply'),
-              icon: const Icon(Icons.message_outlined),
-            ),
-          Obx(
-            () {
-              final anonymity = MineController.anonymity.value;
-              return IconButton(
-                iconSize: iconSize,
-                padding: padding,
-                style: style,
-                tooltip: "${anonymity ? '退出' : '进入'}无痕模式",
-                onPressed: MineController.onChangeAnonymity,
-                icon: anonymity
-                    ? const Icon(MdiIcons.incognito)
-                    : const Icon(MdiIcons.incognitoOff),
-              );
-            },
-          ),
-          IconButton(
-            iconSize: iconSize,
-            padding: padding,
-            style: style,
-            tooltip: '切换账号',
-            onPressed: () => LoginPageController.switchAccountDialog(context),
-            icon: const Icon(Icons.switch_account_outlined),
-          ),
-          Obx(
-            () => IconButton(
-              iconSize: iconSize,
-              padding: padding,
-              style: style,
-              tooltip: '切换至${controller.nextThemeType.label}主题',
-              onPressed: controller.onChangeTheme,
-              icon: controller.themeType.value.icon,
-            ),
-          ),
-          IconButton(
-            iconSize: iconSize,
-            padding: padding,
-            style: style,
-            tooltip: '设置',
-            onPressed: () => Get.toNamed('/setting', preventDuplicates: false),
-            icon: const Icon(Icons.settings_outlined),
-          ),
-          const SizedBox(width: 16),
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    }),
+  );
+
+  PopupMenuItem<VoidCallback> _menuItem(
+    String label,
+    Widget icon,
+    VoidCallback open,
+  ) => PopupMenuItem(
+    value: open,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: 12,
+      children: [
+        icon,
+        Flexible(child: Text(label)),
+      ],
+    ),
+  );
 
   Widget _buildUserInfo(ThemeData theme, Color secondary) {
     final style = TextStyle(

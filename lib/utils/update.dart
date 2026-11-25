@@ -27,22 +27,26 @@ abstract final class Update {
         options: Options(
           headers: {'user-agent': BrowserUa.mob},
           extra: {'account': const NoAccount()},
+          validateStatus: (status) => status == 200 || status == 404,
         ),
       );
-      if (res.statusCode != 200 || res.data is! List) {
-        if (!isAuto) {
-          SmartDialog.showToast('检查更新失败，请检查网络或稍后重试');
-        }
+      if (res.statusCode == 404) {
+        if (!isAuto) SmartDialog.showToast('暂无正式发布版本');
         return;
       }
-      final release = ReleaseInfo.latestStable(res.data as List);
-      if (release == null) {
-        if (!isAuto) SmartDialog.showToast('暂无正式发布版本');
+      final release = ReleaseInfo.fromLatest(res.data);
+      if (res.statusCode != 200 || release == null) {
+        if (!isAuto) SmartDialog.showToast('检查更新失败，请检查网络或稍后重试');
         return;
       }
       final installed = await PackageInfo.fromPlatform();
       final data = release.data;
-      if (!release.isNewerThan(installed.version)) {
+      if (!release.isNewerThan(
+        installed.version,
+        installedAndroidCode: Platform.isAndroid
+            ? int.tryParse(installed.buildNumber)
+            : null,
+      )) {
         if (!isAuto) {
           SmartDialog.showToast('已是最新版本');
         }
@@ -51,9 +55,9 @@ abstract final class Update {
           animationType: SmartAnimationType.centerFade_otherSlide,
           builder: (context) {
             final colorScheme = ColorScheme.of(context);
-            Widget downloadBtn(String text, {String? ext}) => TextButton(
-              onPressed: () => onDownload(data, ext: ext),
-              child: Text(text),
+            Widget downloadBtn(String label, {String? ext}) => TextButton(
+              onPressed: () => onDownload(release, ext: ext),
+              child: Text(label),
             );
             return AlertDialog(
               title: const Text('🎉 发现新版本 '),
@@ -101,15 +105,17 @@ abstract final class Update {
                     style: TextStyle(color: colorScheme.outline),
                   ),
                 ),
-                if (Platform.isWindows) ...[
+                if (Platform.isWindows &&
+                    release.platformDownloadUrl('windows') != null) ...[
                   downloadBtn('zip', ext: 'zip'),
                   downloadBtn('exe', ext: 'exe'),
-                ] else if (Platform.isLinux) ...[
+                ] else if (Platform.isLinux &&
+                    release.platformDownloadUrl('linux') != null) ...[
                   downloadBtn('rpm', ext: 'rpm'),
                   downloadBtn('deb', ext: 'deb'),
                   downloadBtn('targz', ext: 'tar.gz'),
                 ] else
-                  downloadBtn('Github'),
+                  downloadBtn(Platform.isAndroid ? '下载更新' : '查看发布页'),
               ],
             );
           },
@@ -121,35 +127,24 @@ abstract final class Update {
     }
   }
 
-  // 下载适用于当前系统的安装包
-  static Future<void> onDownload(Map data, {String? ext}) async {
+  static Future<void> onDownload(ReleaseInfo release, {String? ext}) async {
     SmartDialog.dismiss();
-    try {
-      void download(String plat) {
-        if (data['assets'] is List && data['assets'].isNotEmpty) {
-          for (Map<String, dynamic> i in data['assets']) {
-            final String name = i['name'];
-            if (name.contains(plat) &&
-                (ext == null || ext.isEmpty ? true : name.endsWith(ext))) {
-              PageUtils.launchURL(i['browser_download_url']);
-              return;
-            }
-          }
-        }
-        throw UnsupportedError('platform not found: $plat');
+    var url = release.pageUrl;
+    if (Platform.isAndroid) {
+      try {
+        final device = await DeviceInfoPlugin().androidInfo;
+        url = release.androidDownloadUrl(device.supportedAbis) ?? url;
+      } catch (e) {
+        if (kDebugMode) debugPrint('Cannot select an Android ABI: $e');
       }
-
-      if (Platform.isAndroid) {
-        // 获取设备信息
-        AndroidDeviceInfo androidInfo = await DeviceInfoPlugin().androidInfo;
-        // [arm64-v8a]
-        download(androidInfo.supportedAbis.first);
-      } else {
-        download(Platform.operatingSystem);
-      }
-    } catch (e) {
-      if (kDebugMode) debugPrint('download error: $e');
-      PageUtils.launchURL('${Constants.sourceCodeUrl}/releases/latest');
+    } else {
+      url =
+          release.platformDownloadUrl(
+            Platform.operatingSystem,
+            extension: ext,
+          ) ??
+          url;
     }
+    await PageUtils.launchURL(url);
   }
 }

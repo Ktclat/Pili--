@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:PiliPlus/common/widgets/floating_navigation_bar.dart';
 import 'package:PiliPlus/models/common/bar_hide_type.dart';
+import 'package:PiliPlus/models/common/dynamic/up_panel_position.dart';
 import 'package:PiliPlus/models/common/member/tab_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/pages/main/controller.dart';
@@ -154,6 +155,23 @@ void main() {
     expect(NavigationBarType.dynamics.index, 1);
     expect(NavigationBarType.mine.index, 2);
     expect(NavigationPreferences.bars, NavigationBarConfig.defaultOrder);
+  });
+
+  test('new and upgraded users see UPs above the dynamics feed', () {
+    expect(Pref.upPanelPosition, UpPanelPosition.top);
+    for (final oldPosition in UpPanelPosition.values) {
+      settings.data['upPanelPosition'] = oldPosition.index;
+      expect(Pref.upPanelPosition, UpPanelPosition.top);
+    }
+
+    for (final position in UpPanelPosition.values) {
+      settings.data[SettingBoxKey.upPanelPositionV2] = position.index;
+      expect(Pref.upPanelPosition, position);
+    }
+    for (final invalid in [-1, UpPanelPosition.values.length, 'leftFixed']) {
+      settings.data[SettingBoxKey.upPanelPositionV2] = invalid;
+      expect(Pref.upPanelPosition, UpPanelPosition.top);
+    }
   });
 
   test(

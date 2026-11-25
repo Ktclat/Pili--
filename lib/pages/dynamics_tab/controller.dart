@@ -31,6 +31,7 @@ class DynamicsTabController
 
   @override
   Future<void> onRefresh() {
+    invalidateCurrentQuery();
     if (dynamicsType == .all) {
       mainController.setDynCount();
     }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify a successful main-branch Android build and publish a test prerelease.
+"""Verify a successful main-branch Android build and publish an Android release.
 
 Run in GitHub Actions with GH_TOKEN, Android build-tools 37 and JDK 17.
 No signing keys are generated or exported here. Assets are reused only when
@@ -26,8 +26,11 @@ ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY = 'Ktclat/Pili--'
 APPLICATION_ID = 'io.github.ktclat.piliminus'
 ABIS = ('arm64-v8a', 'armeabi-v7a', 'x86_64')
-ARTIFACT_NAME = 'Pili--Android-test-signed'
-TAG_PATTERN = re.compile(r'v(\d+\.\d+\.\d+)-(?:alpha|beta|rc)\.[1-9]\d*')
+TEST_ARTIFACT = 'Pili--Android-test-signed'
+SIGNED_ARTIFACT = 'Pili--Android-release-signed'
+SIGN_JOB = 'Sign Android release APKs'
+NUMBER = r'(?:0|[1-9][0-9]*)'
+TAG_PATTERN = re.compile(rf'v({NUMBER}\.{NUMBER}\.{NUMBER})(-(?:alpha|beta|rc)\.[1-9][0-9]*)?')
 SHA_PATTERN = re.compile(r'[0-9a-f]{40}')
 
 
@@ -42,7 +45,8 @@ def command(*args: object, input_text: str | None = None) -> str:
     if result.returncode:
         # Keep CLI diagnostics useful without dumping environments or large logs.
         # No command arguments contain tokens; GH_TOKEN remains in the environment.
-        diagnostic = (result.stderr.strip() or result.stdout.strip())[-2000:]
+        diagnostic = re.sub(r'(https?://[^?\s"]+)\?[^\s"]+', r'\1?[redacted]',
+                            result.stderr.strip() or result.stdout.strip())[-2000:]
         raise RuntimeError(f'{Path(str(args[0])).name} failed ({result.returncode}): {diagnostic}')
     return result.stdout
 
@@ -81,6 +85,38 @@ def validate_run(run: dict) -> str:
     require(bool(SHA_PATTERN.fullmatch(commit)), 'Invalid build source commit')
     require(bool(run.get('updated_at')), 'Build completion metadata is missing')
     return commit
+
+
+def release_settings(tag: str, pin: str) -> tuple[bool, str | None, str]:
+    match = TAG_PATTERN.fullmatch(tag)
+    require(match is not None, 'Tag must be vX.Y.Z or vX.Y.Z-(alpha|beta|rc).N')
+    prerelease = bool(match[2])
+    pin = pin.strip().lower()
+    if pin:
+        require(bool(re.fullmatch(r'[0-9a-f]{64}', pin)), 'Invalid ANDROID_RELEASE_CERT_SHA256')
+    require(prerelease or bool(pin), 'A stable release requires a pinned Android release signer')
+    return prerelease, pin or None, SIGNED_ARTIFACT if pin else TEST_ARTIFACT
+
+
+def validate_jobs(response: dict, use_release_signer: bool) -> None:
+    jobs = response.get('jobs', [])
+    require(response.get('total_count') == len(jobs) and jobs, 'Incomplete build job list')
+    successes = {job['name'] for job in jobs if job.get('conclusion') == 'success'}
+    require('android' in successes, 'Android validation job must have succeeded')
+    if use_release_signer:
+        require(SIGN_JOB in successes, 'The maintained signing job must have succeeded')
+    for job in jobs:
+        optional = not use_release_signer and job['name'] == SIGN_JOB and job.get('conclusion') == 'skipped'
+        require(job.get('status') == 'completed' and (optional or job.get('conclusion') == 'success'),
+                f'Build job did not succeed: {job["name"]}')
+
+
+def verify_signers(records: list[dict], pin: str | None) -> str:
+    signers = {item['signer_certificate_sha256'] for item in records}
+    require(len(signers) == 1, 'APK signers differ between ABIs')
+    signer = signers.pop()
+    require(not pin or signer == pin, 'APK certificate does not match ANDROID_RELEASE_CERT_SHA256')
+    return signer
 
 
 def tag_commit(tag: str) -> str | None:
@@ -177,11 +213,27 @@ def source_changes(commit: str, version: str, code: int) -> str:
     return extract_changelog_entry(changelog, version, code)
 
 
-def release_notes(tag: str, version: str, code: int, commit: str, run: dict) -> str:
+def apk_name(abi: str, version: str, code: int, prerelease: bool, pinned: bool) -> str:
+    if not prerelease:
+        return f'PiliMinus-{abi}.apk'
+    suffix = 'release-signed' if pinned else 'test-signed'
+    return f'PiliMinus-{version}+{code}-{abi}-{suffix}.apk'
+
+
+def release_notes(tag: str, version: str, code: int, commit: str, run: dict,
+                  *, prerelease: bool = True, pinned: bool = False) -> str:
     changes = source_changes(commit, version, code)
+    if pinned:
+        signing = '使用本仓库固定的 Android 发行证书签名。相同包名和证书的安装可以原位升级。'
+    else:
+        signing = '本包使用临时测试签名，不同构建的证书可能不同。'
+    if prerelease:
+        channel = '预发布，需在本页手动下载。'
+    else:
+        channel = f'稳定版，可通过应用内更新或[稳定下载页](https://github.com/{REPOSITORY}/releases/latest)获取。'
     return f'''# Pili-- {tag}
 
-Android **{version}+{code}**，测试签名预发布；不是固定发行密钥签名的稳定版。
+Android **{version}+{code}**。{channel}{signing}
 
 ## 本次更新
 
@@ -189,23 +241,16 @@ Android **{version}+{code}**，测试签名预发布；不是固定发行密钥�
 
 ## 下载与升级
 
-- 多数手机使用 `arm64-v8a`，兼容的 32 位 ARM 设备使用 `armeabi-v7a`，x86_64 设备／模拟器使用 `x86_64`。最低 Android 7.0 / API 24。
+- 多数手机使用 `arm64-v8a`，兼容的 32 位 ARM 设备使用 `armeabi-v7a`，x86_64 设备或模拟器使用 `x86_64`。最低 Android 7.0 / API 24。
 - 独立安装 ID 为 `{APPLICATION_ID}`，可与上游 PiliPlus 同时安装。
-- APK 文件名包含 `test-signed`；`SHA256SUMS.txt` 用于核对附件，`BUILD_INFO.json` 记录实际包身份、签名证书摘要与构建来源。
-- **临时测试签名可能与旧测试包不同，不保证覆盖升级。** 签名冲突时先核对来源并备份数据，不要直接清除应用数据，无需卸载 PiliPlus。
-- 本次为 Pre-release，应用内稳定版更新检查不会提示，请在此页面手动下载。
+- 早期临时测试包的签名可能不同，Android 会拒绝跨签名覆盖安装。遇到签名冲突，请先备份自己的数据。
+- `SHA256SUMS.txt` 提供附件校验值，`BUILD_INFO.json` 记录包名、版本、签名证书摘要及源码提交。
 
 ## 来源与验证
 
-- 精确构建源码：`{commit}`。
-- [通过的 Actions 构建]({run['html_url']})：分析与回归、三个 ABI 构建及实际 APK 隔离检查全部成功。具体测试数以该次日志为准。
-- 发布前再次校验三个 APK 的包名、版本、ABI、嵌入源码提交和签名；三包使用同一证书。
-- [设备记录](https://github.com/{REPOSITORY}/blob/{commit}/docs/VALIDATION.md) 按各自源码提交和安装包记录，历史设备结果不代表本次 CI 包重新安装验收。
-- **真实账号网页／TV 授权、ARM64 真机、长时间播放／下载仍待验收。** 假响应测试、接口研究及构建通过不等于实际授权成功。
-
-## 源码与许可
-
-`PiliMinus-{version}+{code}-source.tar.gz` 来自上述精确提交，包含 GPL、NOTICE、第三方声明、锁文件、构建脚本与 Flutter 补丁；构建步骤见其中的 `docs/BUILD.md`。依赖保留各自许可。GitHub 的 Source code 链接也对应本版本标签。
+- 构建源码为 `{commit}`。[Actions 构建]({run['html_url']}) 已通过回归测试和三个 ABI 的 APK 身份检查。
+- 设备验收范围见[验证记录](https://github.com/{REPOSITORY}/blob/{commit}/docs/VALIDATION.md)，其中列出 ARM64 真机和真实账号网页／TV 授权的验证状态。
+- `PiliMinus-{version}+{code}-source.tar.gz` 来自该提交，包含 GPL、NOTICE、第三方声明、锁文件、构建脚本与 Flutter 补丁。
 '''
 
 
@@ -223,22 +268,59 @@ def matching_asset(remote: dict, path: Path) -> bool:
             and remote.get('state') == 'uploaded')
 
 
-def find_release(tag: str) -> dict | None:
-    # GET /releases/tags/{tag} deliberately omits drafts even for their author.
-    # Authenticated collection reads include drafts, so resolve their numeric ID.
-    matches = []
+def list_releases():
     for page in range(1, 21):
         releases = api(f'releases?per_page=100&page={page}')
-        matches.extend(release for release in releases if release.get('tag_name') == tag)
+        yield from releases
         if len(releases) < 100:
-            break
-    else:
-        raise ValueError('Too many release pages to resolve a draft safely')
+            return
+    raise ValueError('Too many releases to verify publication history')
+
+
+def verify_upgrade_path(tag: str, version: str, code: int, pin: str | None, commit: str, run_id: int) -> None:
+    candidate = tuple(map(int, version.split('.')))
+    for release in list_releases():
+        previous_tag = release['tag_name']
+        if release['draft'] or previous_tag == tag:
+            continue
+        if release['prerelease'] and not any(
+                item['name'].endswith('-release-signed.apk') for item in release.get('assets', [])):
+            continue  # Legacy test certificates were local to individual builds.
+        require(bool(pin), 'A maintained signing channel already exists; restore its certificate pin')
+        previous = TAG_PATTERN.fullmatch(previous_tag)
+        require(previous and bool(previous[2]) == release['prerelease'],
+                f'Unrecognized published release: {previous_tag}')
+        if not release['prerelease']:
+            require(candidate > tuple(map(int, previous[1].split('.'))),
+                    f'Stable version must increase from {previous_tag}')
+        previous_sha = tag_commit(previous_tag)
+        require(previous_sha is not None, f'Missing tag: {previous_tag}')
+        previous_version, previous_code = source_version(previous_sha)
+        manifest = assets_from_release(release).get('BUILD_INFO.json')
+        require(manifest and manifest.get('state') == 'uploaded', f'{previous_tag}: missing signing metadata')
+        raw = command('gh', 'api', f'repos/{REPOSITORY}/releases/assets/{int(manifest["id"])}',
+                      '-H', 'Accept: application/octet-stream')
+        info = json.loads(raw)
+        require(previous_version == previous[1] and info.get('release_tag') == previous_tag
+                and info.get('source_commit') == previous_sha
+                and info.get('version') == f'{previous_version}+{previous_code}'
+                and info.get('signing', {}).get('certificate_sha256') == pin,
+                f'{previous_tag}: signing history does not match the configured certificate')
+        promotes_same_build = (release['prerelease'] and '-' not in tag and commit == previous_sha
+                               and info.get('workflow_run_id') == run_id and code == previous_code)
+        require(code > previous_code or promotes_same_build,
+                f'Android versionCode must increase from {previous_tag} ({previous_code})')
+
+
+def find_release(tag: str) -> dict | None:
+    # Tag lookup omits drafts. Resolve them through the authenticated release collection.
+    matches = [release for release in list_releases() if release.get('tag_name') == tag]
     require(len(matches) <= 1, 'Multiple releases use the requested tag; review before publishing')
     return api(f'releases/{matches[0]["id"]}') if matches else None
 
 
-def publish(tag: str, commit: str, notes: Path, files: list[Path]) -> str:
+def publish(tag: str, commit: str, notes: Path, files: list[Path], *,
+            prerelease: bool = True, pinned: bool = False) -> str:
     existing_tag = tag_commit(tag)
     require(existing_tag in (None, commit), 'Existing release tag points to different source')
     release = find_release(tag)
@@ -247,9 +329,9 @@ def publish(tag: str, commit: str, notes: Path, files: list[Path]) -> str:
         # draft. Use the POST response instead of depending on that index.
         payload = {
             'tag_name': tag, 'target_commitish': commit,
-            'name': f'Pili-- {tag}（测试签名）',
+            'name': f'Pili-- {tag}' + ('' if pinned else '（测试签名）'),
             'body': notes.read_text(encoding='utf-8'),
-            'draft': True, 'prerelease': True,
+            'draft': True, 'prerelease': prerelease,
         }
         release = json.loads(command(
             'gh', 'api', '--method', 'POST', f'repos/{REPOSITORY}/releases',
@@ -257,7 +339,7 @@ def publish(tag: str, commit: str, notes: Path, files: list[Path]) -> str:
         require(isinstance(release.get('id'), int) and release.get('tag_name') == tag,
                 'Created release response has an unexpected identity')
     require(release.get('draft') is True, 'Refusing to modify a published release')
-    require(release.get('prerelease') is True, 'Existing draft is not a prerelease')
+    require(release.get('prerelease') is prerelease, 'Existing draft belongs to a different release channel')
     require(release.get('target_commitish') == commit, 'Existing draft targets different source')
     existing = assets_from_release(release)
     expected = {path.name for path in files}
@@ -276,12 +358,20 @@ def publish(tag: str, commit: str, notes: Path, files: list[Path]) -> str:
         if attempt == 9:
             raise ValueError('Remote release assets do not match local bytes/SHA-256')
         time.sleep(2)
+    require(tag_commit(tag) in (None, commit), 'Release tag changed while uploading assets')
     command('gh', 'release', 'edit', tag, '--repo', REPOSITORY, '--draft=false',
-            '--prerelease', '--latest=false', '--notes-file', notes)
-    published = api(f'releases/tags/{quote(tag, safe="")}')
-    require(published.get('draft') is False and published.get('prerelease') is True,
-            'Release did not become a public prerelease')
-    require(tag_commit(tag) == commit, 'Published tag does not match the APK source')
+            f'--prerelease={str(prerelease).lower()}', f'--latest={str(not prerelease).lower()}',
+            '--notes-file', notes)
+    for attempt in range(10):
+        published = api(f'releases/{release["id"]}')
+        latest = None if prerelease else api('releases/latest', allow_missing=True)
+        if (published.get('draft') is False and published.get('prerelease') is prerelease
+                and tag_commit(tag) == commit
+                and (prerelease or (latest or {}).get('id') == release['id'])):
+            break
+        if attempt == 9:
+            raise ValueError('Published release, tag or latest channel could not be verified')
+        time.sleep(2)
     return published['html_url']
 
 
@@ -293,20 +383,20 @@ def main() -> int:
     parser.add_argument('--prepare-only', action='store_true', help='Verify and prepare assets without changing any release')
     args = parser.parse_args()
     require(args.run_id > 0, 'Run ID must be positive')
-    tag_match = TAG_PATTERN.fullmatch(args.tag)
-    require(tag_match is not None, 'Tag must be vX.Y.Z-alpha.N, -beta.N or -rc.N')
+    prerelease, pin, artifact_name = release_settings(args.tag, os.environ.get('ANDROID_RELEASE_CERT_SHA256', ''))
     require(os.environ.get('GH_REPO', REPOSITORY) == REPOSITORY, 'Unexpected GH_REPO')
     require(os.environ.get('GITHUB_REPOSITORY', REPOSITORY) == REPOSITORY, 'Unexpected Actions repository')
     run = api(f'actions/runs/{args.run_id}')
     commit = validate_run(run)
-    jobs = api(f'actions/runs/{args.run_id}/jobs?per_page=100')
-    require(jobs.get('total_count', 0) == len(jobs.get('jobs', [])) and bool(jobs.get('jobs'))
-            and all(job['status'] == 'completed' and job['conclusion'] == 'success' for job in jobs['jobs']),
-            'Every build job must have succeeded')
+    # Branch names alone persist on runs whose source was later removed from main.
+    command('git', 'merge-base', '--is-ancestor', commit, 'refs/remotes/origin/main')
+    validate_jobs(api(f'actions/runs/{args.run_id}/jobs?per_page=100'), bool(pin))
     version, code = source_version(commit)
-    require(tag_match[1] == version, 'Prerelease tag does not match the build source version')
+    require(0 < code <= 2100000000 and args.tag.split('-')[0] == f'v{version}',
+            'Release tag or versionCode does not match the Android source version')
+    verify_upgrade_path(args.tag, version, code, pin, commit, args.run_id)
     artifacts = api(f'actions/runs/{args.run_id}/artifacts?per_page=100')
-    selected = [item for item in artifacts.get('artifacts', []) if item['name'] == ARTIFACT_NAME]
+    selected = [item for item in artifacts.get('artifacts', []) if item['name'] == artifact_name]
     require(len(selected) == 1 and selected[0].get('expired') is False, 'Expected one unexpired Android artifact')
     sdk = os.environ.get('ANDROID_HOME') or os.environ.get('ANDROID_SDK_ROOT')
     require(bool(sdk), 'ANDROID_HOME or ANDROID_SDK_ROOT is required')
@@ -319,32 +409,33 @@ def main() -> int:
     destination = work / 'assets'
     destination.mkdir(exist_ok=True)
     command('gh', 'run', 'download', args.run_id, '--repo', REPOSITORY,
-            '--name', ARTIFACT_NAME, '--dir', downloads)
+            '--name', artifact_name, '--dir', downloads)
     expected_originals = {f'app-{abi}-release.apk' for abi in ABIS}
-    require({path.name for path in downloads.rglob('*.apk')} == expected_originals,
+    require({path.relative_to(downloads).as_posix() for path in downloads.rglob('*') if path.is_file()} == expected_originals,
             'Unexpected downloaded APK set')
     require(all((downloads / name).is_file() for name in expected_originals), 'APK artifact layout changed')
     records = []
     apks = []
     for abi in ABIS:
-        path = destination / f'PiliMinus-{version}+{code}-{abi}-test-signed.apk'
+        path = destination / apk_name(abi, version, code, prerelease, bool(pin))
         shutil.copyfile(downloads / f'app-{abi}-release.apk', path)
         records.append(inspect_apk(path, abi, version, code, commit, build_tools))
         apks.append(path)
-    require(len({item['signer_certificate_sha256'] for item in records}) == 1, 'APK signers differ between ABIs')
+    signer = verify_signers(records, pin)
     print(command(sys.executable, ROOT / 'scripts/check_android_identity.py',
                   '--aapt', build_tools / 'aapt', *[arg for path in apks for arg in ('--apk', path)]))
     source = source_archive(destination, commit, version, code)
     info = {
-        'schema_version': 1, 'release_tag': args.tag, 'prerelease': True,
+        'schema_version': 1, 'release_tag': args.tag, 'prerelease': prerelease,
         'version': f'{version}+{code}', 'source_commit': commit,
         'workflow_run_id': args.run_id, 'workflow_run_url': run['html_url'],
         'workflow_run_updated_at': run['updated_at'], 'artifact_id': selected[0]['id'],
         'artifact_digest': selected[0].get('digest'), 'build_mode': 'release',
         'signing': {
-            'kind': 'CI-generated Android test signing, not a stable distribution key',
-            'certificate_sha256': records[0]['signer_certificate_sha256'],
-            'in_place_upgrade_from_other_CI_runs_guaranteed': False,
+            'kind': 'maintained release signing' if pin else 'CI-generated Android test signing',
+            'certificate_sha256': signer,
+            'pinned_distribution_signer': bool(pin),
+            'in_place_upgrade_requires_matching_certificate': True,
         },
         'apks': records,
         'source_archive': {'file': source.name, 'sha256': sha256(source)},
@@ -362,16 +453,16 @@ def main() -> int:
     checksums.write_text(''.join(f'{sha256(path)}  {path.name}\n' for path in content_files))
     files = sorted([*content_files, checksums], key=lambda path: path.name)
     notes = work / 'release-notes.md'
-    notes.write_text(release_notes(args.tag, version, code, commit, run))
+    notes.write_text(release_notes(args.tag, version, code, commit, run, prerelease=prerelease, pinned=bool(pin)))
     print(f'Verified assets prepared in {destination}')
     if args.prepare_only:
         return 0
-    url = publish(args.tag, commit, notes, files)
+    url = publish(args.tag, commit, notes, files, prerelease=prerelease, pinned=bool(pin))
     print(url)
     summary = os.environ.get('GITHUB_STEP_SUMMARY')
     if summary:
         with Path(summary).open('a') as stream:
-            stream.write(f'## Test-signed Android prerelease\n\n[{args.tag}]({url})\n\n'
+            stream.write(f'## Android release\n\n[{args.tag}]({url})\n\n'
                          f'Build source: `{commit}` · [Actions run]({run["html_url"]})\n\n'
                          'Three APKs, exact source, build metadata and SHA-256 sums verified and published.\n')
     return 0

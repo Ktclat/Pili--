@@ -34,7 +34,7 @@ class PrereleaseNotesTests(unittest.TestCase):
             notes.write_text('Native navigation\n\n拖动停留；保留 `literal` text.\n', encoding='utf-8')
             # Simulate the collection remaining stale throughout publication.
             with patch.object(publisher, 'find_release', return_value=None) as find, \
-                    patch.object(publisher, 'tag_commit', side_effect=[None, commit]), \
+                    patch.object(publisher, 'tag_commit', side_effect=[None, None, commit]), \
                     patch.object(publisher, 'command', side_effect=cli), \
                     patch.object(publisher, 'assets_from_release', return_value={}), \
                     patch.object(publisher, 'api', return_value=published):
