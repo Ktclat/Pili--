@@ -15,7 +15,7 @@
 
 本项目不是哔哩哔哩官方客户端。其他平台源码保留，目前仅对 Android 提供构建与验证说明。
 
-0.6.3+11 已通过 437 项 Flutter 测试、31 项项目脚本测试及三个 Android 架构的安装包检查。Android 11 模拟器从同签名 +10 覆盖安装至 +11 后保留了设置和自定义按钮。[构建记录](https://github.com/Ktclat/Pili--/actions/runs/45558391018) · [0.6.3+11 测试包](https://github.com/Ktclat/Pili--/actions/runs/45558391018/artifacts/14998000754) · [设备记录](docs/VALIDATION.md)
+0.6.3+12 已通过 439 项 Flutter 测试、31 项项目脚本测试和三个 Android 架构的安装包检查。在 Android 11 模拟器上用相同测试证书从 +11 升至 +12 后，原有按钮设置得到保留。[0.6.3+12 测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45592612772/artifacts/15011943766) · [构建记录](https://github.com/Ktclat/Pili--/actions/runs/45592612772) · [设备记录](docs/VALIDATION.md)
 
 ## 主要功能
 
