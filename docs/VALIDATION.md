@@ -4,6 +4,14 @@
 
 验证按源码提交与安装包记录；相同版本号下可能包含多个开发提交，不能把历史结果直接用于当前代码。构建记录见 [Actions](https://github.com/Ktclat/Pili--/actions/workflows/build.yml)。
 
+## 0.6.1+8 统一扫一扫与链接识别（2026-11-25）
+
+提交 `a940fe67c` 通过 412 项 Flutter 测试与 17 项项目检查。静态分析为 0 个错误、0 个警告及 38 条提示。测试从「识别链接」输入 `BV17x411w7KC` 并点选结果，用受控分 P 响应验证失败后可重试、成功后向原生视频页传入对应的 aid、BV 和 CID。三种架构 APK 均已生成并通过包名、Provider 和快捷方式检查。[构建记录](https://github.com/Ktclat/Pili--/actions/runs/45527338594) · [测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45527338594/artifacts/14984330487)
+
+Android 11（API 30）x86_64 游客模拟器安装了同一提交的本地测试包。「我的」只有一个「扫一扫」入口，旁边保留「识别链接」。在系统弹窗拒绝相机权限后，通过「从相册识别」先后选取两张测试 PNG。内容码显示链接并等待确认，网页登录码进入原生授权页并提示先登录。该模拟器使用离线图片选择器提供文件，两张二维码均由应用内扫描器解码。「粘贴登录链接」在相机不可用时仍可用。[“我的”实测截图](validation/0.6.1/unified-scan-mine.png)
+
+在同一安装包的「识别链接」输入含重复项、BV、av 和 UP 主空间链接的文案，结果按原文顺序列出三个不同链接。选取空间链接会打开原生空间页，分享预览中的 UID 为 2。仿冒域名路径中的 BV 被拒绝。点选带 CID 的视频链接 `bilibili://video/170001?cid=279786` 后，原生视频页显示 `BV17x411w7KC` 和 `av170001`。本次设备测试验证了页面跳转，视频实际播放、真机相机取景及真实账号授权未在本轮验收。[识别结果实测截图](validation/0.6.1/recognized-content-links.png)
+
 ## 0.6.1+8 外部 App 登录授权（2026-11-24）
 
 代码提交 `0eb74d185` 通过 400 项 Flutter 测试和 17 项项目检查。静态分析为 0 个错误、0 个警告，另有 38 条提示。GitHub Actions 构建了三个架构的测试签名 APK，并核验了成品包名、Provider 和启动快捷方式。[构建记录](https://github.com/Ktclat/Pili--/actions/runs/45444746013) · [测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45444746013/artifacts/14947410379)
