@@ -79,6 +79,39 @@ void main() {
     );
   }
 
+  testWidgets('scanner preview and actions use the full safe width', (
+    tester,
+  ) async {
+    tester.view
+      ..physicalSize = const Size(540, 960)
+      ..devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await _showScanner(tester);
+    final actions = find.ancestor(
+      of: find.text('粘贴登录链接'),
+      matching: find.byType(Wrap),
+    );
+    final body = find
+        .ancestor(of: actions, matching: find.byType(Column))
+        .first;
+    final preview = find.byWidget(tester.widget<Column>(body).children.first);
+
+    void checkWidth(double left, double right) {
+      final cameraRect = tester.getRect(preview);
+      final actionRect = tester.getRect(actions);
+      expect(cameraRect.left, left);
+      expect(cameraRect.right, right);
+      expect(actionRect.left, left + 12);
+      expect(actionRect.right, right - 12);
+      expect(actionRect.center.dx, cameraRect.center.dx);
+    }
+
+    checkWidth(0, 540);
+    tester.view.padding = const FakeViewPadding(left: 30, right: 10);
+    await tester.pumpAndSettle();
+    checkWidth(30, 530);
+  });
+
   testWidgets(
     'scanner app bar opens link recognition and returns to scanning',
     (

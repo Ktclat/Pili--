@@ -309,6 +309,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     ),
     body: SafeArea(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             child: !_supported
@@ -316,11 +317,16 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                 : Stack(
                     alignment: Alignment.center,
                     children: [
-                      MobileScanner(
-                        controller: _controller,
-                        onDetect: _detect,
-                        errorBuilder: (_, _) => const Center(
-                          child: Icon(Icons.no_photography_outlined, size: 48),
+                      Positioned.fill(
+                        child: MobileScanner(
+                          controller: _controller,
+                          onDetect: _detect,
+                          errorBuilder: (_, _) => const Center(
+                            child: Icon(
+                              Icons.no_photography_outlined,
+                              size: 48,
+                            ),
+                          ),
                         ),
                       ),
                       if (_error == null)
@@ -340,7 +346,10 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
           if (_supported)
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(_error ?? '将内容二维码或登录码放入框内'),
+              child: Text(
+                _error ?? '将内容二维码或登录码放入框内',
+                textAlign: TextAlign.center,
+              ),
             ),
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
