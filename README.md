@@ -15,7 +15,7 @@
 
 本项目不是哔哩哔哩官方客户端。其他平台源码保留，目前仅对 Android 提供构建与验证说明。
 
-0.6.0 已通过 [三架构构建与回归](https://github.com/Ktclat/Pili--/actions/runs/41070378254)：316 项 Flutter 测试、14 项 Python 检查通过，静态分析无 error / warning。导航与设备验证范围见 [验证记录](docs/VALIDATION.md)；此前 0.5.0 的分享、识别与隐私开关截图保留在 [历史设备记录](docs/validation/0.5.0.md)。真实账号扫码授权与 ARM64 真机仍待验收。
+0.6.3+10 已通过 425 项 Flutter 测试、31 项项目脚本测试及三个 Android 架构的安装包检查。Android 11 模拟器上已验证同签名覆盖升级和重启后保留自定义按钮。[构建记录](https://github.com/Ktclat/Pili--/actions/runs/45554529199) · [测试 APK](https://github.com/Ktclat/Pili--/actions/runs/45554529199/artifacts/14996072103) · [设备记录](docs/VALIDATION.md)
 
 ## 主要功能
 
