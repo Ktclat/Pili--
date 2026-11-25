@@ -7,11 +7,14 @@ import 'package:PiliPlus/common/widgets/scaffold/simple_scaffold.dart';
 import 'package:PiliPlus/common/widgets/sliver_wrap.dart';
 import 'package:PiliPlus/common/widgets/view_insets_safe_area.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/models_new/search/search_rcmd/data.dart';
 import 'package:PiliPlus/pages/search/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/hot_keyword.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/utils/em.dart' show Em;
+import 'package:PiliPlus/utils/header_action_preferences.dart';
+import 'package:PiliPlus/utils/navigation_preferences.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
@@ -46,6 +49,15 @@ class _SearchPageState extends State<SearchPage> {
     isPortrait = MediaQuery.isPortraitOf(context);
   }
 
+  bool get _needsSettingsEntry {
+    final bars = NavigationPreferences.bars;
+    return bars.contains(NavigationBarType.home) &&
+        !bars.contains(NavigationBarType.mine) &&
+        !HeaderActionPreferences.read(.home).any(
+          (entry) => entry.action == HeaderAction.profile && entry.pinned,
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final trending = _searchController.enableTrending
@@ -62,6 +74,17 @@ class _SearchPageState extends State<SearchPage> {
         child: ViewInsetsSafeArea(
           child: CustomScrollView(
             slivers: [
+              if (_needsSettingsEntry)
+                SliverToBoxAdapter(
+                  child: ListTile(
+                    leading: const Icon(Icons.settings_outlined),
+                    title: const Text('设置'),
+                    onTap: () async {
+                      await Get.toNamed('/setting');
+                      if (mounted) setState(() {});
+                    },
+                  ),
+                ),
               if (_searchController.searchSuggestion) _buildSearchSuggest(),
               if (isPortrait) ...[
                 ?trending,

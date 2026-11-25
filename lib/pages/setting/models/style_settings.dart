@@ -143,8 +143,8 @@ List<SettingsModel> get styleSettings => [
   ),
   NormalModel(
     title: '右上角按钮',
-    subtitle: '调整首页和我的按钮顺序，选择直接显示或收进更多操作',
-    leading: const Icon(Icons.more_horiz),
+    subtitle: '选择首页和「我的」显示的按钮并排序',
+    leading: const Icon(Icons.tune),
     onTap: (context, setState) =>
         Get.to(() => const HeaderActionSettingsPage()),
   ),

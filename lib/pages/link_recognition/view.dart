@@ -19,8 +19,6 @@ Future<void> confirmRecognizedLinks(
             mainAxisSize: .min,
             crossAxisAlignment: .start,
             children: [
-              const Text('核对后点击打开。短链接会在打开后解析，不会自动授权登录。'),
-              const SizedBox(height: 12),
               for (final link in links)
                 ListTile(
                   contentPadding: .zero,
@@ -105,10 +103,6 @@ class _LinkRecognitionPageState extends State<LinkRecognitionPage> {
       child: ListView(
         padding: const .all(20),
         children: [
-          const Text(
-            '支持分享文案中的 B 站链接、b23.tv 短链接和 BV/av 号。登录二维码请用「扫一扫」。可在首页或「我的」右上角找到，收起时点「⋮」。',
-          ),
-          const SizedBox(height: 16),
           TextField(
             controller: _text,
             minLines: 4,
@@ -116,6 +110,7 @@ class _LinkRecognitionPageState extends State<LinkRecognitionPage> {
             maxLength: BiliLinkRecognition.maxTextLength,
             decoration: InputDecoration(
               labelText: '链接或分享文字',
+              hintText: 'B 站链接、b23.tv 短链接或 BV/av 号',
               border: const OutlineInputBorder(),
               errorText: _error,
             ),
@@ -130,7 +125,7 @@ class _LinkRecognitionPageState extends State<LinkRecognitionPage> {
             icon: const Icon(Icons.content_paste),
             label: const Text('从剪贴板粘贴并识别'),
           ),
-          const Text('此按钮仅在点击时读取剪贴板；自动识别需在“设置 → 隐私设置”另行开启。'),
+          const Text('自动识别剪贴板可在「设置 → 隐私设置」开启。'),
         ],
       ),
     ),

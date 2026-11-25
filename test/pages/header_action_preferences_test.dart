@@ -48,7 +48,7 @@ void main() {
     await directory.delete(recursive: true);
   });
 
-  test('new installations keep the original visible actions on each page', () {
+  test('both pages show Scan and hide Recognize Link by default', () {
     List<HeaderAction> pinned(HeaderActionPage page, bool pinned) =>
         HeaderActionPreferences.read(page)
             .where((entry) => entry.pinned == pinned)
@@ -66,14 +66,35 @@ void main() {
       HeaderAction.switchAccount,
       HeaderAction.theme,
       HeaderAction.settings,
+      HeaderAction.scan,
     ]);
     expect(pinned(.mine, false), [
       HeaderAction.messages,
       HeaderAction.search,
-      HeaderAction.scan,
       HeaderAction.recognizeLink,
     ]);
   });
+
+  test(
+    'upgrades keep explicit choices and apply the new Scan default',
+    () async {
+      await GStorage.setting.put(SettingBoxKey.mineHeaderActions, [
+        {'id': 'recognizeLink', 'pinned': true},
+        {'id': 'scan', 'pinned': false},
+      ]);
+      expect(HeaderActionPreferences.read(.mine).take(2), [
+        (action: HeaderAction.recognizeLink, pinned: true),
+        (action: HeaderAction.scan, pinned: false),
+      ]);
+      await GStorage.setting.put(SettingBoxKey.mineHeaderActions, [
+        {'id': 'scan', 'pinned': null},
+      ]);
+      expect(HeaderActionPreferences.read(.mine).first, (
+        action: HeaderAction.scan,
+        pinned: true,
+      ));
+    },
+  );
 
   test('Mine defaults follow navigation until explicitly customized', () async {
     final homeVisible = HeaderActionPreferences.read(.mine);

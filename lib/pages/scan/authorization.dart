@@ -138,15 +138,11 @@ class _QrLoginAuthorizationPageState extends State<QrLoginAuthorizationPage>
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
-                  if (!widget.fromExternalApp)
-                    const Text(
-                      '确认后，二维码对应的浏览器或设备将获得你的账号登录权限。'
-                      '请只扫描你本人正在操作的设备上的登录二维码，不要为陌生人发送的二维码授权。',
-                    )
-                  else if (phase == .checking || phase == .ready)
-                    const Text(
-                      '确认后，发起此次请求的浏览器或设备将使用你的哔哩哔哩账号登录。'
-                      '请只授权你刚刚在原 App 亲自发起的登录。遇到陌生请求，请点「取消」并切回原 App。',
+                  if (phase == .checking || phase == .ready)
+                    Text(
+                      widget.fromExternalApp
+                          ? '发起请求的设备将登录你的哔哩哔哩账号。请确认这是你在原 App 发起的登录。'
+                          : '显示二维码的设备将登录你的哔哩哔哩账号。请确认这是你要登录的设备。',
                     ),
                   if (scene != null) ...[
                     const SizedBox(height: 16),

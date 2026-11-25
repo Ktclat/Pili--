@@ -1,7 +1,6 @@
 import 'package:PiliPlus/common/style.dart';
-import 'package:PiliPlus/common/widgets/custom_height_widget.dart';
-import 'package:PiliPlus/common/widgets/header_more_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/scan_icon.dart';
 import 'package:PiliPlus/common/widgets/scroll_physics.dart' show tabBarView;
 import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
@@ -84,12 +83,10 @@ class _HomePageState extends CommonPageState<HomePage>
           customAppBar(),
           tabBar,
         ] else
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: _HomeHeaderBar(
-              mainController: _mainController,
-              leading: tabBar,
-            ),
+          _HomeHeaderBar(
+            mainController: _mainController,
+            leading: tabBar,
+            horizontalPadding: 8,
           ),
         Expanded(
           child: onBuild(
@@ -104,25 +101,29 @@ class _HomePageState extends CommonPageState<HomePage>
   }
 
   Widget customAppBar() {
-    const padding = EdgeInsets.fromLTRB(14, 6, 14, 0);
-    final child = _HomeHeaderBar(
-      mainController: _mainController,
-      leading: searchBar(),
+    final child = Padding(
+      padding: const EdgeInsets.only(
+        top: Style.topBarHeight - kMinInteractiveDimension,
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: kMinInteractiveDimension),
+        child: _HomeHeaderBar(
+          mainController: _mainController,
+          leading: searchBar(),
+          horizontalPadding: 14,
+        ),
+      ),
     );
     if (_homeController.hideTopBar) {
       if (_mainController.barOffset case final barOffset?) {
         return Obx(
-          () {
-            final offset = barOffset.value;
-            return CustomHeightWidget(
-              offset: Offset(0, -offset),
-              height: Style.topBarHeight - offset,
-              child: Padding(
-                padding: padding,
-                child: child,
-              ),
-            );
-          },
+          () => ClipRect(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: 1 - barOffset.value / Style.topBarHeight,
+              child: child,
+            ),
+          ),
         );
       }
       if (_homeController.showTopBar case final showTopBar?) {
@@ -131,22 +132,20 @@ class _HomePageState extends CommonPageState<HomePage>
           return AnimatedOpacity(
             opacity: showSearchBar ? 1 : 0,
             duration: const Duration(milliseconds: 300),
-            child: AnimatedContainer(
-              curve: Curves.easeInOutCubicEmphasized,
-              duration: const Duration(milliseconds: 500),
-              height: showSearchBar ? Style.topBarHeight : 0,
-              padding: padding,
-              child: child,
+            child: ClipRect(
+              child: AnimatedAlign(
+                alignment: Alignment.bottomCenter,
+                curve: Curves.easeInOutCubicEmphasized,
+                duration: const Duration(milliseconds: 500),
+                heightFactor: showSearchBar ? 1 : 0,
+                child: child,
+              ),
             ),
           );
         });
       }
     }
-    return Container(
-      height: Style.topBarHeight,
-      padding: padding,
-      child: child,
-    );
+    return child;
   }
 
   Widget searchBar() {
@@ -209,10 +208,12 @@ class _HomeHeaderBar extends StatelessWidget {
   const _HomeHeaderBar({
     required this.mainController,
     required this.leading,
+    required this.horizontalPadding,
   });
 
   final MainController mainController;
   final Widget leading;
+  final double horizontalPadding;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -221,7 +222,7 @@ class _HomeHeaderBar extends StatelessWidget {
       final colors = ColorScheme.of(context);
       final buttons = <HeaderAction, ({Widget icon, VoidCallback open})>{
         .scan: (
-          icon: const Icon(Icons.qr_code_scanner),
+          icon: const ScanIcon(),
           open: () => Get.toNamed('/scan'),
         ),
         if (loggedIn)
@@ -238,49 +239,47 @@ class _HomeHeaderBar extends StatelessWidget {
           open: () => Get.toNamed('/recognizeLink'),
         ),
       };
-      final entries = HeaderActionPreferences.read(.home)
-          .where((entry) => buttons.containsKey(entry.action))
-          .toList();
-      // Keep the search field or scrollable tabs usable before pinning shortcuts.
+      final actions = [
+        for (final entry in HeaderActionPreferences.read(.home))
+          if (entry.pinned && buttons.containsKey(entry.action)) entry.action,
+      ];
       const slot = kMinInteractiveDimension;
-      final slots = ((constraints.maxWidth - 96) / slot).floor();
-      final (:pinned, :more) = splitHeaderActions(entries, slots);
-      return Row(
-        children: [
-          Expanded(child: leading),
-          for (final action in pinned)
-            SizedBox(
-              width: slot,
-              child: IconButton(
-                padding: action == .profile ? EdgeInsets.zero : null,
-                tooltip: action == .profile && !loggedIn
-                    ? '点击登录'
-                    : action.label,
-                onPressed: buttons[action]!.open,
-                icon: buttons[action]!.icon,
-              ),
+      final tools = [
+        for (final action in actions)
+          SizedBox(
+            width: slot,
+            child: IconButton(
+              padding: action == .profile ? EdgeInsets.zero : null,
+              tooltip: action == .profile && !loggedIn ? '点击登录' : action.label,
+              onPressed: buttons[action]!.open,
+              icon: buttons[action]!.icon,
             ),
-          if (more.isNotEmpty)
-            SizedBox(
-              width: constraints.maxWidth.clamp(0.0, slot),
-              child: HeaderMoreButton(
-                icon: loggedIn && !pinned.contains(HeaderAction.messages)
-                    ? messageBadgeIcon(
-                        mainController,
-                        child: const Icon(Icons.more_vert),
-                      )
-                    : const Icon(Icons.more_vert),
-                items: [
-                  for (final action in more)
-                    headerMenuItem(
-                      label: action.label,
-                      icon: buttons[action]!.icon,
-                      onPressed: buttons[action]!.open,
-                    ),
-                ],
-              ),
-            ),
-        ],
+          ),
+      ];
+      // The search icon (or tab strip) and each selected tool get a full tap target.
+      final minimumWidth = slot * (actions.length + 1);
+      if (constraints.maxWidth < minimumWidth) {
+        return Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(width: slot, child: leading),
+            ...tools,
+          ],
+        );
+      }
+      final inset = ((constraints.maxWidth - minimumWidth) / 2).clamp(
+        0.0,
+        horizontalPadding,
+      );
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: inset),
+        child: Row(
+          children: [
+            Expanded(child: leading),
+            ...tools,
+          ],
+        ),
       );
     }),
   );

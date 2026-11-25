@@ -4,8 +4,8 @@ import 'package:PiliPlus/common/assets.dart';
 import 'package:PiliPlus/common/style.dart';
 import 'package:PiliPlus/common/widgets/flutter/list_tile.dart';
 import 'package:PiliPlus/common/widgets/flutter/refresh_indicator.dart';
-import 'package:PiliPlus/common/widgets/header_more_button.dart';
 import 'package:PiliPlus/common/widgets/image/network_img_layer.dart';
+import 'package:PiliPlus/common/widgets/scan_icon.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/mine_tab_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
@@ -78,40 +78,59 @@ class _MediaPageState extends CommonPageState<MinePage>
   Widget build(BuildContext context) {
     super.build(context);
     final secondary = theme.colorScheme.secondary;
-    return Column(
-      children: [
-        Padding(
-          padding: const .symmetric(vertical: 10),
-          child: _buildHeaderActions,
-        ),
-        Expanded(
-          child: Material(
-            type: .transparency,
-            child: refreshIndicator(
-              onRefresh: controller.onRefresh,
-              child: onBuild(
-                ListView(
-                  padding: const .only(bottom: 150),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  children: [
-                    _buildUserInfo(theme, secondary),
-                    _buildActions(secondary),
-                    for (final tab in controller.mineTabs)
-                      switch (tab) {
-                        .favorite => Obx(_buildFav),
-                        .history => Obx(_buildHistory),
-                        .later => Obx(_buildLater),
-                        .sub => Obx(_buildSub),
-                      },
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: constraints.maxHeight / 2),
+            child: SingleChildScrollView(
+              primary: false,
+              child: _buildHeaderActions,
+            ),
+          ),
+          Expanded(
+            child: Material(
+              type: .transparency,
+              child: refreshIndicator(
+                onRefresh: controller.onRefresh,
+                child: onBuild(
+                  ListView(
+                    padding: const .only(bottom: 150),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      _buildUserInfo(theme, secondary),
+                      _buildActions(secondary),
+                      Obx(() {
+                        final showSettings = HeaderActionPreferences.read(.mine)
+                            .any((e) => e.action == .settings && e.pinned);
+                        return showSettings
+                            ? const SizedBox.shrink()
+                            : ListTile(
+                                leading: const Icon(Icons.settings_outlined),
+                                title: const Text('设置'),
+                                onTap: _openSettings,
+                              );
+                      }),
+                      for (final tab in controller.mineTabs)
+                        switch (tab) {
+                          .favorite => Obx(_buildFav),
+                          .history => Obx(_buildHistory),
+                          .later => Obx(_buildLater),
+                          .sub => Obx(_buildSub),
+                        },
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
+
+  void _openSettings() => Get.toNamed('/setting', preventDuplicates: false);
 
   Widget _buildActions(Color primary) {
     return Row(
@@ -147,104 +166,94 @@ class _MediaPageState extends CommonPageState<MinePage>
     );
   }
 
-  Widget get _buildHeaderActions => LayoutBuilder(
-    builder: (context, constraints) => Obx(() {
-      final anonymity = MineController.anonymity.value;
-      final actions = <HeaderAction, ({Widget icon, VoidCallback open})>{
-        if (_mainController.accountService.isLogin.value)
-          .messages: (
-            icon: messageBadgeIcon(_mainController),
-            open: () => openMessages(_mainController),
-          ),
-        .search: (
-          icon: const Icon(Icons.search),
-          open: () => Get.toNamed('/search'),
+  Widget get _buildHeaderActions => Obx(() {
+    final anonymity = MineController.anonymity.value;
+    final actions = <HeaderAction, ({Widget icon, VoidCallback open})>{
+      if (_mainController.accountService.isLogin.value)
+        .messages: (
+          icon: messageBadgeIcon(_mainController),
+          open: () => openMessages(_mainController),
         ),
-        if (GStorage.reply != null)
-          .replyHistory: (
-            icon: const Icon(Icons.message_outlined),
-            open: () => Get.toNamed('/myReply'),
-          ),
-        .incognito: (
-          icon: Icon(anonymity ? MdiIcons.incognito : MdiIcons.incognitoOff),
-          open: MineController.onChangeAnonymity,
+      .search: (
+        icon: const Icon(Icons.search),
+        open: () => Get.toNamed('/search'),
+      ),
+      if (GStorage.reply != null)
+        .replyHistory: (
+          icon: const Icon(Icons.message_outlined),
+          open: () => Get.toNamed('/myReply'),
         ),
-        .switchAccount: (
-          icon: const Icon(Icons.switch_account_outlined),
-          open: () => LoginPageController.switchAccountDialog(context),
-        ),
-        .theme: (
-          icon: controller.themeType.value.icon,
-          open: controller.onChangeTheme,
-        ),
-        .settings: (
-          icon: const Icon(Icons.settings_outlined),
-          open: () => Get.toNamed('/setting', preventDuplicates: false),
-        ),
-        .scan: (
-          icon: const Icon(Icons.qr_code_scanner),
-          open: () => Get.toNamed('/scan'),
-        ),
-        .recognizeLink: (
-          icon: const Icon(Icons.link),
-          open: () => Get.toNamed('/recognizeLink'),
-        ),
-      };
-      String label(HeaderAction action) => switch (action) {
-        HeaderAction.incognito => "${anonymity ? '退出' : '进入'}无痕模式",
-        HeaderAction.theme => '切换至${controller.nextThemeType.label}主题',
-        _ => action.label,
-      };
-      final entries = HeaderActionPreferences.read(.mine)
-          .where((entry) => actions.containsKey(entry.action))
-          .toList();
-      const slot = kMinInteractiveDimension;
-      final slots =
-          ((constraints.maxWidth - 16) / slot).floor() -
-          (widget.showBackBtn ? 1 : 0);
-      final (:pinned, :more) = splitHeaderActions(entries, slots);
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        child: Row(
-          children: [
-            if (widget.showBackBtn)
-              const SizedBox.square(dimension: slot, child: BackButton()),
-            const Spacer(),
-            for (final action in pinned)
-              SizedBox.square(
-                dimension: slot,
-                child: IconButton(
-                  iconSize: 22,
-                  tooltip: label(action),
-                  icon: actions[action]!.icon,
-                  onPressed: actions[action]!.open,
+      .incognito: (
+        icon: Icon(anonymity ? MdiIcons.incognito : MdiIcons.incognitoOff),
+        open: MineController.onChangeAnonymity,
+      ),
+      .switchAccount: (
+        icon: const Icon(Icons.switch_account_outlined),
+        open: () => LoginPageController.switchAccountDialog(context),
+      ),
+      .theme: (
+        icon: controller.themeType.value.icon,
+        open: controller.onChangeTheme,
+      ),
+      .settings: (
+        icon: const Icon(Icons.settings_outlined),
+        open: _openSettings,
+      ),
+      .scan: (
+        icon: const ScanIcon(),
+        open: () => Get.toNamed('/scan'),
+      ),
+      .recognizeLink: (
+        icon: const Icon(Icons.link),
+        open: () => Get.toNamed('/recognizeLink'),
+      ),
+    };
+    String label(HeaderAction action) => switch (action) {
+      HeaderAction.incognito => "${anonymity ? '退出' : '进入'}无痕模式",
+      HeaderAction.theme => '切换至${controller.nextThemeType.label}主题',
+      _ => action.label,
+    };
+    final visible = [
+      for (final entry in HeaderActionPreferences.read(.mine))
+        if (entry.pinned && actions.containsKey(entry.action)) entry.action,
+    ];
+    if (visible.isEmpty && !widget.showBackBtn) return const SizedBox.shrink();
+    const slot = kMinInteractiveDimension;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Keep the back button at the start and use the entire width of later rows.
+          final firstRowTools = ((constraints.maxWidth / slot).floor() - 1)
+              .clamp(0, visible.length);
+          return Wrap(
+            alignment: WrapAlignment.end,
+            children: [
+              if (widget.showBackBtn)
+                SizedBox(
+                  width: constraints.maxWidth - firstRowTools * slot,
+                  height: slot,
+                  child: const Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: BackButton(),
+                  ),
                 ),
-              ),
-            if (more.isNotEmpty)
-              SizedBox.square(
-                dimension: slot,
-                child: HeaderMoreButton(
-                  icon: more.contains(HeaderAction.messages)
-                      ? messageBadgeIcon(
-                          _mainController,
-                          child: const Icon(Icons.more_vert),
-                        )
-                      : const Icon(Icons.more_vert),
-                  items: [
-                    for (final action in more)
-                      headerMenuItem(
-                        label: label(action),
-                        icon: actions[action]!.icon,
-                        onPressed: actions[action]!.open,
-                      ),
-                  ],
+              for (final action in visible)
+                SizedBox.square(
+                  dimension: slot,
+                  child: IconButton(
+                    iconSize: 22,
+                    tooltip: label(action),
+                    icon: actions[action]!.icon,
+                    onPressed: actions[action]!.open,
+                  ),
                 ),
-              ),
-          ],
-        ),
-      );
-    }),
-  );
+            ],
+          );
+        },
+      ),
+    );
+  });
 
   Widget _buildUserInfo(ThemeData theme, Color secondary) {
     final style = TextStyle(

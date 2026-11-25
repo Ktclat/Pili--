@@ -38,7 +38,7 @@ enum HeaderActionPage {
     (action: HeaderAction.switchAccount, pinned: true),
     (action: HeaderAction.theme, pinned: true),
     (action: HeaderAction.settings, pinned: true),
-    (action: HeaderAction.scan, pinned: false),
+    (action: HeaderAction.scan, pinned: true),
     (action: HeaderAction.recognizeLink, pinned: false),
   ]);
 

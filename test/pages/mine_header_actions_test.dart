@@ -68,6 +68,7 @@ void main() {
     WidgetTester tester,
     Size size, {
     bool withHome = false,
+    bool showBack = true,
   }) async {
     if (withHome) settings.data[SettingBoxKey.navBarSort] = [0, 2];
     main = Get.put(MainController());
@@ -77,7 +78,7 @@ void main() {
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
       GetMaterialApp(
-        home: const Scaffold(body: MinePage(showBackBtn: true)),
+        home: Scaffold(body: MinePage(showBackBtn: showBack)),
         getPages: [
           GetPage(name: '/scan', page: () => const ScanPage()),
           GetPage(
@@ -99,82 +100,48 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets(
-    'Mine defaults to scan and link recognition in its top-right menu',
-    (
-      tester,
-    ) async {
-      await mount(tester, const Size(320, 680));
-      final more = find.byTooltip('更多操作');
-      final list = find.byType(ListView);
-      for (final label in ['扫一扫', '识别链接']) {
-        expect(
-          find.descendant(of: list, matching: find.text(label)),
-          findsNothing,
-        );
-      }
-      expect(find.byTooltip('消息'), findsOneWidget);
-      expect(find.byTooltip('评论记录'), findsOneWidget);
-      expect(find.byTooltip('设置'), findsNothing);
-      expect(tester.getSize(more), const Size.square(48));
-      expect(tester.getSemantics(more).flagsCollection.isButton, isTrue);
-      expect(
-        tester.getCenter(more).dx,
-        greaterThan(tester.getCenter(find.byTooltip('评论记录')).dx),
-      );
+  testWidgets('Mine offers its default tools directly and hides recognition', (
+    tester,
+  ) async {
+    await mount(tester, const Size(320, 680));
+    final scan = find.byTooltip('扫一扫');
+    final messages = find.byTooltip('消息');
+    expect(find.byTooltip('更多操作'), findsNothing);
+    expect(find.byTooltip('识别链接'), findsNothing);
+    expect(find.text('识别链接'), findsNothing);
+    expect(find.byTooltip('设置'), findsOneWidget);
+    expect(find.text('设置'), findsNothing);
+    expect(scan.hitTestable(), findsOneWidget);
+    expect(tester.getSize(scan), const Size.square(48));
+    expect(tester.getSemantics(scan).flagsCollection.isButton, isTrue);
+    expect(
+      tester.getCenter(scan).dy,
+      greaterThan(tester.getCenter(messages).dy),
+    );
+    expect(
+      tester.getBottomLeft(scan).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.byType(ListView)).dy),
+    );
 
-      Future<void> select(String label) async {
-        await tester.tap(more);
-        await tester.pumpAndSettle();
-        expect(find.text('编辑按钮'), findsNothing);
-        expect(find.text('扫一扫'), findsOneWidget);
-        expect(find.text('识别链接'), findsOneWidget);
-        await tester.tap(find.text(label));
-        await tester.pumpAndSettle();
-      }
-
-      Future<void> back() async {
-        Get.back<void>();
-        await tester.pumpAndSettle();
-        expect(more, findsOneWidget);
-      }
-
-      await select('扫一扫');
-      expect(find.byType(ScanPage), findsOneWidget);
-      await back();
-      await select('设置');
-      expect(find.byType(SettingPage), findsOneWidget);
-      await back();
-
-      tester.view.physicalSize = const Size(680, 320);
-      await tester.pumpAndSettle();
-      expect(find.byType(BackButton), findsOneWidget);
-      for (final label in [
-        '搜索',
-        '消息',
-        '评论记录',
-        '进入无痕模式',
-        '切换账号',
-        '切换至浅色主题',
-        '设置',
-      ]) {
-        expect(find.byTooltip(label), findsOneWidget);
-      }
-      await select('识别链接');
-      expect(find.byType(LinkRecognitionPage), findsOneWidget);
-      await back();
-      expect(tester.takeException(), isNull);
-    },
-  );
+    await tester.tap(scan);
+    await tester.pumpAndSettle();
+    expect(find.byType(ScanPage), findsOneWidget);
+    Get.back<void>();
+    await tester.pumpAndSettle();
+    tester.view.physicalSize = const Size(680, 320);
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(scan).dy, tester.getCenter(messages).dy);
+    expect(find.byTooltip('更多操作'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets(
-    'Mine applies edited placement and order and keeps hidden tools usable',
+    'Mine updates visible tools from Settings and keeps their order',
     (
       tester,
     ) async {
       await mount(tester, const Size(680, 850), withHome: true);
       expect(find.byTooltip('搜索'), findsNothing);
-      final more = find.byTooltip('更多操作');
       await tester.tap(find.byTooltip('设置'));
       await tester.pumpAndSettle();
       await tester.scrollUntilVisible(find.text('外观设置'), 160);
@@ -186,109 +153,129 @@ void main() {
       await tester.tap(find.widgetWithText(Tab, '我的'));
       await tester.pumpAndSettle();
 
-      final search = find.widgetWithText(CheckboxListTile, '搜索');
-      await tester.ensureVisible(search);
-      expect(tester.widget<CheckboxListTile>(search).value, isFalse);
-      await tester.tap(search);
-      await tester.pumpAndSettle();
-      final scan = find.widgetWithText(CheckboxListTile, '扫一扫');
-      await tester.ensureVisible(scan);
-      expect(tester.widget<CheckboxListTile>(scan).value, isFalse);
-      await tester.tap(scan);
-      await tester.pumpAndSettle();
+      Future<void> toggle(String label, bool previous) async {
+        final checkbox = find.widgetWithText(CheckboxListTile, label);
+        await tester.ensureVisible(checkbox);
+        expect(tester.widget<CheckboxListTile>(checkbox).value, previous);
+        await tester.tap(checkbox);
+        await tester.pumpAndSettle();
+      }
+
+      await toggle('搜索', false);
+      await toggle('扫一扫', true);
+      await toggle('识别链接', false);
       Get.until((route) => route.isFirst);
       await tester.pumpAndSettle();
-      expect(find.byTooltip('扫一扫'), findsOneWidget);
-      expect(find.byTooltip('识别链接'), findsNothing);
+      expect(find.byTooltip('更多操作'), findsNothing);
+      expect(find.byTooltip('扫一扫'), findsNothing);
+      await tester.tap(find.byTooltip('识别链接'));
+      await tester.pumpAndSettle();
+      expect(find.byType(LinkRecognitionPage), findsOneWidget);
+      Get.back<void>();
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('搜索'));
       await tester.pumpAndSettle();
       expect(find.text('搜索页面'), findsOneWidget);
       Get.back<void>();
       await tester.pumpAndSettle();
 
-      final entries = HeaderActionPreferences.read(HeaderActionPage.mine);
-      await HeaderActionPreferences.save(HeaderActionPage.mine, [
-        (action: HeaderAction.recognizeLink, pinned: true),
-        (action: HeaderAction.scan, pinned: true),
+      final entries = HeaderActionPreferences.read(.mine);
+      await HeaderActionPreferences.save(.mine, [
+        (action: .recognizeLink, pinned: true),
+        (action: .scan, pinned: true),
         for (final entry in entries)
-          if (entry.action != HeaderAction.scan &&
-              entry.action != HeaderAction.recognizeLink)
-            (
-              action: entry.action,
-              pinned: entry.action != HeaderAction.messages,
-            ),
+          if (entry.action != .recognizeLink && entry.action != .scan)
+            (action: entry.action, pinned: entry.action != .messages),
       ]);
       tester.view.physicalSize = const Size(320, 680);
+      main.msgUnReadCount.value = '2';
       await tester.pumpAndSettle();
       expect(
         tester.getCenter(find.byTooltip('识别链接')).dx,
         lessThan(tester.getCenter(find.byTooltip('扫一扫')).dx),
       );
       expect(find.byTooltip('消息'), findsNothing);
-      await tester.tap(find.byTooltip('识别链接'));
+      expect(find.text('2'), findsNothing);
+      expect(find.byTooltip('更多操作'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'All available tools stay reachable when Mine wraps on narrow screens',
+    (
+      tester,
+    ) async {
+      await HeaderActionPreferences.save(.mine, [
+        for (final entry in HeaderActionPreferences.read(.mine))
+          (action: entry.action, pinned: true),
+      ]);
+      // Nine actions plus the back button, with 8 dp padding on either side.
+      await mount(tester, const Size(496, 750));
+      final back = find.byType(BackButton);
+      final recognize = find.byTooltip('识别链接');
+      expect(tester.getCenter(recognize).dy, tester.getCenter(back).dy);
+      tester.view.physicalSize = const Size(495, 750);
       await tester.pumpAndSettle();
-      expect(find.byType(LinkRecognitionPage), findsOneWidget);
-      Get.back<void>();
-      await tester.pumpAndSettle();
+      expect(
+        tester.getCenter(recognize).dy,
+        greaterThan(tester.getCenter(back).dy),
+      );
+      expect(recognize.hitTestable(), findsOneWidget);
+      expect(find.byTooltip('更多操作'), findsNothing);
 
       main.msgUnReadCount.value = '2';
       await tester.pumpAndSettle();
+      final messages = find.byTooltip('消息');
       expect(
-        find.descendant(of: more, matching: find.text('2')),
+        find.descendant(of: messages, matching: find.text('2')),
         findsOneWidget,
       );
-      await tester.tap(more);
-      await tester.pumpAndSettle();
-      expect(find.text('扫一扫'), findsNothing);
-      expect(find.text('识别链接'), findsNothing);
-      expect(find.text('设置'), findsOneWidget);
-      await tester.tap(find.text('消息'));
+      await tester.tap(messages);
       await tester.pumpAndSettle();
       expect(find.text('消息页面'), findsOneWidget);
       expect(main.msgUnReadCount.value, isNull);
       Get.back<void>();
       await tester.pumpAndSettle();
-
       Get.find<AccountService>().isLogin.value = false;
       await tester.pumpAndSettle();
-      await tester.tap(more);
+      expect(messages, findsNothing);
+      expect(tester.getCenter(recognize).dy, tester.getCenter(back).dy);
+
+      tester.view.physicalSize = const Size(300, 180);
       await tester.pumpAndSettle();
-      expect(find.text('消息'), findsNothing);
-      expect(find.text('编辑按钮'), findsNothing);
+      await tester.ensureVisible(recognize);
+      await tester.pumpAndSettle();
+      expect(recognize.hitTestable(), findsOneWidget);
+      expect(
+        tester.getBottomLeft(recognize).dy,
+        lessThanOrEqualTo(tester.getTopLeft(find.byType(ListView)).dy),
+      );
+      await tester.tap(recognize);
+      await tester.pumpAndSettle();
+      expect(find.byType(LinkRecognitionPage), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
 
-  testWidgets('Mine uses the last slot for a tool when all actions fit', (
-    tester,
-  ) async {
-    final entries = HeaderActionPreferences.read(.mine);
-    await HeaderActionPreferences.save(.mine, [
-      for (final entry in entries) (action: entry.action, pinned: true),
-    ]);
-    // Nine actions plus the back button, with 8 dp padding on either side.
-    await mount(tester, const Size(496, 750));
-    final more = find.byTooltip('更多操作');
-    expect(more, findsNothing);
-    expect(find.byType(BackButton), findsOneWidget);
-    expect(find.byTooltip('识别链接'), findsOneWidget);
-
-    tester.view.physicalSize = const Size(495, 750);
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('识别链接'), findsNothing);
-    await tester.tap(more);
-    await tester.pumpAndSettle();
-    expect(find.text('编辑按钮'), findsNothing);
-    expect(find.text('扫一扫'), findsOneWidget);
-    expect(find.text('识别链接'), findsOneWidget);
-    Get.back<void>();
-    await tester.pumpAndSettle();
-
-    Get.find<AccountService>().isLogin.value = false;
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('消息'), findsNothing);
-    expect(find.byTooltip('识别链接'), findsOneWidget);
-    expect(more, findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'Mine still opens Settings from its body when every tool is hidden',
+    (
+      tester,
+    ) async {
+      await HeaderActionPreferences.save(.mine, [
+        for (final entry in HeaderActionPreferences.read(.mine))
+          (action: entry.action, pinned: false),
+      ]);
+      await mount(tester, const Size(320, 680), showBack: false);
+      for (final label in ['扫一扫', '识别链接', '消息', '设置', '更多操作']) {
+        expect(find.byTooltip(label), findsNothing);
+      }
+      expect(tester.getTopLeft(find.byType(ListView)).dy, 0);
+      await tester.tap(find.text('设置'));
+      await tester.pumpAndSettle();
+      expect(find.byType(SettingPage), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

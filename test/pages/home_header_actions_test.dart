@@ -1,3 +1,5 @@
+import 'package:PiliPlus/common/style.dart';
+import 'package:PiliPlus/models/common/bar_hide_type.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamic_badge_mode.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/home/view.dart';
@@ -63,6 +65,7 @@ void main() {
     Size size, {
     bool loggedIn = false,
     bool sideBar = false,
+    EdgeInsets contentInsets = EdgeInsets.zero,
   }) async {
     settings.data[SettingBoxKey.useSideBar] = sideBar;
     final account = Get.put<AccountService>(_Account());
@@ -77,11 +80,17 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
       GetMaterialApp(
-        home: const Scaffold(body: HomePage()),
+        home: Scaffold(
+          body: Padding(padding: contentInsets, child: const HomePage()),
+        ),
         getPages: [
           GetPage(
             name: '/recognizeLink',
             page: () => const Scaffold(body: Text('识别页面')),
+          ),
+          GetPage(
+            name: '/search',
+            page: () => const Scaffold(body: Text('搜索页面')),
           ),
           GetPage(
             name: '/whisper',
@@ -94,27 +103,31 @@ void main() {
     return main;
   }
 
-  testWidgets(
-    'portrait defaults keep search, scan and guest avatar reachable',
-    (tester) async {
-      await show(tester, const Size(360, 640));
-      expect(find.byIcon(Icons.search_outlined), findsOneWidget);
-      expect(find.byTooltip('扫一扫'), findsOneWidget);
-      expect(find.byTooltip('点击登录'), findsOneWidget);
-      expect(find.byTooltip('消息'), findsNothing);
-      await tester.tap(find.byTooltip('更多操作'));
-      await tester.pumpAndSettle();
-      expect(find.text('消息'), findsNothing);
-      expect(find.text('编辑按钮'), findsNothing);
-      await tester.tap(find.text('识别链接'));
-      await tester.pumpAndSettle();
-      expect(find.text('识别页面'), findsOneWidget);
-    },
-  );
+  testWidgets('guests see only enabled tools and can enable link recognition', (
+    tester,
+  ) async {
+    await show(tester, const Size(360, 640));
+    expect(find.byIcon(Icons.search_outlined), findsOneWidget);
+    expect(find.byTooltip('扫一扫'), findsOneWidget);
+    expect(find.byTooltip('点击登录'), findsOneWidget);
+    expect(find.byTooltip('消息'), findsNothing);
+    expect(find.byTooltip('识别链接'), findsNothing);
+    expect(find.byTooltip('更多操作'), findsNothing);
+    await HeaderActionPreferences.save(.home, [
+      for (final entry in HeaderActionPage.home.defaults)
+        (action: entry.action, pinned: true),
+    ]);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('识别链接'));
+    await tester.pumpAndSettle();
+    expect(find.text('识别页面'), findsOneWidget);
+  });
 
   testWidgets(
     'custom order updates live in both side-bar and landscape layouts',
-    (tester) async {
+    (
+      tester,
+    ) async {
       await show(tester, const Size(360, 640), sideBar: true);
       expect(find.byIcon(Icons.search_outlined), findsNothing);
       await HeaderActionPreferences.save(.home, [
@@ -131,80 +144,155 @@ void main() {
       tester.view.physicalSize = const Size(800, 400);
       await tester.pumpAndSettle();
       expect(tester.getCenter(link).dx, lessThan(tester.getCenter(scan).dx));
-      await tester.tap(find.byTooltip('更多操作'));
-      await tester.pumpAndSettle();
-      expect(find.text('我的'), findsOneWidget);
-      expect(find.text('编辑按钮'), findsNothing);
+      expect(find.byTooltip('更多操作'), findsNothing);
     },
   );
 
-  testWidgets('rotating a phone keeps all collapsed tools in More', (
-    tester,
-  ) async {
-    await show(tester, const Size(360, 640));
-    await HeaderActionPreferences.save(.home, [
-      for (final entry in HeaderActionPage.home.defaults)
-        (action: entry.action, pinned: false),
-    ]);
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.search_outlined), findsOneWidget);
-    expect(find.byTooltip('扫一扫'), findsNothing);
-    tester.view.physicalSize = const Size(640, 360);
-    await tester.pumpAndSettle();
-    expect(find.byIcon(Icons.search_outlined), findsNothing);
-    await tester.tap(find.byTooltip('更多操作'));
-    await tester.pumpAndSettle();
-    expect(find.text('扫一扫'), findsOneWidget);
-    expect(find.text('识别链接'), findsOneWidget);
-    expect(find.text('编辑按钮'), findsNothing);
-  });
-
-  testWidgets('the last available slot shows a shortcut when all tools fit', (
-    tester,
-  ) async {
-    // Portrait has 28 dp of outer padding, 96 dp for search and three 48 dp slots.
-    await show(tester, const Size(268, 640));
-    await HeaderActionPreferences.save(.home, [
-      for (final entry in HeaderActionPage.home.defaults)
-        (action: entry.action, pinned: entry.action != HeaderAction.messages),
-    ]);
-    await tester.pumpAndSettle();
-
-    final more = find.byTooltip('更多操作');
-    expect(find.byTooltip('扫一扫'), findsOneWidget);
-    expect(find.byTooltip('点击登录'), findsOneWidget);
-    expect(find.byTooltip('识别链接'), findsOneWidget);
-    expect(more, findsNothing);
-
-    tester.view.physicalSize = const Size(267, 640);
-    await tester.pumpAndSettle();
-    expect(find.byTooltip('扫一扫'), findsOneWidget);
-    expect(find.byTooltip('识别链接'), findsNothing);
-    await tester.tap(more);
-    await tester.pumpAndSettle();
-    expect(find.text('我的'), findsOneWidget);
-    expect(find.text('识别链接'), findsOneWidget);
-    expect(find.text('编辑按钮'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'turning off every tool leaves only the original search or tabs',
+    (
+      tester,
+    ) async {
+      await show(tester, const Size(360, 640));
+      await HeaderActionPreferences.save(.home, [
+        for (final entry in HeaderActionPage.home.defaults)
+          (action: entry.action, pinned: false),
+      ]);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.search_outlined), findsOneWidget);
+      for (final label in ['扫一扫', '点击登录', '消息', '识别链接', '更多操作']) {
+        expect(find.byTooltip(label), findsNothing);
+      }
+      tester.view.physicalSize = const Size(640, 360);
+      await tester.pumpAndSettle();
+      expect(find.byIcon(Icons.search_outlined), findsNothing);
+      expect(find.byType(IconButton), findsNothing);
+    },
+  );
 
   testWidgets(
-    'narrow header keeps unread messages in More and opens the inbox',
-    (tester) async {
+    'search contracts to an icon before any selected tool leaves the viewport',
+    (
+      tester,
+    ) async {
+      await show(tester, const Size(360, 640), loggedIn: true);
+      await HeaderActionPreferences.save(.home, [
+        for (final entry in HeaderActionPage.home.defaults)
+          (action: entry.action, pinned: true),
+      ]);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('搜索'), findsNothing);
+      // Five 48 dp targets fit exactly after releasing the outer padding.
+      tester.view.physicalSize = const Size(240, 640);
+      await tester.pumpAndSettle();
+      for (final label in ['搜索', '扫一扫', '消息', '我的', '识别链接']) {
+        expect(find.byTooltip(label).hitTestable(), findsOneWidget);
+      }
+      expect(find.byTooltip('更多操作'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.byTooltip('搜索'));
+      await tester.pumpAndSettle();
+      expect(find.text('搜索页面'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'tools wrap into a directly tappable second row in an inset window',
+    (
+      tester,
+    ) async {
+      // A 360 dp window can give Home only 160 dp of usable width.
+      await show(
+        tester,
+        const Size(360, 640),
+        loggedIn: true,
+        contentInsets: const EdgeInsets.symmetric(horizontal: 100),
+      );
+      await HeaderActionPreferences.save(.home, [
+        for (final entry in HeaderActionPage.home.defaults)
+          (action: entry.action, pinned: true),
+      ]);
+      await tester.pumpAndSettle();
+      for (final label in ['搜索', '扫一扫', '消息', '我的', '识别链接']) {
+        expect(find.byTooltip(label).hitTestable(), findsOneWidget);
+      }
+      final link = find.byTooltip('识别链接');
+      expect(
+        tester.getCenter(link).dy,
+        greaterThan(tester.getCenter(find.byTooltip('搜索')).dy),
+      );
+      expect(find.byTooltip('更多操作'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.tap(link);
+      await tester.pumpAndSettle();
+      expect(find.text('识别页面'), findsOneWidget);
+    },
+  );
+
+  for (final type in BarHideType.values) {
+    testWidgets(
+      'the ${type.name} toolbar hides and reopens at either row count',
+      (
+        tester,
+      ) async {
+        settings.data
+          ..[SettingBoxKey.hideTopBar] = true
+          ..[SettingBoxKey.barHideType] = type.index;
+        final main = await show(tester, const Size(360, 640), loggedIn: true);
+        final home = Get.find<HomeController>();
+        final scan = find.byTooltip('扫一扫');
+        for (final width in [360.0, 150.0]) {
+          tester.view.physicalSize = Size(width, 640);
+          await tester.pumpAndSettle();
+          expect(scan.hitTestable(), findsOneWidget);
+          if (type == BarHideType.sync) {
+            main.barOffset!.value = Style.topBarHeight;
+          } else {
+            home.showTopBar!.value = false;
+          }
+          await tester.pumpAndSettle();
+          expect(scan.hitTestable(), findsNothing);
+          if (type == BarHideType.sync) {
+            main.barOffset!.value = 0;
+          } else {
+            home.showTopBar!.value = true;
+          }
+          await tester.pumpAndSettle();
+          expect(scan.hitTestable(), findsOneWidget);
+          expect(tester.takeException(), isNull);
+        }
+      },
+    );
+  }
+
+  testWidgets(
+    'unread messages stay on the selected button and open the inbox',
+    (
+      tester,
+    ) async {
       final main = await show(tester, const Size(220, 640), loggedIn: true);
       main.msgUnReadCount.value = '7';
       await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      expect(find.byTooltip('扫一扫'), findsOneWidget);
-      expect(find.byTooltip('消息'), findsNothing);
+      final messages = find.byTooltip('消息');
       expect(
-        find.descendant(of: find.byTooltip('更多操作'), matching: find.text('7')),
+        find.descendant(of: messages, matching: find.text('7')),
         findsOneWidget,
       );
-      await tester.tap(find.byTooltip('更多操作'));
+      expect(find.byTooltip('更多操作'), findsNothing);
+
+      await HeaderActionPreferences.save(.home, [
+        for (final entry in HeaderActionPage.home.defaults)
+          (
+            action: entry.action,
+            pinned: entry.action != HeaderAction.messages && entry.pinned,
+          ),
+      ]);
       await tester.pumpAndSettle();
-      expect(find.text('消息'), findsOneWidget);
-      await tester.tap(find.text('消息'));
+      expect(messages, findsNothing);
+      expect(find.text('7'), findsNothing);
+      await HeaderActionPreferences.save(.home, HeaderActionPage.home.defaults);
+      await tester.pumpAndSettle();
+      await tester.tap(messages);
       await tester.pumpAndSettle();
       expect(find.text('消息页面'), findsOneWidget);
       expect(main.msgUnReadCount.value, isNull);

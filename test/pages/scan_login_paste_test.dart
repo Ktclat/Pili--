@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:PiliPlus/pages/link_recognition/view.dart';
 import 'package:PiliPlus/pages/scan/authorization.dart';
 import 'package:PiliPlus/pages/scan/view.dart';
 import 'package:PiliPlus/router/app_pages.dart';
@@ -19,7 +20,13 @@ Future<void> _showScanner(
   await tester.pumpWidget(
     GetMaterialApp(
       getPages: Routes.getPages
-          .where((page) => page.name == '/scan' || page.name == '/scanLogin')
+          .where(
+            (page) => const {
+              '/scan',
+              '/scanLogin',
+              '/recognizeLink',
+            }.contains(page.name),
+          )
           .toList(),
       home: Builder(
         builder: (context) => Scaffold(
@@ -71,6 +78,36 @@ void main() {
       },
     );
   }
+
+  testWidgets(
+    'scanner app bar opens link recognition and returns to scanning',
+    (
+      tester,
+    ) async {
+      await _showScanner(tester);
+      final appBar = find.byType(AppBar);
+      final link = find.descendant(
+        of: appBar,
+        matching: find.byTooltip('识别链接'),
+      );
+      expect(tester.widget<AppBar>(appBar).actions, hasLength(1));
+      expect(
+        tester.getCenter(link).dx,
+        greaterThan(tester.getCenter(appBar).dx),
+      );
+      await tester.tap(link);
+      await tester.pumpAndSettle();
+      expect(find.byType(LinkRecognitionPage), findsOneWidget);
+      expect(find.byType(TextField), findsOneWidget);
+      expect(reads, 0);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(link, findsOneWidget);
+      expect(find.text('粘贴登录链接'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'a deliberate paste opens one account confirmation without a camera',

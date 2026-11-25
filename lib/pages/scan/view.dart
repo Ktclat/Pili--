@@ -30,7 +30,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   bool _leaving = false;
   int _pasteRevision = 0;
   String? _error;
-  static const _cameraError = '无法使用相机，可从相册识别二维码或粘贴登录链接。';
+  static const _cameraError = '相机不可用，可从相册识别二维码。';
   bool get _supported =>
       Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
 
@@ -61,6 +61,8 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     try {
       await _controller.start();
       if (mounted) {
+        if (_busy || _leaving) await _controller.stop();
+        if (!mounted) return;
         setState(
           () => _error = _controller.value.error == null ? null : _cameraError,
         );
@@ -115,11 +117,11 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
   }
 
   Future<void> _openLinkRecognition() async {
-    if (_busy) return;
+    if (_busy || _leaving) return;
     _busy = true;
-    await _controller.stop();
-    if (!mounted) return;
     try {
+      if (_controller.value.isRunning) await _controller.stop();
+      if (!mounted) return;
       await Get.toNamed('/recognizeLink');
     } finally {
       _busy = false;
@@ -191,9 +193,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
         context: context,
         builder: (context) => AlertDialog(
           title: const Text('无法识别登录二维码'),
-          content: const Text(
-            '请扫描你本人设备上由哔哩哔哩生成的网页或 TV 登录二维码。二维码可能不完整、已过期或属于暂不支持的类型，请刷新后重新扫码。',
-          ),
+          content: const Text('请在哔哩哔哩网页或电视端刷新登录二维码后重试。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -207,28 +207,17 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       return;
     }
     final uri = TrustedUrl.scanLink(value);
-    final isBili = uri != null && TrustedUrl.isBilibili(uri);
+    final openInApp =
+        uri != null &&
+        TrustedUrl.isBilibili(uri) &&
+        uri.host != 'passport.bilibili.com';
     final action = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('扫码结果'),
         content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SelectableText(
-                value.length > 8192 ? '${value.substring(0, 8192)}…' : value,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                uri == null
-                    ? '这是文本或不支持的链接，可以复制内容。'
-                    : isBili
-                    ? '确认后打开哔哩哔哩内容链接。'
-                    : '这是外部网站，将在系统浏览器打开，请核对域名。',
-              ),
-            ],
+          child: SelectableText(
+            value.length > 8192 ? '${value.substring(0, 8192)}…' : value,
           ),
         ),
         actions: [
@@ -243,7 +232,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
           if (uri != null)
             FilledButton(
               onPressed: () => Navigator.pop(context, 'open'),
-              child: const Text('打开'),
+              child: Text(openInApp ? '打开' : '在浏览器打开'),
             ),
         ],
       ),
@@ -259,7 +248,7 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
       // Remove the camera route before opening another page, releasing CameraX.
       _leaving = true;
       Get.back();
-      if (isBili && uri.host != 'passport.bilibili.com') {
+      if (openInApp) {
         unawaited(PageUtils.handleWebview(uri.toString()));
       } else {
         unawaited(PageUtils.launchURL(uri.toString()));
@@ -311,14 +300,9 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
     appBar: AppBar(
       title: const Text('扫一扫'),
       actions: [
-        TextButton.icon(
-          onPressed: _pasteLoginLink,
-          icon: const Icon(Icons.content_paste),
-          label: const Text('粘贴登录链接'),
-        ),
         IconButton(
           tooltip: '识别链接',
-          icon: const Icon(Icons.link),
+          icon: const Icon(Icons.link_rounded),
           onPressed: _openLinkRecognition,
         ),
       ],
@@ -335,35 +319,36 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                       MobileScanner(
                         controller: _controller,
                         onDetect: _detect,
-                        errorBuilder: (_, _) =>
-                            const Center(child: Text('相机不可用，可使用下方的相册识别')),
-                      ),
-                      IgnorePointer(
-                        child: Container(
-                          width: 240,
-                          height: 240,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.white, width: 2),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                        errorBuilder: (_, _) => const Center(
+                          child: Icon(Icons.no_photography_outlined, size: 48),
                         ),
                       ),
+                      if (_error == null)
+                        IgnorePointer(
+                          child: Container(
+                            width: 240,
+                            height: 240,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white, width: 2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              _error ?? '扫描内容二维码或你本人发起的哔哩哔哩登录码。登录前请核对账号和登录位置。',
-            ),
-          ),
           if (_supported)
             Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Wrap(
-                spacing: 12,
-                alignment: WrapAlignment.center,
-                children: [
+              padding: const EdgeInsets.all(16),
+              child: Text(_error ?? '将内容二维码或登录码放入框内'),
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+            child: Wrap(
+              spacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                if (_supported) ...[
                   OutlinedButton.icon(
                     onPressed: _gallery,
                     icon: const Icon(Icons.photo_library_outlined),
@@ -374,14 +359,20 @@ class _ScanPageState extends State<ScanPage> with WidgetsBindingObserver {
                     icon: const Icon(Icons.flashlight_on_outlined),
                     label: const Text('手电筒'),
                   ),
-                  if (_error != null)
-                    TextButton(
-                      onPressed: () => _start(requestPermission: true),
-                      child: const Text('重试相机'),
-                    ),
                 ],
-              ),
+                OutlinedButton.icon(
+                  onPressed: _pasteLoginLink,
+                  icon: const Icon(Icons.content_paste),
+                  label: const Text('粘贴登录链接'),
+                ),
+                if (_error != null)
+                  TextButton(
+                    onPressed: () => _start(requestPermission: true),
+                    child: const Text('重试相机'),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     ),

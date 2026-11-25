@@ -160,7 +160,7 @@ void main() {
       final repository = _Repository();
       await _show(tester, repository, fromExternalApp: true);
       expect(find.text('其他 App 请求登录'), findsOneWidget);
-      expect(find.textContaining('请只授权你刚刚在原 App 亲自发起的登录'), findsOneWidget);
+      expect(find.textContaining('请确认这是你在原 App 发起的登录'), findsOneWidget);
       expect(find.text('使用账号：UID 123'), findsOneWidget);
       expect(find.text('官方服务提供的登录地点：测试地点'), findsOneWidget);
       expect(find.textContaining(_token), findsNothing);

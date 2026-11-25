@@ -11,7 +11,7 @@ class HeaderActionSettingsPage extends StatelessWidget {
     } catch (_) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('无法保存右上角按钮设置，请重试')),
+          const SnackBar(content: Text('按钮设置保存失败，请重试')),
         );
       }
     }
@@ -60,7 +60,7 @@ class HeaderActionSettingsPage extends StatelessWidget {
       buildDefaultDragHandles: false,
       header: const Padding(
         padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: Text('勾选的按钮显示在右上角，收起的按钮放入「更多操作」。拖动右侧手柄调整顺序。'),
+        child: Text('勾选要显示的按钮，拖动右侧手柄排序。'),
       ),
       itemCount: entries.length,
       onReorderItem: (oldIndex, newIndex) {
